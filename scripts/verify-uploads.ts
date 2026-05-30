@@ -138,8 +138,7 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
   ok(`created upload ${created.id}`);
   ok(`signedUrl host: ${new URL(created.signedUrl).host}`);
 
-  // 4. Upload bytes to signed URL using the storage adapter's preferred method
-  //    (PUT for real GCS/S3, POST for fake-gcs-server).
+  // 4. Upload bytes to the signed URL (S3/R2 presigned PUT).
   const method = created.httpMethod ?? 'PUT';
   const putHeaders = new Headers(created.requiredHeaders ?? {});
   if (!putHeaders.has('content-type')) putHeaders.set('content-type', MIME_TYPE);

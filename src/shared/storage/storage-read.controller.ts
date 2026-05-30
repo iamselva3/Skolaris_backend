@@ -6,20 +6,22 @@ import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { IObjectStorage, OBJECT_STORAGE } from './object-storage.interface';
 
 /**
- * GCS-compatible object READ proxy. Serves the EXACT URL shapes the frontend
- * and the OCR engine already build:
+ * Object READ proxy for the private R2/S3 bucket. Serves the EXACT URL shapes
+ * the frontend and the standalone OCR worker already build (kept for backward
+ * compatibility — the path shape is historical, not provider-specific):
  *   FE  : GET {host}/storage/v1/b/<bucket>/o/<urlencoded-key>?alt=media
  *   OCR : GET {host}/download/storage/v1/b/<bucket>/o/<urlencoded-key>?alt=media
- * and streams the bytes from whatever provider is active (R2/S3 via getObject).
+ * and streams the bytes from the active S3/R2 adapter via getObject. The :bucket
+ * segment is cosmetic; objects are keyed by :key alone.
  *
- * This is the entire reason no frontend/OCR code changes for R2: point
- * VITE_GCS_PUBLIC_HOST (FE) and GCS_API_ENDPOINT (OCR) at this backend ("/api"
- * base) and a private R2 bucket renders transparently. With STORAGE_PROVIDER=gcs
- * those envs keep pointing at fake-gcs/GCS and this proxy is simply unused.
+ * Point VITE_GCS_PUBLIC_HOST (FE) and STORAGE_READ_BASE_URL (standalone OCR
+ * worker) at this backend's "/api" base and a private R2 bucket renders
+ * transparently. The in-process OCR consumer bypasses this proxy entirely and
+ * reads bytes directly via the injected adapter.
  *
  * @Public (image tags / server fetch can't carry a JWT) — matching the existing
- * unauthenticated read posture (public GCS objects / fake-gcs today). @SkipThrottle
- * so image-heavy pages aren't rate-limited.
+ * unauthenticated read posture. @SkipThrottle so image-heavy pages aren't
+ * rate-limited.
  */
 @SkipThrottle()
 @UseGuards(JwtAuthGuard)

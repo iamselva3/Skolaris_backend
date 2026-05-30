@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { IObjectStorage } from '../../../shared/storage/object-storage.interface';
-import { OcrQueueService } from '../../../shared/queue/ocr-queue.service';
+import { IOcrDispatcher } from '../../../shared/queue/ocr-dispatcher';
 import { IOcrJobRepository } from '../../ocr/repositories/ocr-job.repository';
 import { OcrJobModel } from '../../ocr/models/ocr-job.model';
 import { UploadModel } from '../models/upload.model';
@@ -37,7 +37,7 @@ describe('CompleteUploadUseCase', () => {
   let uploads: jest.Mocked<IUploadRepository>;
   let ocrJobs: jest.Mocked<IOcrJobRepository>;
   let storage: jest.Mocked<IObjectStorage>;
-  let queue: jest.Mocked<OcrQueueService>;
+  let dispatcher: jest.Mocked<IOcrDispatcher>;
   let useCase: CompleteUploadUseCase;
 
   beforeEach(() => {
@@ -64,11 +64,11 @@ describe('CompleteUploadUseCase', () => {
       objectExists: jest.fn().mockResolvedValue(true),
       getObject: jest.fn(),
     };
-    queue = {
+    dispatcher = {
       enqueue: jest.fn().mockResolvedValue('job-1'),
-    } as unknown as jest.Mocked<OcrQueueService>;
+    };
 
-    useCase = new CompleteUploadUseCase(uploads, ocrJobs, storage, queue);
+    useCase = new CompleteUploadUseCase(uploads, ocrJobs, storage, dispatcher);
   });
 
   it('happy path: transitions to PROCESSING and enqueues OCR job', async () => {
@@ -78,7 +78,7 @@ describe('CompleteUploadUseCase', () => {
       id: 'u-1',
     });
     expect(r.status).toBe('PROCESSING');
-    expect(queue.enqueue).toHaveBeenCalledWith(
+    expect(dispatcher.enqueue).toHaveBeenCalledWith(
       expect.objectContaining({ ocrJobId: 'job-1', uploadId: 'u-1' }),
     );
   });

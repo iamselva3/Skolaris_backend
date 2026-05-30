@@ -14,7 +14,7 @@ import {
   IObjectStorage,
   OBJECT_STORAGE,
 } from '../../../shared/storage/object-storage.interface';
-import { OcrQueueService } from '../../../shared/queue/ocr-queue.service';
+import { OCR_DISPATCHER, IOcrDispatcher } from '../../../shared/queue/ocr-dispatcher';
 import {
   IOcrJobRepository,
   OCR_JOB_REPOSITORY,
@@ -33,7 +33,7 @@ export class CompleteUploadUseCase {
     @Inject(UPLOAD_REPOSITORY) private readonly uploads: IUploadRepository,
     @Inject(OCR_JOB_REPOSITORY) private readonly ocrJobs: IOcrJobRepository,
     @Inject(OBJECT_STORAGE) private readonly storage: IObjectStorage,
-    private readonly queue: OcrQueueService,
+    @Inject(OCR_DISPATCHER) private readonly dispatcher: IOcrDispatcher,
   ) {}
 
   async execute(input: { actor: AuthenticatedUser; id: string }): Promise<UploadModel> {
@@ -94,14 +94,17 @@ export class CompleteUploadUseCase {
     const processed = await this.uploads.updateStatus(upload.tenantId, upload.id, 'PROCESSING');
     this.logger.log(`[4/5] status PENDING_UPLOAD → UPLOADED → PROCESSING ${t.mark()}`);
 
-    await this.queue.enqueue({
+    // Hand off to the configured OCR backend (BullMQ or in-process inline).
+    // Both return promptly — the upload is acked as PROCESSING and OCR runs
+    // asynchronously, so the client is never blocked on extraction.
+    await this.dispatcher.enqueue({
       ocrJobId: ocrJob.id,
       tenantId: upload.tenantId,
       uploadId: upload.id,
       storageKey: upload.storageKey,
     });
     this.logger.log(
-      `[5/5] enqueued ${t.mark()} — worker takes over (${t.totalLabel()} to ack client)`,
+      `[5/5] dispatched ${t.mark()} — OCR backend takes over (${t.totalLabel()} to ack client)`,
     );
 
     return processed;

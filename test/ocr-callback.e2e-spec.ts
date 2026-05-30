@@ -12,7 +12,7 @@ import { PrismaService } from '../src/shared/database/prisma.service';
 /**
  * End-to-end test for the internal OCR callback.
  *
- * Requires Postgres + Redis + (optionally) fake-gcs running. The test only exercises
+ * Requires Postgres + Redis running. The test only exercises
  * the HMAC-protected callback path — no real file upload, no real OCR service.
  */
 describe('OCR callback flow (e2e)', () => {

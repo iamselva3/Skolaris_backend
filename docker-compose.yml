@@ -38,34 +38,6 @@ services:
       - "1026:1025"   # SMTP (use 1026 from host to avoid conflict with native SMTP)
       - "8026:8025"   # Web UI: http://localhost:8026
 
-  fake-gcs:
-    image: fsouza/fake-gcs-server:latest
-    container_name: skolaris-fake-gcs
-    restart: unless-stopped
-    command:
-      - "-scheme"
-      - "http"
-      - "-public-host"
-      - "localhost:4443"
-      - "-external-url"
-      - "http://localhost:4443"
-      - "-port"
-      - "4443"
-      - "-data"
-      - "/data"
-    ports:
-      - "4443:4443"
-    volumes:
-      - skolaris_gcs_data:/data
-      - ./docker/fake-gcs-init:/init:ro
-    # Pre-create the bucket on every start.
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        mkdir -p /data/skolaris-uploads &&
-        exec fake-gcs-server -scheme http -public-host localhost:4443 -external-url http://localhost:4443 -port 4443 -data /data
-
   # Mock OCR worker — stands in for the real Python OCR microservice. Consumes
   # the BullMQ ocr.extract queue and POSTs canned drafts back to the API after a
   # short pause. Reuses the API image (same node_modules + ts-node). Replace
@@ -110,8 +82,9 @@ services:
       HW_OCR_QUEUE_NAME: ocr.handwriting
       OCR_CALLBACK_URL: http://api:3000/api/internal/ocr/callback
       OCR_CALLBACK_SECRET: ${OCR_CALLBACK_SECRET:-dev-ocr-callback-secret-change-me}
-      GCS_BUCKET: skolaris-uploads
-      GCS_API_ENDPOINT: http://fake-gcs:4443
+      # Python service fetches object bytes via the backend read-proxy (S3/R2-backed).
+      AWS_S3_BUCKET: skolaris-uploads
+      STORAGE_READ_BASE_URL: http://api:3000/api
       HW_OCR_MODEL: ${HW_OCR_MODEL:-stub}
       HW_OCR_DEVICE: ${HW_OCR_DEVICE:-cpu}
     ports:
@@ -150,22 +123,20 @@ services:
       # the service directly — no consumer needed). URL used only in http mode.
       HW_OCR_DISPATCH: ${HW_OCR_DISPATCH:-queue}
       HANDWRITING_OCR_URL: ${HANDWRITING_OCR_URL:-http://ocr-handwriting:8001}
-      # Storage provider. Default 'gcs' (fake-gcs). For Cloudflare R2 / MinIO set
-      # STORAGE_PROVIDER=s3 + the S3_* vars, and point GCS_API_ENDPOINT at the API
-      # read proxy (http://api:3000/api) so OCR byte-fetch resolves via R2.
-      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-gcs}
-      GCS_BUCKET: skolaris-uploads
-      GCS_API_ENDPOINT: ${GCS_API_ENDPOINT:-http://fake-gcs:4443}
-      GCS_PROJECT_ID: skolaris-dev
-      GCS_PUBLIC_HOST: http://localhost:4443
-      # S3/R2/MinIO (only used when STORAGE_PROVIDER=s3). MinIO --profile s3 below.
+      # Storage: S3/R2-only. Dev uses MinIO (always-on below) as an R2 stand-in.
+      # For real Cloudflare R2 set S3_ENDPOINT=https://<acct>.r2.cloudflarestorage.com
+      # + the R2 token in AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY.
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:-skolaris-uploads}
       AWS_REGION: ${AWS_REGION:-auto}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
-      S3_ENDPOINT: ${S3_ENDPOINT:-}
-      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-minioadmin}
+      # Internal endpoint (server-side ops) vs browser-reachable endpoint (presigned uploads).
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:9000}
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+      # Read-proxy base for the DI-less standalone OCR worker only (in-process reads via the adapter).
+      STORAGE_READ_BASE_URL: ${STORAGE_READ_BASE_URL:-http://api:3000/api}
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SMTP_FROM: no-reply@skolaris.local
@@ -175,17 +146,14 @@ services:
       - "3000:3000"
     command: sh -c "npx prisma migrate deploy && node dist/main.js"
 
-  # Local S3-compatible storage (MinIO) — a stand-in for Cloudflare R2 so the
-  # STORAGE_PROVIDER=s3 path can be exercised without real R2. Behind the 's3'
-  # profile, so plain `docker compose up` is unchanged. Bring up with:
-  #   docker compose --profile s3 up minio minio-init
-  # then run the API with STORAGE_PROVIDER=s3, S3_ENDPOINT=http://minio:9000,
-  # S3_PUBLIC_ENDPOINT=http://localhost:9000, GCS_API_ENDPOINT=http://api:3000/api.
+  # Local S3-compatible storage (MinIO) — the default dev stand-in for Cloudflare
+  # R2 (SKOLARIS is S3/R2-only). Always-on, so plain `docker compose up` gives the
+  # API a working bucket. For real R2, leave MinIO running locally or point the
+  # API's S3_ENDPOINT at https://<acct>.r2.cloudflarestorage.com instead.
   minio:
     image: minio/minio:latest
     container_name: skolaris-minio
     restart: unless-stopped
-    profiles: ["s3"]
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-minioadmin}
@@ -202,10 +170,9 @@ services:
       retries: 10
 
   # One-shot: create the bucket and allow anonymous download (mirrors the
-  # current unauthenticated read posture used by fake-gcs / public GCS objects).
+  # current unauthenticated read posture served by the backend read-proxy).
   minio-init:
     image: minio/mc:latest
-    profiles: ["s3"]
     depends_on:
       minio:
         condition: service_started
@@ -221,5 +188,4 @@ services:
 
 volumes:
   skolaris_pg_data:
-  skolaris_gcs_data:
   skolaris_minio_data:

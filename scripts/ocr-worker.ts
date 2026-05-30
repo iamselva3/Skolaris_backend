@@ -21,7 +21,7 @@
  *   OCR_QUEUE_NAME            default 'ocr.extract'
  *   OCR_CALLBACK_URL          API callback endpoint
  *   OCR_CALLBACK_SECRET       HMAC secret (must match backend)
- *   GCS_BUCKET / GCS_API_ENDPOINT / GCS_PUBLIC_HOST   storage location (read by the engine)
+ *   STORAGE_READ_BASE_URL     backend read-proxy base, e.g. https://<api-host>/api (read by the engine)
  *
  * Run:
  *   npm run ocr:real          (after `npm install`)
@@ -67,8 +67,8 @@ const redisUrl = env('REDIS_URL');
 const queueName = env('OCR_QUEUE_NAME', 'ocr.extract');
 const callbackUrl = env('OCR_CALLBACK_URL', 'http://localhost:3000/api/internal/ocr/callback');
 const callbackSecret = env('OCR_CALLBACK_SECRET');
-const bucket = env('GCS_BUCKET', 'skolaris-uploads');
-const storageBase = env('GCS_API_ENDPOINT', env('GCS_PUBLIC_HOST', 'http://localhost:4443')).replace(/\/+$/, '');
+// Object bytes are fetched by the shared engine's fetchObjectBytes(), which
+// resolves the read host from STORAGE_READ_BASE_URL (the backend read-proxy).
 const hwQueueName = env('HW_OCR_QUEUE_NAME', 'ocr.handwriting');
 
 /* ─── Secondary handwriting queue (lazy: no connection unless the fallback routes) */
@@ -175,7 +175,7 @@ const worker = new Worker<OcrExtractJob>(
 worker.on('ready', () => {
   // eslint-disable-next-line no-console
   console.log(
-    `[ocr-worker] listening queue="${queueName}" callback="${callbackUrl}" storage="${storageBase}/${bucket}/…"`,
+    `[ocr-worker] listening queue="${queueName}" callback="${callbackUrl}" readBase="${process.env.STORAGE_READ_BASE_URL ?? '(unset!)'}"`,
   );
 });
 

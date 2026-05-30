@@ -1,18 +1,26 @@
 import { registerAs } from '@nestjs/config';
 
-export type StorageProvider = 'gcs' | 's3';
+/**
+ * SKOLARIS is S3/R2-only. The provider seam is retained (pinned to 's3') so a
+ * future S3-compatible backend can be added without re-plumbing DI, but the
+ * legacy Google Cloud Storage adapter has been removed. Cloudflare R2 is the
+ * canonical production backend (S3 adapter + S3_ENDPOINT); AWS S3 and MinIO
+ * (dev) use the same adapter.
+ */
+export type StorageProvider = 's3';
 
 export interface StorageConfig {
   provider: StorageProvider;
   uploadMaxBytes: number;
   uploadUrlTtlSeconds: number;
-  gcs: {
-    bucket: string;
-    apiEndpoint: string | null;
-    projectId: string | null;
-    publicHost: string | null;
-    serviceAccountJsonPath: string | null;
-  };
+  /**
+   * Base URL of the backend storage read-proxy (StorageReadController), e.g.
+   * `https://<api-host>/api`. Used ONLY by the DI-less standalone OCR worker
+   * (scripts/ocr-worker.ts) to fetch object bytes over HTTP. The in-process
+   * OCR consumer reads bytes directly via the injected adapter and ignores this.
+   * null when unset — the standalone worker fails fast with a clear message.
+   */
+  readBaseUrl: string | null;
   s3: {
     bucket: string;
     region: string;
@@ -35,22 +43,19 @@ const required = (key: string, value: string | undefined): string => {
 };
 
 export const storageConfig = registerAs<StorageConfig>('storage', () => {
-  const provider = (process.env.STORAGE_PROVIDER ?? 'gcs').toLowerCase() as StorageProvider;
-  if (provider !== 'gcs' && provider !== 's3') {
-    throw new Error(`Invalid STORAGE_PROVIDER: ${provider}`);
+  const provider = (process.env.STORAGE_PROVIDER ?? 's3').toLowerCase();
+  if (provider !== 's3') {
+    throw new Error(
+      `Invalid STORAGE_PROVIDER "${provider}": SKOLARIS is S3/R2-only. ` +
+        `Set STORAGE_PROVIDER=s3 (or leave it unset) and configure the AWS_*/S3_* vars for Cloudflare R2.`,
+    );
   }
 
   const cfg: StorageConfig = {
-    provider,
+    provider: 's3',
     uploadMaxBytes: Number(process.env.UPLOAD_MAX_BYTES ?? 25 * 1024 * 1024),
     uploadUrlTtlSeconds: Number(process.env.UPLOAD_URL_TTL_SECONDS ?? 900),
-    gcs: {
-      bucket: process.env.GCS_BUCKET ?? '',
-      apiEndpoint: process.env.GCS_API_ENDPOINT || null,
-      projectId: process.env.GCS_PROJECT_ID || null,
-      publicHost: process.env.GCS_PUBLIC_HOST || null,
-      serviceAccountJsonPath: process.env.GCS_SERVICE_ACCOUNT_JSON || null,
-    },
+    readBaseUrl: process.env.STORAGE_READ_BASE_URL || null,
     s3: {
       bucket: process.env.AWS_S3_BUCKET ?? '',
       region: process.env.AWS_REGION ?? '',
@@ -62,11 +67,7 @@ export const storageConfig = registerAs<StorageConfig>('storage', () => {
     },
   };
 
-  if (provider === 'gcs') {
-    required('GCS_BUCKET', cfg.gcs.bucket);
-  } else {
-    required('AWS_S3_BUCKET', cfg.s3.bucket);
-    required('AWS_REGION', cfg.s3.region);
-  }
+  required('AWS_S3_BUCKET', cfg.s3.bucket);
+  required('AWS_REGION', cfg.s3.region);
   return cfg;
 });

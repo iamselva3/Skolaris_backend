@@ -21,7 +21,11 @@ export interface UploadResponse {
 export interface SignedUploadResponse extends UploadResponse {
   signedUrl: string;
   expiresAt: string;
-  /** HTTP method the client must use ('PUT' for real GCS/S3, 'POST' for fake-gcs). */
+  /**
+   * HTTP method the client must use for the presigned upload. S3/R2 always use
+   * 'PUT'; the 'POST' member is retained for response-shape backward compatibility
+   * with existing frontend clients and is no longer emitted by the backend.
+   */
   httpMethod: 'PUT' | 'POST';
   requiredHeaders?: Record<string, string>;
 }

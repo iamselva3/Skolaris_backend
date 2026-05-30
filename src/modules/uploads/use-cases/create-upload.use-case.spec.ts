@@ -8,11 +8,11 @@ import { IUploadRepository } from '../repositories/upload.repository';
 import { CreateUploadUseCase } from './create-upload.use-case';
 
 const cfg = {
-  provider: 'gcs',
+  provider: 's3',
   uploadMaxBytes: 25 * 1024 * 1024,
   uploadUrlTtlSeconds: 900,
-  gcs: { bucket: 'b', apiEndpoint: null, projectId: null, publicHost: null, serviceAccountJsonPath: null },
-  s3: { bucket: '', region: '', accessKeyId: null, secretAccessKey: null, endpoint: null, publicEndpoint: null, forcePathStyle: true },
+  readBaseUrl: null,
+  s3: { bucket: 'b', region: 'auto', accessKeyId: null, secretAccessKey: null, endpoint: null, publicEndpoint: null, forcePathStyle: true },
 } satisfies ConfigType<typeof storageConfig>;
 
 describe('CreateUploadUseCase', () => {

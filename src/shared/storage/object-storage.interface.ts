@@ -4,15 +4,11 @@ export interface SignedUploadUrl {
   signedUrl: string;
   storageKey: string;
   expiresAt: Date;
+  /** HTTP method the client must use for the presigned upload (S3/R2 → PUT). */
+  httpMethod: 'PUT';
   /**
-   * HTTP method the client must use. Defaults to PUT (real GCS v4 / S3
-   * presigned URLs). fake-gcs-server's JSON simple-upload endpoint requires
-   * POST, so the emulator branch returns 'POST'.
-   */
-  httpMethod: 'PUT' | 'POST';
-  /**
-   * Some providers require additional headers (e.g. `x-goog-content-length-range`)
-   * that the client MUST send with its upload for it to succeed.
+   * Additional headers the client MUST send with its upload for it to succeed.
+   * Currently just Content-Type for S3/R2 presigned PUTs.
    */
   requiredHeaders?: Record<string, string>;
 }
@@ -38,10 +34,11 @@ export interface IObjectStorage {
    */
   objectExists(storageKey: string): Promise<boolean>;
   /**
-   * Read object bytes + content-type. Backs the GCS-compatible read proxy
+   * Read object bytes + content-type. Backs the read proxy
    * (StorageReadController) so the frontend's existing `/storage/v1/b/.../o/...`
-   * read URLs and the OCR `/download/...` fetch keep working against any provider
-   * (notably private R2/S3 buckets) with NO frontend or OCR code change.
+   * read URLs and the standalone OCR worker's `/download/...` fetch keep working
+   * against the private R2/S3 bucket with no frontend change. The in-process OCR
+   * consumer calls this directly via DI (no HTTP round-trip).
    */
   getObject(storageKey: string): Promise<ObjectData>;
 }

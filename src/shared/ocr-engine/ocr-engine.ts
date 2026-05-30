@@ -91,18 +91,30 @@ const inferMimeFromKey = (storageKey: string): string => {
 };
 
 /**
- * Build the GCS-compatible download URL. fake-gcs-server and real GCS both
- * accept `/download/storage/v1/b/<bucket>/o/<encoded-key>?alt=media` without
- * auth when the object is public (or unauthenticated for the emulator).
- * Storage config is read from env at call time so this stays DI-free and
- * matches the original standalone worker exactly.
+ * Fetch object bytes through the backend storage read-proxy (StorageReadController),
+ * which streams them from the active R2/S3 adapter. This is DI-less and used ONLY
+ * by the standalone BullMQ worker (scripts/ocr-worker.ts); the in-process NestJS
+ * consumer reads bytes directly from the injected adapter (no HTTP, no env).
+ *
+ * Provider-agnostic: the read host comes from STORAGE_READ_BASE_URL (e.g.
+ * `https://<api-host>/api`) — NOT from any GCS_* variable. There is no localhost
+ * fallback: an unset base fails fast so a misconfigured worker can never silently
+ * hit a dead emulator host.
  */
 export const fetchObjectBytes = async (
   storageKey: string,
 ): Promise<{ bytes: Buffer; mime: string }> => {
-  const bucket = process.env.GCS_BUCKET || 'skolaris-uploads';
-  const storageBase = (process.env.GCS_API_ENDPOINT || process.env.GCS_PUBLIC_HOST || 'http://localhost:4443').replace(/\/+$/, '');
-  const url = `${storageBase}/download/storage/v1/b/${encodeURIComponent(bucket)}/o/${encodeURIComponent(storageKey)}?alt=media`;
+  const base = (process.env.STORAGE_READ_BASE_URL || '').replace(/\/+$/, '');
+  if (!base) {
+    throw new Error(
+      'STORAGE_READ_BASE_URL is not set. The standalone OCR worker needs the backend ' +
+        'read-proxy base URL (e.g. https://<api-host>/api) to fetch uploaded files.',
+    );
+  }
+  // The read-proxy keys objects by storageKey alone; the bucket segment is
+  // cosmetic (it ignores :bucket), so AWS_S3_BUCKET or a placeholder both work.
+  const bucket = process.env.AWS_S3_BUCKET || 'uploads';
+  const url = `${base}/download/storage/v1/b/${encodeURIComponent(bucket)}/o/${encodeURIComponent(storageKey)}?alt=media`;
   const t0 = Date.now();
   const res = await fetch(url);
   if (!res.ok) {

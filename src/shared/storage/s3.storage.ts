@@ -40,8 +40,8 @@ const inferMime = (key: string): string => EXT_MIME[key.toLowerCase().split('.')
 @Injectable()
 export class S3Storage implements IObjectStorage {
   private readonly logger = new Logger(S3Storage.name);
-  // Lazy: S3Client throws synchronously when AWS_REGION is unset. With
-  // STORAGE_PROVIDER=gcs, S3Storage is still registered by DI but never used.
+  // Lazy: S3Client construction is deferred to first use so DI wiring never
+  // fails at bootstrap; AWS_S3_BUCKET/AWS_REGION are validated in storageConfig.
   private _client: S3Client | null = null;
   private _signClient: S3Client | null = null;
   private readonly bucket: string;
@@ -58,6 +58,16 @@ export class S3Storage implements IObjectStorage {
       region: this.cfg.s3.region,
       endpoint: endpoint ?? undefined,
       forcePathStyle: this.cfg.s3.forcePathStyle,
+      // AWS SDK v3 >= 3.729 defaults requestChecksumCalculation to
+      // 'WHEN_SUPPORTED', which bakes an x-amz-checksum-crc32 (placeholder
+      // AAAAAA== for empty content) into PRESIGNED PutObject URLs. The browser
+      // then PUTs the real bytes, R2 recomputes a different CRC32, and the
+      // signed checksum no longer matches → HTTP 400. R2 (and MinIO/GCS) are not
+      // compatible with this default. Force WHEN_REQUIRED so no checksum query
+      // params are signed unless an operation genuinely needs them (PutObject
+      // does not), restoring pre-3.729 presigning behaviour.
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
       credentials:
         this.cfg.s3.accessKeyId && this.cfg.s3.secretAccessKey
           ? { accessKeyId: this.cfg.s3.accessKeyId, secretAccessKey: this.cfg.s3.secretAccessKey }
