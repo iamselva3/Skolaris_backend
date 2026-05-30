@@ -25,6 +25,13 @@ export class NotificationsProcessor implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
+    if (this.cfg.queueDriver === 'inline') {
+      this.logger.log(
+        'BullMQ notifications worker disabled (QUEUE_DRIVER=inline); dispatch runs in-process — no Redis.',
+      );
+      return;
+    }
+
     this.connection = createRedisConnection(this.cfg.redisUrl);
     this.worker = new Worker<NotificationsDispatchJob>(
       this.cfg.notificationsQueueName,

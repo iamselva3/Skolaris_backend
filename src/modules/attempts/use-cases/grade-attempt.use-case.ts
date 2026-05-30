@@ -1,7 +1,10 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import { AnalyticsQueueService } from '../../../shared/queue/analytics-queue.service';
+import {
+  ANALYTICS_DISPATCHER,
+  IAnalyticsDispatcher,
+} from '../../../shared/queue/analytics-dispatcher';
 import { QuestionType } from '../../questions/models/question-type.enum';
 import { GradingService } from '../grading/grading.service';
 import { ExamAttemptModel } from '../models/exam-attempt.model';
@@ -24,7 +27,7 @@ export class GradeAttemptUseCase {
     @Inject(EXAM_ATTEMPT_REPOSITORY) private readonly attempts: IExamAttemptRepository,
     private readonly grading: GradingService,
     private readonly prisma: PrismaService,
-    private readonly analyticsQueue: AnalyticsQueueService,
+    @Inject(ANALYTICS_DISPATCHER) private readonly analyticsQueue: IAnalyticsDispatcher,
   ) {}
 
   async execute(input: { tenantId: string; attemptId: string }): Promise<GradeAttemptResult> {

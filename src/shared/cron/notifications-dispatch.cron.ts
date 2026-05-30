@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { NotificationsQueueService } from '../queue/notifications-queue.service';
+import {
+  NOTIFICATIONS_DISPATCHER,
+  INotificationsDispatcher,
+} from '../queue/notifications-dispatcher';
 
 @Injectable()
 export class NotificationsDispatchCron {
-  constructor(private readonly queue: NotificationsQueueService) {}
+  constructor(
+    @Inject(NOTIFICATIONS_DISPATCHER) private readonly queue: INotificationsDispatcher,
+  ) {}
 
   // Every 30 seconds. The queue service dedupes by 30s bucket to avoid duplicate jobs.
   @Cron('*/30 * * * * *')

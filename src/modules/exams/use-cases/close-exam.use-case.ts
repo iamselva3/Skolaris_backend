@@ -12,8 +12,9 @@ import {
   IExamAttemptRepository,
 } from '../../attempts/repositories/exam-attempt.repository';
 import {
-  AnalyticsQueueService,
-} from '../../../shared/queue/analytics-queue.service';
+  ANALYTICS_DISPATCHER,
+  IAnalyticsDispatcher,
+} from '../../../shared/queue/analytics-dispatcher';
 import { ExamModel } from '../models/exam.model';
 import { EXAM_REPOSITORY, IExamRepository } from '../repositories/exam.repository';
 
@@ -27,7 +28,7 @@ export class CloseExamUseCase {
   constructor(
     @Inject(EXAM_REPOSITORY) private readonly exams: IExamRepository,
     @Inject(EXAM_ATTEMPT_REPOSITORY) private readonly attempts: IExamAttemptRepository,
-    private readonly analyticsQueue: AnalyticsQueueService,
+    @Inject(ANALYTICS_DISPATCHER) private readonly analyticsQueue: IAnalyticsDispatcher,
   ) {}
 
   async execute(input: { actor: AuthenticatedUser; examId: string }): Promise<CloseExamResult> {

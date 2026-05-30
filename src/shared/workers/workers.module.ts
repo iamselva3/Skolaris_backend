@@ -6,12 +6,19 @@ import { AnalyticsProcessor } from './analytics.processor';
 import { NotificationsProcessor } from './notifications.processor';
 import { OcrProcessor } from './ocr.processor';
 import { OcrJobRunner } from './ocr-job-runner.service';
+import { AnalyticsJobRunner } from './analytics-job-runner.service';
 
 @Module({
   imports: [AnalyticsModule, NotificationsModule, OcrModule],
-  // OcrJobRunner is the shared OCR job body used by BOTH the BullMQ worker
-  // (OcrProcessor) and InlineOcrDispatcher (resolved via ModuleRef, non-strict).
-  providers: [AnalyticsProcessor, NotificationsProcessor, OcrProcessor, OcrJobRunner],
-  exports: [OcrJobRunner],
+  // The *JobRunner providers are the shared job bodies used by BOTH the BullMQ
+  // workers and the inline dispatchers (resolved via ModuleRef, non-strict).
+  providers: [
+    AnalyticsProcessor,
+    NotificationsProcessor,
+    OcrProcessor,
+    OcrJobRunner,
+    AnalyticsJobRunner,
+  ],
+  exports: [OcrJobRunner, AnalyticsJobRunner],
 })
 export class WorkersModule {}

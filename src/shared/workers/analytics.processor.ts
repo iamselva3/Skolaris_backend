@@ -9,62 +9,39 @@ import { ConfigType } from '@nestjs/config';
 import { Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import { queueConfig } from '../config/queue.config';
-import { PrismaService } from '../database/prisma.service';
-import { RecomputeQuestionStatsUseCase } from '../../modules/analytics/use-cases/recompute-question-stats.use-case';
-import { RecomputeTopicReportsForStudentUseCase } from '../../modules/analytics/use-cases/recompute-topic-reports.use-case';
 import { AnalyticsAggregateJob } from '../queue/analytics-queue.service';
 import { createRedisConnection } from '../queue/bullmq.config';
+import { AnalyticsJobRunner } from './analytics-job-runner.service';
 
 /**
- * Worker that runs inside the API process. For Phase 3 this keeps deployment
- * simple — a separate worker process is a Phase 4 concern.
- *
- * On each completed attempt, recompute QuestionStat for every question the
- * student touched and TopicReport rollups for the student. Idempotent.
+ * BullMQ analytics consumer for QUEUE_DRIVER=redis. When QUEUE_DRIVER=inline it
+ * is inert — aggregation runs via InlineAnalyticsDispatcher with no Redis. The
+ * job body lives in AnalyticsJobRunner (shared with the inline dispatcher).
  */
 @Injectable()
 export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AnalyticsProcessor.name);
-  private connection!: Redis;
-  private worker!: Worker<AnalyticsAggregateJob>;
+  private connection?: Redis;
+  private worker?: Worker<AnalyticsAggregateJob>;
 
   constructor(
     @Inject(queueConfig.KEY) private readonly cfg: ConfigType<typeof queueConfig>,
-    private readonly prisma: PrismaService,
-    private readonly recomputeQuestionStats: RecomputeQuestionStatsUseCase,
-    private readonly recomputeTopicReports: RecomputeTopicReportsForStudentUseCase,
+    private readonly runner: AnalyticsJobRunner,
   ) {}
 
   onModuleInit(): void {
+    if (this.cfg.queueDriver === 'inline') {
+      this.logger.log(
+        'BullMQ analytics worker disabled (QUEUE_DRIVER=inline); aggregation runs in-process — no Redis.',
+      );
+      return;
+    }
+
     this.connection = createRedisConnection(this.cfg.redisUrl);
     this.worker = new Worker<AnalyticsAggregateJob>(
       this.cfg.analyticsQueueName,
       async (job) => {
-        const { attemptId, tenantId } = job.data;
-        const attempt = await this.prisma.examAttempt.findFirst({
-          where: { id: attemptId, tenantId },
-          select: {
-            studentId: true,
-            answers: { select: { examQuestion: { select: { questionId: true } } } },
-          },
-        });
-        if (!attempt) {
-          this.logger.warn(`Analytics job ${job.id}: attempt ${attemptId} not found`);
-          return;
-        }
-        const questionIds = Array.from(
-          new Set(attempt.answers.map((a) => a.examQuestion.questionId)),
-        );
-        for (const qid of questionIds) {
-          await this.recomputeQuestionStats.execute({ tenantId, questionId: qid });
-        }
-        const touched = await this.recomputeTopicReports.execute({
-          tenantId,
-          studentId: attempt.studentId,
-        });
-        this.logger.log(
-          `Analytics job ${job.id}: recomputed ${questionIds.length} question(s), ${touched} topic(s) for student ${attempt.studentId}`,
-        );
+        await this.runner.run(job.data, String(job.id ?? job.data.attemptId));
       },
       { connection: this.connection, concurrency: 4 },
     );

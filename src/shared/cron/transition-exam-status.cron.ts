@@ -1,7 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../database/prisma.service';
-import { AnalyticsQueueService } from '../queue/analytics-queue.service';
+import {
+  ANALYTICS_DISPATCHER,
+  IAnalyticsDispatcher,
+} from '../queue/analytics-dispatcher';
 
 @Injectable()
 export class TransitionExamStatusCron {
@@ -9,7 +12,7 @@ export class TransitionExamStatusCron {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly analyticsQueue: AnalyticsQueueService,
+    @Inject(ANALYTICS_DISPATCHER) private readonly analyticsQueue: IAnalyticsDispatcher,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
