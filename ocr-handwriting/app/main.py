@@ -1,0 +1,102 @@
+"""FastAPI entrypoint for the SKOLARIS handwriting OCR microservice.
+
+Responsibilities:
+  - consume the BullMQ 'ocr.handwriting' queue (the Node side routes to it),
+  - expose /healthz (liveness) and /readyz (gated on model warm-up),
+  - expose POST /ocr/extract for manual/sync testing (does NOT post a callback).
+
+It is OPTIONAL: the Node pipeline runs fine without it (HANDWRITING_OCR_ENABLED
+off). Bring it up with `docker compose --profile handwriting up`.
+"""
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+from typing import Optional
+
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
+from .callback import _draft_to_dict
+from .config import settings
+from .engines import build_engine
+from .parser import parse_drafts
+from .storage import fetch_object
+from .worker import handle_job
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+log = logging.getLogger("ocr-handwriting")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    settings.validate()
+    engine = build_engine()
+    app.state.engine = engine
+    app.state.ready = False
+
+    async def _warm() -> None:
+        try:
+            await asyncio.get_event_loop().run_in_executor(None, engine.warm)
+            app.state.ready = True
+            log.info("engine '%s' warmed; ready", engine.name)
+        except Exception:  # noqa: BLE001
+            log.exception("engine warm-up failed")
+
+    warm_task = asyncio.create_task(_warm())
+
+    # Start the BullMQ consumer (official `bullmq` python client, protocol-compatible).
+    from bullmq import Worker
+
+    async def _process(job, token=None):  # noqa: ANN001 - bullmq passes (job, token)
+        await handle_job(engine, job.data)
+
+    worker = Worker(settings.queue_name, _process, {"connection": settings.redis_url})
+    app.state.worker = worker
+    log.info("consuming BullMQ queue '%s' at %s (model=%s)", settings.queue_name, settings.redis_url, settings.model)
+
+    try:
+        yield
+    finally:
+        warm_task.cancel()
+        await worker.close()
+
+
+app = FastAPI(title="SKOLARIS Handwriting OCR", lifespan=lifespan)
+
+
+@app.get("/healthz")
+async def healthz():
+    return {
+        "status": "ok",
+        "model": settings.model,
+        "device": settings.device,
+        "queue": settings.queue_name,
+    }
+
+
+@app.get("/readyz")
+async def readyz():
+    ready = bool(getattr(app.state, "ready", False))
+    return JSONResponse(status_code=200 if ready else 503, content={"ready": ready})
+
+
+class ExtractRequest(BaseModel):
+    storageKey: str
+    mime: Optional[str] = None
+
+
+@app.post("/ocr/extract")
+async def extract(req: ExtractRequest):
+    """Synchronous, manual-mode extraction. Returns drafts WITHOUT posting the
+    callback — for testing the engine in isolation."""
+    content, mime = await fetch_object(req.storageKey)
+    text, conf, provider = await asyncio.get_event_loop().run_in_executor(
+        None, app.state.engine.recognize, content, req.mime or mime
+    )
+    drafts = parse_drafts(text, conf, settings.max_drafts)
+    return {
+        "providerUsed": provider,
+        "overallConfidence": round(conf, 3),
+        "drafts": [_draft_to_dict(d) for d in drafts],
+    }

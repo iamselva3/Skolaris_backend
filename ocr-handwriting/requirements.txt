@@ -1,0 +1,8 @@
+# Base deps — enough to run the service in stub mode (contract testing) with no
+# ML stack. Real engines add their deps via requirements-{ml,paddle,trocr}.txt.
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+bullmq==2.11.0
+redis==5.2.1
+httpx==0.27.2
+pydantic==2.9.2

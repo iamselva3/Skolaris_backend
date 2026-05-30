@@ -1,0 +1,6 @@
+# Shared imaging deps for the real engines (paddle/trocr). PDF rasterization
+# (pdf2image) additionally needs the system package poppler-utils (installed in
+# the Dockerfile when INSTALL_ML != none).
+pillow==11.0.0
+pdf2image==1.17.0
+numpy==2.1.3

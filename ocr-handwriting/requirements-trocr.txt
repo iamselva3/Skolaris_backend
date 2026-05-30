@@ -1,0 +1,5 @@
+# Alternative real engine (HW_OCR_MODEL=trocr). TrOCR handwritten model.
+# For GPU, install the CUDA torch build matching your driver instead.
+torch==2.5.1
+transformers==4.46.3
+sentencepiece==0.2.0

@@ -1,0 +1,4 @@
+# Recommended real engine (HW_OCR_MODEL=paddle). Detection + recognition,
+# CPU-friendly. Pin versions per your platform; paddlepaddle has CPU and GPU builds.
+paddleocr==2.9.1
+paddlepaddle==2.6.2
