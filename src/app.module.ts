@@ -38,6 +38,7 @@ import { EmailModule } from './shared/email/email.module';
 import { QueueModule } from './shared/queue/queue.module';
 import { StorageModule } from './shared/storage/storage.module';
 import { WorkersModule } from './shared/workers/workers.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { WorkersModule } from './shared/workers/workers.module';
     WorkersModule,
     CronModule,
   ],
+  controllers: [AppController],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: RequestIdInterceptor },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
