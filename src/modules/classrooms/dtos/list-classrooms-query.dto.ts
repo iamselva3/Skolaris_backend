@@ -5,4 +5,8 @@ export class ListClassroomsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
   branchId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  teacherId?: string;
 }

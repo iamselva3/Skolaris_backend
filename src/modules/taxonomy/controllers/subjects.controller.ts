@@ -73,11 +73,12 @@ export class SubjectsController {
     return { data: toResponse(s) };
   }
 
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.TEACHER)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@CurrentUser() actor: AuthenticatedUser, @Body() dto: CreateSubjectDto) {
     const s = await this.createUC.execute({
+      actor,
       tenantId: actor.tenantId,
       programId: dto.programId,
       name: dto.name,

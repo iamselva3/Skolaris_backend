@@ -1,4 +1,6 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
+import { Role } from '../../../shared/common/enums/role.enum';
 import { SubjectModel } from '../models/taxonomy.models';
 import {
   ITaxonomyRepository,
@@ -31,6 +33,7 @@ export class GetSubjectUseCase {
 export class CreateSubjectUseCase {
   constructor(@Inject(TAXONOMY_REPOSITORY) private readonly repo: ITaxonomyRepository) {}
   async execute(input: {
+    actor: AuthenticatedUser;
     tenantId: string;
     programId: string;
     name: string;
@@ -38,7 +41,21 @@ export class CreateSubjectUseCase {
     const program = await this.repo.getProgram(input.tenantId, input.programId);
     if (!program) throw new NotFoundException('Program not found');
     try {
-      return await this.repo.createSubject(input);
+      const subject = await this.repo.createSubject({
+        tenantId: input.tenantId,
+        programId: input.programId,
+        name: input.name,
+      });
+
+      if (input.actor.role === Role.TEACHER) {
+        await this.repo.assignTeacherSubjects({
+          tenantId: input.tenantId,
+          userId: input.actor.sub,
+          subjectIds: [subject.id],
+        });
+      }
+
+      return subject;
     } catch (e: unknown) {
       if (isUniqueConstraintError(e)) {
         throw new ConflictException('A subject with that name already exists for this program');

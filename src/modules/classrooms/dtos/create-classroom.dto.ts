@@ -16,6 +16,10 @@ export class CreateClassroomDto {
   branchId!: string;
 
   @IsOptional()
+  @IsUUID()
+  teacherId?: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(20)
   year?: string;

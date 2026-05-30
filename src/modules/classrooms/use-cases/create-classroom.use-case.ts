@@ -14,6 +14,7 @@ export interface CreateClassroomInput {
   year?: string;
   section?: string;
   subject?: string;
+  teacherId?: string;
 }
 
 @Injectable()
@@ -28,6 +29,12 @@ export class CreateClassroomUseCase {
         throw new ForbiddenException('Teachers can only create classrooms in their own branch');
       }
     }
+    
+    let createdBy = input.actor.sub;
+    if (input.actor.role === Role.SUPER_ADMIN && input.teacherId) {
+      createdBy = input.teacherId;
+    }
+
     return this.classrooms.create({
       tenantId: input.actor.tenantId,
       branchId: input.branchId,
@@ -35,7 +42,7 @@ export class CreateClassroomUseCase {
       year: input.year,
       section: input.section,
       subject: input.subject,
-      createdBy: input.actor.sub,
+      createdBy,
     });
   }
 }

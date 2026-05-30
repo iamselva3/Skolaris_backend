@@ -70,6 +70,7 @@ export class ClassroomsController {
       year: dto.year,
       section: dto.section,
       subject: dto.subject,
+      teacherId: dto.teacherId,
     });
     return { data: toClassroomResponse(c, 0) };
   }
@@ -83,6 +84,7 @@ export class ClassroomsController {
     const r = await this.listClassroomsUseCase.execute({
       tenantId: actor.tenantId,
       branchId: query.branchId,
+      createdBy: query.teacherId,
       limit: query.limit ?? 50,
       offset: query.offset ?? 0,
     });
