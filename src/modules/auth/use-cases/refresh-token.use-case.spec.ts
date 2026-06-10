@@ -15,9 +15,18 @@ describe('RefreshTokenUseCase', () => {
 
   beforeEach(() => {
     refresh = {
-      create: jest.fn().mockResolvedValue(
-        new RefreshTokenModel('rt-2', 'user-1', 'new-hash', new Date(Date.now() + 60_000), null, new Date()),
-      ),
+      create: jest
+        .fn()
+        .mockResolvedValue(
+          new RefreshTokenModel(
+            'rt-2',
+            'user-1',
+            'new-hash',
+            new Date(Date.now() + 60_000),
+            null,
+            new Date(),
+          ),
+        ),
       findByTokenHash: jest.fn(),
       revoke: jest.fn().mockResolvedValue(undefined),
       revokeAllForUser: jest.fn(),
@@ -45,10 +54,30 @@ describe('RefreshTokenUseCase', () => {
 
   it('rotates token on success', async () => {
     refresh.findByTokenHash.mockResolvedValue(
-      new RefreshTokenModel('rt-1', 'user-1', 'old-hash', new Date(Date.now() + 60_000), null, new Date()),
+      new RefreshTokenModel(
+        'rt-1',
+        'user-1',
+        'old-hash',
+        new Date(Date.now() + 60_000),
+        null,
+        new Date(),
+      ),
     );
     users.findByIdAnyTenant.mockResolvedValue(
-      new UserModel('user-1', 'tenant-1', null, 'a@b.test', 'h', 'A', Role.TEACHER, 'ACTIVE', null, new Date(), new Date()),
+      new UserModel(
+        'user-1',
+        'tenant-1',
+        null,
+        'a@b.test',
+        null,
+        'h',
+        'A',
+        Role.TEACHER,
+        'ACTIVE',
+        null,
+        new Date(),
+        new Date(),
+      ),
     );
 
     const result = await useCase.execute('raw-token');
@@ -69,24 +98,58 @@ describe('RefreshTokenUseCase', () => {
 
   it('rejects revoked token', async () => {
     refresh.findByTokenHash.mockResolvedValue(
-      new RefreshTokenModel('rt-1', 'user-1', 'old-hash', new Date(Date.now() + 60_000), new Date(), new Date()),
+      new RefreshTokenModel(
+        'rt-1',
+        'user-1',
+        'old-hash',
+        new Date(Date.now() + 60_000),
+        new Date(),
+        new Date(),
+      ),
     );
     await expect(useCase.execute('raw')).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('rejects expired token', async () => {
     refresh.findByTokenHash.mockResolvedValue(
-      new RefreshTokenModel('rt-1', 'user-1', 'old-hash', new Date(Date.now() - 1000), null, new Date()),
+      new RefreshTokenModel(
+        'rt-1',
+        'user-1',
+        'old-hash',
+        new Date(Date.now() - 1000),
+        null,
+        new Date(),
+      ),
     );
     await expect(useCase.execute('raw')).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('revokes token and rejects if user is disabled', async () => {
     refresh.findByTokenHash.mockResolvedValue(
-      new RefreshTokenModel('rt-1', 'user-1', 'old-hash', new Date(Date.now() + 60_000), null, new Date()),
+      new RefreshTokenModel(
+        'rt-1',
+        'user-1',
+        'old-hash',
+        new Date(Date.now() + 60_000),
+        null,
+        new Date(),
+      ),
     );
     users.findByIdAnyTenant.mockResolvedValue(
-      new UserModel('user-1', 'tenant-1', null, 'a@b.test', 'h', 'A', Role.TEACHER, 'DISABLED', null, new Date(), new Date()),
+      new UserModel(
+        'user-1',
+        'tenant-1',
+        null,
+        'a@b.test',
+        null,
+        'h',
+        'A',
+        Role.TEACHER,
+        'DISABLED',
+        null,
+        new Date(),
+        new Date(),
+      ),
     );
     await expect(useCase.execute('raw')).rejects.toBeInstanceOf(UnauthorizedException);
     expect(refresh.revoke).toHaveBeenCalledWith('rt-1');

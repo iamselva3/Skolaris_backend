@@ -6,6 +6,7 @@ export interface UserResponse {
   tenantId: string;
   branchId: string | null;
   email: string;
+  phone?: string;
   name: string;
   role: Role;
   status: UserStatus;
@@ -19,6 +20,7 @@ export const toUserResponse = (u: UserModel): UserResponse => ({
   tenantId: u.tenantId,
   branchId: u.branchId,
   email: u.email,
+  phone: u.phone ?? undefined,
   name: u.name,
   role: u.role,
   status: u.status,

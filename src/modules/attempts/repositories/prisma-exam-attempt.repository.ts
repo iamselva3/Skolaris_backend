@@ -63,9 +63,7 @@ export class PrismaExamAttemptRepository implements IExamAttemptRepository {
     return r ? this.toModel(r) : null;
   }
 
-  async list(
-    filter: ListAttemptsFilter,
-  ): Promise<{ data: ExamAttemptModel[]; total: number }> {
+  async list(filter: ListAttemptsFilter): Promise<{ data: ExamAttemptModel[]; total: number }> {
     const where: Prisma.ExamAttemptWhereInput = { tenantId: filter.tenantId };
     if (filter.examId) where.examId = filter.examId;
     if (filter.studentId) where.studentId = filter.studentId;
@@ -138,11 +136,7 @@ export class PrismaExamAttemptRepository implements IExamAttemptRepository {
     return this.toModel(row);
   }
 
-  async setStatus(
-    tenantId: string,
-    id: string,
-    status: AttemptStatus,
-  ): Promise<ExamAttemptModel> {
+  async setStatus(tenantId: string, id: string, status: AttemptStatus): Promise<ExamAttemptModel> {
     const row = await this.prisma.examAttempt.update({
       where: { id },
       data: { status: status as PrismaAttemptStatus },

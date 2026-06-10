@@ -51,7 +51,8 @@ export interface ThresholdResult {
 
 const MARKER = '[ocr-routing] ';
 
-const numOr = (v: unknown, d: number): number => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+const numOr = (v: unknown, d: number): number =>
+  typeof v === 'number' && Number.isFinite(v) ? v : d;
 const strOr = (v: unknown, d: string): string => (typeof v === 'string' ? v : d);
 const boolOr = (v: unknown, d: boolean): boolean => (typeof v === 'boolean' ? v : d);
 
@@ -189,7 +190,9 @@ export const recommendThreshold = (
     const ok = results.filter((r) => r.precision >= opts.minPrecision!);
     if (ok.length === 0) return null;
     return ok.reduce((best, r) =>
-      r.recall > best.recall || (r.recall === best.recall && r.threshold < best.threshold) ? r : best,
+      r.recall > best.recall || (r.recall === best.recall && r.threshold < best.threshold)
+        ? r
+        : best,
     );
   }
   return results.reduce((best, r) => (r.f1 > best.f1 ? r : best));

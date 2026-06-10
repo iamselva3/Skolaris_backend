@@ -18,11 +18,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
 import { Role } from '../../../shared/common/enums/role.enum';
-import {
-  CreateChapterDto,
-  ListChaptersQueryDto,
-  UpdateChapterDto,
-} from '../dtos/taxonomy.dtos';
+import { CreateChapterDto, ListChaptersQueryDto, UpdateChapterDto } from '../dtos/taxonomy.dtos';
 import { ChapterModel } from '../models/taxonomy.models';
 import {
   CreateChapterUseCase,
@@ -64,10 +60,7 @@ export class ChaptersController {
 
   @Roles(Role.SUPER_ADMIN, Role.TEACHER, Role.STUDENT)
   @Get(':id')
-  async get(
-    @CurrentUser() actor: AuthenticatedUser,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
+  async get(@CurrentUser() actor: AuthenticatedUser, @Param('id', new ParseUUIDPipe()) id: string) {
     const c = await this.getUC.execute({ tenantId: actor.tenantId, id });
     return { data: toResponse(c) };
   }
@@ -104,7 +97,7 @@ export class ChaptersController {
     return { data: toResponse(c) };
   }
 
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.TEACHER)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(

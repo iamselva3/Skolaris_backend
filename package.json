@@ -25,6 +25,7 @@
     "ocr:real": "ts-node scripts/ocr-worker.ts",
     "ocr:calibrate": "ts-node scripts/ocr-routing-calibrate.ts",
     "verify:uploads": "ts-node scripts/verify-uploads.ts",
+    "dev": "node scripts/dev.mjs",
     "dev:full": "concurrently --names api,ocr --prefix-colors blue,yellow --kill-others-on-fail \"npm run start:dev\" \"npm run ocr:real\"",
     "dev:full:mock": "concurrently --names api,ocr --prefix-colors blue,yellow --kill-others-on-fail \"npm run start:dev\" \"npm run ocr:mock\""
   },
@@ -56,6 +57,7 @@
     "pdfjs-dist": "5.6.205",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sharp": "^0.34.5",
     "tesseract.js": "^7.0.0",
     "uuid": "^10.0.0"
   },

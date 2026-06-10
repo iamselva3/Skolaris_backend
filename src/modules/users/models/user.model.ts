@@ -8,6 +8,7 @@ export class UserModel {
     public readonly tenantId: string,
     public readonly branchId: string | null,
     public readonly email: string,
+    public readonly phone: string | null,
     public readonly passwordHash: string,
     public readonly name: string,
     public readonly role: Role,

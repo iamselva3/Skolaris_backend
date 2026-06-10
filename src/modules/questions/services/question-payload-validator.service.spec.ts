@@ -83,9 +83,9 @@ describe('QuestionPayloadValidator', () => {
     });
 
     it('rejects missing `correct`', () => {
-      expect(() =>
-        v.validate({ type: QuestionType.TRUE_FALSE, payload: {} }),
-      ).toThrow(BadRequestException);
+      expect(() => v.validate({ type: QuestionType.TRUE_FALSE, payload: {} })).toThrow(
+        BadRequestException,
+      );
     });
 
     it('rejects when options are supplied (non-choice type)', () => {
@@ -138,17 +138,15 @@ describe('QuestionPayloadValidator', () => {
     });
 
     it('rejects when pairs missing', () => {
-      expect(() =>
-        v.validate({ type: QuestionType.MATCH_FOLLOWING, payload: {} }),
-      ).toThrow(BadRequestException);
+      expect(() => v.validate({ type: QuestionType.MATCH_FOLLOWING, payload: {} })).toThrow(
+        BadRequestException,
+      );
     });
   });
 
   describe('DESCRIPTIVE', () => {
     it('accepts an empty payload', () => {
-      expect(() =>
-        v.validate({ type: QuestionType.DESCRIPTIVE, payload: {} }),
-      ).not.toThrow();
+      expect(() => v.validate({ type: QuestionType.DESCRIPTIVE, payload: {} })).not.toThrow();
     });
 
     it('accepts maxWords cap', () => {
@@ -158,6 +156,87 @@ describe('QuestionPayloadValidator', () => {
           payload: { rubric: 'short answer', maxWords: 200 },
         }),
       ).not.toThrow();
+    });
+  });
+
+  describe('VISUAL', () => {
+    const img = '<p><img src="https://x/storage/v1/b/b/o/k?alt=media" /></p>';
+
+    it('accepts an image stem with 4 options and exactly one correct', () => {
+      expect(() =>
+        v.validate({
+          type: QuestionType.VISUAL,
+          payload: { contentHtml: img, optionCount: 4 },
+          options: [
+            { label: '1', isCorrect: false },
+            { label: '2', isCorrect: true },
+            { label: '3', isCorrect: false },
+            { label: '4', isCorrect: false },
+          ],
+        }),
+      ).not.toThrow();
+    });
+
+    it('rejects a missing image (empty contentHtml)', () => {
+      expect(() =>
+        v.validate({
+          type: QuestionType.VISUAL,
+          payload: { contentHtml: '', optionCount: 4 },
+          options: [
+            { label: '1', isCorrect: true },
+            { label: '2', isCorrect: false },
+          ],
+        }),
+      ).toThrow(BadRequestException);
+    });
+
+    it('rejects when no option is correct', () => {
+      expect(() =>
+        v.validate({
+          type: QuestionType.VISUAL,
+          payload: { contentHtml: img, optionCount: 2 },
+          options: [
+            { label: '1', isCorrect: false },
+            { label: '2', isCorrect: false },
+          ],
+        }),
+      ).toThrow(BadRequestException);
+    });
+
+    it('rejects when more than one option is correct', () => {
+      expect(() =>
+        v.validate({
+          type: QuestionType.VISUAL,
+          payload: { contentHtml: img, optionCount: 2 },
+          options: [
+            { label: '1', isCorrect: true },
+            { label: '2', isCorrect: true },
+          ],
+        }),
+      ).toThrow(BadRequestException);
+    });
+
+    it('rejects fewer than 2 options', () => {
+      expect(() =>
+        v.validate({
+          type: QuestionType.VISUAL,
+          payload: { contentHtml: img, optionCount: 2 },
+          options: [{ label: '1', isCorrect: true }],
+        }),
+      ).toThrow(BadRequestException);
+    });
+
+    it('rejects more than 6 options', () => {
+      expect(() =>
+        v.validate({
+          type: QuestionType.VISUAL,
+          payload: { contentHtml: img, optionCount: 6 },
+          options: Array.from({ length: 7 }, (_, i) => ({
+            label: String(i + 1),
+            isCorrect: i === 0,
+          })),
+        }),
+      ).toThrow(BadRequestException);
     });
   });
 });

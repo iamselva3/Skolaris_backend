@@ -95,7 +95,14 @@ export const defaultRoutingConfig = (): RoutingConfig => ({
   weights: [0.3, 0.2, 0.15, 0.15, 0.1, 0.1],
   answerSheetBias: 0.1,
   scanLikelyBias: 0.1,
-  answerSheetHints: ['answer-sheet', 'answersheet', '/answers/', 'handwritten', '/scripts/', '/submissions/'],
+  answerSheetHints: [
+    'answer-sheet',
+    'answersheet',
+    '/answers/',
+    'handwritten',
+    '/scripts/',
+    '/submissions/',
+  ],
   preHardRouteOnHint: false,
   preProbePages: 3,
   preTextLayerCharsPerPage: 100,
@@ -134,15 +141,27 @@ export const routingConfigFromEnv = (env: NodeJS.ProcessEnv): RoutingConfig => {
     weights: parseWeights(env.OCR_ROUTE_WEIGHTS, d.weights),
     answerSheetBias: num(env, 'OCR_ROUTE_ANSWERSHEET_BIAS', d.answerSheetBias),
     scanLikelyBias: num(env, 'OCR_ROUTE_SCANLIKELY_BIAS', d.scanLikelyBias),
-    answerSheetHints: hints ? hints.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean) : d.answerSheetHints,
+    answerSheetHints: hints
+      ? hints
+          .split(',')
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean)
+      : d.answerSheetHints,
     preHardRouteOnHint: env.OCR_PRE_HARD_ROUTE_ON_HINT === 'true',
     preProbePages: num(env, 'OCR_PRE_PROBE_PAGES', d.preProbePages),
-    preTextLayerCharsPerPage: num(env, 'OCR_PRE_TEXTLAYER_CHARS_PER_PAGE', d.preTextLayerCharsPerPage),
+    preTextLayerCharsPerPage: num(
+      env,
+      'OCR_PRE_TEXTLAYER_CHARS_PER_PAGE',
+      d.preTextLayerCharsPerPage,
+    ),
     preTextLayerFloor: num(env, 'OCR_PRE_TEXTLAYER_FLOOR', d.preTextLayerFloor),
   };
 };
 
-export const wordStatsFromConfidences = (confidences: number[], lowWordConfidence: number): WordStats => {
+export const wordStatsFromConfidences = (
+  confidences: number[],
+  lowWordConfidence: number,
+): WordStats => {
   const wordCount = confidences.length;
   if (wordCount === 0) {
     return { wordCount: 0, medianWordConfidence: 0, lowWordRatio: 0 };
@@ -269,7 +288,11 @@ export interface SignalInput {
   sentinel: boolean; // the "(OCR produced no extractable text)" fallback fired
 }
 
-export const computeSignal = (input: SignalInput, pre: PreRouteResult, cfg: RoutingConfig): RoutingSignal => {
+export const computeSignal = (
+  input: SignalInput,
+  pre: PreRouteResult,
+  cfg: RoutingConfig,
+): RoutingSignal => {
   const charsPerPage = input.text.length / Math.max(1, input.pageCount);
   return {
     mime: input.mime,
@@ -313,5 +336,9 @@ export const decideRoute = (s: RoutingSignal, cfg: RoutingConfig): RoutingDecisi
   if (s.pre.verdict === 'SCAN_LIKELY') score += cfg.scanLikelyBias;
 
   const route = score >= cfg.scoreThreshold;
-  return { route, score: Math.min(1, Math.round(score * 100) / 100), reason: route ? 'score_threshold' : 'below_threshold' };
+  return {
+    route,
+    score: Math.min(1, Math.round(score * 100) / 100),
+    reason: route ? 'score_threshold' : 'below_threshold',
+  };
 };

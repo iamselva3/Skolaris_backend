@@ -1,8 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  BRANCH_REPOSITORY,
-  IBranchRepository,
-} from '../repositories/branch.repository';
+import { BRANCH_REPOSITORY, IBranchRepository } from '../repositories/branch.repository';
 
 @Injectable()
 export class DeleteBranchUseCase {

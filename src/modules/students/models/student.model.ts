@@ -9,5 +9,8 @@ export class StudentModel {
     public readonly parentContact: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    public readonly batch?: string | null,
+    public readonly section?: string | null,
+    public readonly subject?: string | null,
   ) {}
 }

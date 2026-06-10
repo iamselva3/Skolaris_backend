@@ -1,14 +1,8 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import {
-  IOcrJobRepository,
-  OCR_JOB_REPOSITORY,
-} from '../../ocr/repositories/ocr-job.repository';
+import { IOcrJobRepository, OCR_JOB_REPOSITORY } from '../../ocr/repositories/ocr-job.repository';
 import { OcrJobModel } from '../../ocr/models/ocr-job.model';
 import { UploadModel } from '../models/upload.model';
-import {
-  IUploadRepository,
-  UPLOAD_REPOSITORY,
-} from '../repositories/upload.repository';
+import { IUploadRepository, UPLOAD_REPOSITORY } from '../repositories/upload.repository';
 
 export interface GetUploadResult {
   upload: UploadModel;

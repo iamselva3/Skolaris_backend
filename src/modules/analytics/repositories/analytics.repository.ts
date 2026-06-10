@@ -49,7 +49,10 @@ export interface IAnalyticsRepository {
   ): Promise<Array<{ subject: string; topic: string; total: number; correct: number }>>;
 
   // Reports
-  getExamSummary(tenantId: string, examId: string): Promise<{
+  getExamSummary(
+    tenantId: string,
+    examId: string,
+  ): Promise<{
     totalAttempts: number;
     submittedCount: number;
     gradedCount: number;
@@ -59,7 +62,10 @@ export interface IAnalyticsRepository {
 
   getExamQuestionStats(tenantId: string, examId: string): Promise<ExamQuestionStatRow[]>;
 
-  getStudentSummary(tenantId: string, studentId: string): Promise<{
+  getStudentSummary(
+    tenantId: string,
+    studentId: string,
+  ): Promise<{
     attemptsTotal: number;
     avgScore: number;
     weakTopicsCount: number;

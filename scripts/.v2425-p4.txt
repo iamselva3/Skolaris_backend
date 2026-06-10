@@ -1,0 +1,27 @@
+FILE=RE NEET PST 3 (1)-24-25.pdf
+PARALLEL=4
+provider=tesseract:pdf(2p)
+draftCount=19
+distinctQNumbers=19
+qnums=[162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180]
+crops=19
+----
+pos=0 | page=1 | span=1..- | qnum=162 | type=VISUAL | class=MCQ | opt=3 | invalid=0 | needsReview=0 | coords=31,85,622,522 | textSha=d74dfe5c5296 | cropKey=verify/question-p1-0-RND.png | crop=41758:83d1bf35fa47
+pos=1 | page=1 | span=1..- | qnum=163 | type=VISUAL | class=MCQ | opt=4 | invalid=0 | needsReview=0 | coords=31,520,622,711 | textSha=05e4dc436958 | cropKey=verify/question-p1-1-RND.png | crop=21216:28e8cc536dfb
+pos=2 | page=1 | span=1..- | qnum=164 | type=VISUAL | class=MCQ | opt=4 | invalid=0 | needsReview=0 | coords=31,709,622,963 | textSha=54fa03aff3a1 | cropKey=verify/question-p1-2-RND.png | crop=54664:27b133837605
+pos=3 | page=1 | span=1..- | qnum=165 | type=VISUAL | class=MCQ | opt=4 | invalid=0 | needsReview=0 | coords=31,961,622,1152 | textSha=a39278b7f7b8 | cropKey=verify/question-p1-3-RND.png | crop=21452:ae6006c9dffc
+pos=4 | page=1 | span=1..- | qnum=166 | type=VISUAL | class=MCQ | opt=3 | invalid=0 | needsReview=0 | coords=31,1150,622,1584 | textSha=cfc007e14029 | cropKey=verify/question-p1-4-RND.png | crop=18239:2e139d61e9ab
+pos=5 | page=1 | span=1..- | qnum=167 | type=VISUAL | class=MCQ | opt=4 | invalid=0 | needsReview=0 | coords=616,86,1224,277 | textSha=4e64aceb5856 | cropKey=verify/question-p1-5-RND.png | crop=21562:8254bc36bb64
+pos=6 | page=1 | span=1..- | qnum=168 | type=VISUAL | class=MCQ | opt=2 | invalid=0 | needsReview=0 | coords=616,275,1224,702 | textSha=e575d349a01f | cropKey=verify/question-p1-6-RND.png | crop=34580:b2caf90f9b5c
+pos=7 | page=1 | span=1..- | qnum=169 | type=VISUAL | class=UNKNOWN | opt=4 | invalid=0 | needsReview=0 | coords=616,700,1224,870 | textSha=37e90735d465 | cropKey=verify/question-p1-7-RND.png | crop=31291:42c132962b51
+pos=8 | page=1 | span=1..- | qnum=170 | type=VISUAL | class=MCQ | opt=3 | invalid=0 | needsReview=0 | coords=616,868,1224,1059 | textSha=44c9aa6485d6 | cropKey=verify/question-p1-8-RND.png | crop=18004:066dc5858c73
+pos=9 | page=1 | span=1..2 | qnum=171 | type=VISUAL | class=MATCH_THE_FOLLOWING | opt=4 | invalid=0 | needsReview=1 | coords=616,1057,1224,1584 | textSha=a9a678355640 | cropKey=verify/question-p1-9-RND.png | crop=51073:c3b047ccdbea
+pos=10 | page=2 | span=2..- | qnum=172 | type=VISUAL | class=MCQ | opt=4 | invalid=0 | needsReview=0 | coords=31,85,622,298 | textSha=ed28374ff575 | cropKey=verify/question-p2-10-RND.png | crop=20726:8ad391f1aaf6
+pos=11 | page=2 | span=2..- | qnum=173 | type=VISUAL | class=MCQ | opt=4 | invalid=0 | needsReview=0 | coords=31,296,622,466 | textSha=3c7d0ef03b4e | cropKey=verify/question-p2-11-RND.png | crop=16959:f5874f97c65b
+pos=12 | page=2 | span=2..- | qnum=174 | type=VISUAL | class=MCQ | opt=3 | invalid=0 | needsReview=0 | coords=31,464,622,739 | textSha=5a276cdd12fd | cropKey=verify/question-p2-12-RND.png | crop=30524:e7ada9a7b1c7
+pos=13 | page=2 | span=2..- | qnum=175 | type=VISUAL | class=MCQ | opt=2 | invalid=0 | needsReview=0 | coords=31,737,622,928 | textSha=89bb900201e8 | cropKey=verify/question-p2-13-RND.png | crop=27396:7b355d2f2b7b
+pos=14 | page=2 | span=2..- | qnum=176 | type=VISUAL | class=MCQ | opt=4 | invalid=0 | needsReview=0 | coords=31,926,622,1584 | textSha=fa9220011238 | cropKey=verify/question-p2-14-RND.png | crop=33203:54d082784002
+pos=15 | page=2 | span=2..- | qnum=177 | type=VISUAL | class=MCQ | opt=4 | invalid=0 | needsReview=0 | coords=616,85,1224,297 | textSha=cf031aa9b306 | cropKey=verify/question-p2-15-RND.png | crop=21403:03c205e0ec0b
+pos=16 | page=2 | span=2..- | qnum=178 | type=VISUAL | class=MCQ | opt=4 | invalid=0 | needsReview=0 | coords=616,295,1224,508 | textSha=6b392e1558d0 | cropKey=verify/question-p2-16-RND.png | crop=20933:1b948b923a29
+pos=17 | page=2 | span=2..- | qnum=179 | type=VISUAL | class=MCQ | opt=2 | invalid=0 | needsReview=0 | coords=616,506,1224,872 | textSha=0e38c045321b | cropKey=verify/question-p2-17-RND.png | crop=50832:c3b92da5c255
+pos=18 | page=2 | span=2..- | qnum=180 | type=VISUAL | class=MATCH_THE_FOLLOWING | opt=4 | invalid=0 | needsReview=0 | coords=616,870,1224,1584 | textSha=f8de9fe1d5bb | cropKey=verify/question-p2-18-RND.png | crop=34985:dbfbcffb7f4c

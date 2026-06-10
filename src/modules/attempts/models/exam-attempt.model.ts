@@ -1,11 +1,6 @@
 import { Decimal } from '@prisma/client/runtime/library';
 
-export type AttemptStatus =
-  | 'NOT_STARTED'
-  | 'IN_PROGRESS'
-  | 'SUBMITTED'
-  | 'GRADED'
-  | 'FLAGGED';
+export type AttemptStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED' | 'GRADED' | 'FLAGGED';
 
 export class ExamAttemptModel {
   constructor(

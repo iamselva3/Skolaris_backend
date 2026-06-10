@@ -45,6 +45,8 @@ export class GetDashboardSummaryUseCase {
     tenantId: string;
     actorUserId: string;
     actorRole: Role;
+    /** When set, scope every KPI to this branch. Undefined = tenant-wide ("All branches"). */
+    branchId?: string;
   }): Promise<DashboardSummary> {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -52,6 +54,15 @@ export class GetDashboardSummaryUseCase {
     const startOfWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const teacherScope = input.actorRole === Role.TEACHER ? input.actorUserId : null;
+
+    // Branch scoping. Entities with a direct branch_id column (Student, User,
+    // Exam, Question, Upload) filter on it directly; OcrDraft and TopicReport
+    // have no column, so they scope through their owning relation. Each spread
+    // is empty when no branch is selected, leaving the query tenant-wide.
+    const branchId = input.branchId;
+    const branchEq = branchId ? { branchId } : {};
+    const draftBranch = branchId ? { ocrJob: { upload: { branchId } } } : {};
+    const topicBranch = branchId ? { student: { branchId } } : {};
 
     // Fan-out — every query runs in parallel.
     const [
@@ -73,26 +84,28 @@ export class GetDashboardSummaryUseCase {
       ocrReviewQueueRows,
       todaysExamsRows,
     ] = await Promise.all([
-      this.prisma.student.count({ where: { tenantId: input.tenantId } }),
+      this.prisma.student.count({ where: { tenantId: input.tenantId, ...branchEq } }),
       this.prisma.student.count({
-        where: { tenantId: input.tenantId, createdAt: { gte: startOfWeek } },
+        where: { tenantId: input.tenantId, ...branchEq, createdAt: { gte: startOfWeek } },
       }),
       this.prisma.topicReport.count({
-        where: { tenantId: input.tenantId, isWeak: true },
+        where: { tenantId: input.tenantId, isWeak: true, ...topicBranch },
       }),
       this.prisma.user.count({
-        where: { tenantId: input.tenantId, role: Role.TEACHER },
+        where: { tenantId: input.tenantId, role: Role.TEACHER, ...branchEq },
       }),
       this.prisma.user.count({
         where: {
           tenantId: input.tenantId,
           role: Role.TEACHER,
+          ...branchEq,
           lastLoginAt: { gte: startOfDay },
         },
       }),
       this.prisma.exam.count({
         where: {
           tenantId: input.tenantId,
+          ...branchEq,
           status: 'LIVE',
           ...(teacherScope ? { createdBy: teacherScope } : {}),
         },
@@ -100,14 +113,19 @@ export class GetDashboardSummaryUseCase {
       this.prisma.exam.count({
         where: {
           tenantId: input.tenantId,
+          ...branchEq,
           status: { in: ['SCHEDULED', 'LIVE'] },
-          opensAt: { gte: startOfDay, lt: new Date(startOfDay.getTime() + 7 * 24 * 60 * 60 * 1000) },
+          opensAt: {
+            gte: startOfDay,
+            lt: new Date(startOfDay.getTime() + 7 * 24 * 60 * 60 * 1000),
+          },
           ...(teacherScope ? { createdBy: teacherScope } : {}),
         },
       }),
       this.prisma.question.count({
         where: {
           tenantId: input.tenantId,
+          ...branchEq,
           isActive: true,
           ...(teacherScope ? { createdBy: teacherScope } : {}),
         },
@@ -115,12 +133,14 @@ export class GetDashboardSummaryUseCase {
       this.prisma.ocrDraft.count({
         where: {
           tenantId: input.tenantId,
+          ...draftBranch,
           status: { in: ['PENDING_REVIEW', 'EDITED'] },
         },
       }),
       this.prisma.upload.count({
         where: {
           tenantId: input.tenantId,
+          ...branchEq,
           createdAt: { gte: startOfDay },
           ...(teacherScope ? { uploadedBy: teacherScope } : {}),
         },
@@ -128,6 +148,7 @@ export class GetDashboardSummaryUseCase {
       this.prisma.upload.count({
         where: {
           tenantId: input.tenantId,
+          ...branchEq,
           status: 'READY_FOR_REVIEW',
           ...(teacherScope ? { uploadedBy: teacherScope } : {}),
         },
@@ -135,6 +156,7 @@ export class GetDashboardSummaryUseCase {
       this.prisma.exam.count({
         where: {
           tenantId: input.tenantId,
+          ...branchEq,
           status: 'DRAFT',
           ...(teacherScope ? { createdBy: teacherScope } : {}),
         },
@@ -142,6 +164,7 @@ export class GetDashboardSummaryUseCase {
       this.prisma.exam.findFirst({
         where: {
           tenantId: input.tenantId,
+          ...branchEq,
           publishedAt: { not: null },
           ...(teacherScope ? { createdBy: teacherScope } : {}),
         },
@@ -165,6 +188,7 @@ export class GetDashboardSummaryUseCase {
       this.prisma.upload.findMany({
         where: {
           tenantId: input.tenantId,
+          ...branchEq,
           status: 'READY_FOR_REVIEW',
           ...(teacherScope ? { uploadedBy: teacherScope } : {}),
         },
@@ -184,11 +208,9 @@ export class GetDashboardSummaryUseCase {
       this.prisma.exam.findMany({
         where: {
           tenantId: input.tenantId,
+          ...branchEq,
           status: { in: ['SCHEDULED', 'LIVE'] },
-          OR: [
-            { opensAt: { lt: endOfDay }, closesAt: { gte: startOfDay } },
-            { status: 'LIVE' },
-          ],
+          OR: [{ opensAt: { lt: endOfDay }, closesAt: { gte: startOfDay } }, { status: 'LIVE' }],
           ...(teacherScope ? { createdBy: teacherScope } : {}),
         },
         orderBy: [{ status: 'asc' }, { opensAt: 'asc' }],

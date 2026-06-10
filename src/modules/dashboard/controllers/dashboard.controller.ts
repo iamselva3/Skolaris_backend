@@ -25,18 +25,25 @@ import { GetDashboardSummaryUseCase } from '../use-cases/get-dashboard-summary.u
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('dashboard')
 export class DashboardController {
-  constructor(
-    private readonly summaryUC: GetDashboardSummaryUseCase,
-  ) {}
+  constructor(private readonly summaryUC: GetDashboardSummaryUseCase) {}
 
   /** Single batched payload powering the ERP module-card grid + the two operational panels. */
   @Roles(Role.TEACHER, Role.SUPER_ADMIN, Role.STUDENT)
   @Get('summary')
-  async summary(@CurrentUser() actor: AuthenticatedUser) {
+  async summary(@CurrentUser() actor: AuthenticatedUser, @Query('branchId') branchId?: string) {
+    // Teachers are always pinned to their own branch; only SUPER_ADMIN may pick
+    // a branch (or omit it for tenant-wide "All branches").
+    const effectiveBranchId =
+      actor.role === Role.TEACHER
+        ? (actor.branchId ?? undefined)
+        : branchId && branchId.length > 0
+          ? branchId
+          : undefined;
     const r = await this.summaryUC.execute({
       tenantId: actor.tenantId,
       actorUserId: actor.sub,
       actorRole: actor.role,
+      branchId: effectiveBranchId,
     });
     return { data: r };
   }
@@ -58,10 +65,7 @@ export class DashboardNotificationsController {
 
   @Roles(Role.TEACHER, Role.STUDENT, Role.SUPER_ADMIN)
   @Get('notifications')
-  async notifications(
-    @CurrentUser() actor: AuthenticatedUser,
-    @Query() query: PaginationQueryDto,
-  ) {
+  async notifications(@CurrentUser() actor: AuthenticatedUser, @Query() query: PaginationQueryDto) {
     const r = await this.listNotificationsUC.execute({
       tenantId: actor.tenantId,
       userId: actor.sub,

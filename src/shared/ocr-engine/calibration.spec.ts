@@ -24,7 +24,8 @@ const rec = (over: Partial<RoutingRecord> = {}): RoutingRecord => ({
   ...over,
 });
 
-const logLine = (r: Partial<RoutingRecord>): string => `2026-05-29 ... [ocr-routing] ${JSON.stringify(rec(r))}`;
+const logLine = (r: Partial<RoutingRecord>): string =>
+  `2026-05-29 ... [ocr-routing] ${JSON.stringify(rec(r))}`;
 
 describe('calibration/parseRoutingLogLines', () => {
   it('extracts records regardless of leading prefix and skips malformed lines', () => {
@@ -61,7 +62,9 @@ describe('calibration/predictRoute', () => {
   it('honors hard-override reasons and sweeps score-driven ones', () => {
     expect(predictRoute(rec({ reason: 'machine_text_force_node', score: 0.99 }), 0.5)).toBe(false);
     expect(predictRoute(rec({ reason: 'near_empty', score: 0 }), 0.5)).toBe(true);
-    expect(predictRoute(rec({ reason: 'low_confidence_small_sample', wouldRoute: true }), 0.9)).toBe(true);
+    expect(
+      predictRoute(rec({ reason: 'low_confidence_small_sample', wouldRoute: true }), 0.9),
+    ).toBe(true);
     expect(predictRoute(rec({ reason: 'score_threshold', score: 0.6 }), 0.5)).toBe(true);
     expect(predictRoute(rec({ reason: 'score_threshold', score: 0.4 }), 0.5)).toBe(false);
   });
@@ -75,7 +78,12 @@ describe('calibration/evaluate + recommendThreshold', () => {
     rec({ storageKey: 'pr1', reason: 'below_threshold', score: 0.2 }),
     rec({ storageKey: 'pr2', reason: 'below_threshold', score: 0.1 }),
   ];
-  const labels: Record<string, Label> = { hw1: 'handwritten', hw2: 'handwritten', pr1: 'printed', pr2: 'printed' };
+  const labels: Record<string, Label> = {
+    hw1: 'handwritten',
+    hw2: 'handwritten',
+    pr1: 'printed',
+    pr2: 'printed',
+  };
 
   it('produces a perfect split at a mid threshold', () => {
     const results = evaluate(records, labels, defaultThresholdSweep());
@@ -96,7 +104,10 @@ describe('calibration/evaluate + recommendThreshold', () => {
   });
 
   it('ignores unlabeled records', () => {
-    const withExtra = [...records, rec({ storageKey: 'unlabeled', score: 0.95, reason: 'score_threshold' })];
+    const withExtra = [
+      ...records,
+      rec({ storageKey: 'unlabeled', score: 0.95, reason: 'score_threshold' }),
+    ];
     const results = evaluate(withExtra, labels, [0.5]);
     expect(results[0].tp + results[0].fp + results[0].tn + results[0].fn).toBe(4);
   });

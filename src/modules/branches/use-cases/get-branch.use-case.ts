@@ -1,9 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { BranchModel } from '../models/branch.model';
-import {
-  BRANCH_REPOSITORY,
-  IBranchRepository,
-} from '../repositories/branch.repository';
+import { BRANCH_REPOSITORY, IBranchRepository } from '../repositories/branch.repository';
 
 @Injectable()
 export class GetBranchUseCase {

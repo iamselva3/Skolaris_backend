@@ -33,7 +33,20 @@ describe('GetUserUseCase', () => {
 
   it('returns target when SUPER_ADMIN', async () => {
     users.findById.mockResolvedValue(
-      new UserModel('u-target', 'tenant-1', null, 'a@b.test', 'h', 'A', Role.STUDENT, 'ACTIVE', null, new Date(), new Date()),
+      new UserModel(
+        'u-target',
+        'tenant-1',
+        null,
+        'a@b.test',
+        null,
+        'h',
+        'A',
+        Role.STUDENT,
+        'ACTIVE',
+        null,
+        new Date(),
+        new Date(),
+      ),
     );
     const r = await useCase.execute({
       actor: makeActor({ role: Role.SUPER_ADMIN }),
@@ -44,7 +57,20 @@ describe('GetUserUseCase', () => {
 
   it('STUDENT can read only own profile', async () => {
     users.findById.mockResolvedValue(
-      new UserModel('u-target', 'tenant-1', null, 'a@b.test', 'h', 'A', Role.STUDENT, 'ACTIVE', null, new Date(), new Date()),
+      new UserModel(
+        'u-target',
+        'tenant-1',
+        null,
+        'a@b.test',
+        null,
+        'h',
+        'A',
+        Role.STUDENT,
+        'ACTIVE',
+        null,
+        new Date(),
+        new Date(),
+      ),
     );
     await expect(
       useCase.execute({

@@ -17,6 +17,7 @@ const makeUser = (overrides: Partial<UserModel> = {}): UserModel => {
     overrides.tenantId ?? 'tenant-1',
     overrides.branchId ?? null,
     overrides.email ?? 'a@b.test',
+    overrides.phone ?? null,
     overrides.passwordHash ?? 'hash',
     overrides.name ?? 'A',
     overrides.role ?? Role.TEACHER,
@@ -54,9 +55,18 @@ describe('LoginUseCase', () => {
       update: jest.fn(),
     };
     refresh = {
-      create: jest.fn().mockResolvedValue(
-        new RefreshTokenModel('rt-1', 'user-1', 'hash', new Date(Date.now() + 60_000), null, new Date()),
-      ),
+      create: jest
+        .fn()
+        .mockResolvedValue(
+          new RefreshTokenModel(
+            'rt-1',
+            'user-1',
+            'hash',
+            new Date(Date.now() + 60_000),
+            null,
+            new Date(),
+          ),
+        ),
       findByTokenHash: jest.fn(),
       revoke: jest.fn(),
       revokeAllForUser: jest.fn(),
@@ -109,9 +119,9 @@ describe('LoginUseCase', () => {
 
   it('throws 401 when user not found', async () => {
     users.findByEmailGlobal.mockResolvedValue(null);
-    await expect(useCase.execute({ email: 'x@y.test', password: 'whatever1!' })).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(
+      useCase.execute({ email: 'x@y.test', password: 'whatever1!' }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('throws 401 when password is wrong', async () => {
@@ -125,8 +135,8 @@ describe('LoginUseCase', () => {
   it('throws 401 when user is disabled', async () => {
     const hash = await argon2.hash('Password1!', { type: argon2.argon2id });
     users.findByEmailGlobal.mockResolvedValue(makeUser({ passwordHash: hash, status: 'DISABLED' }));
-    await expect(useCase.execute({ email: 'a@b.test', password: 'Password1!' })).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(
+      useCase.execute({ email: 'a@b.test', password: 'Password1!' }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

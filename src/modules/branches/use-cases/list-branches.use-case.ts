@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PaginatedResponse } from '../../../shared/common/dtos/paginated-response.dto';
 import { BranchModel } from '../models/branch.model';
-import {
-  BRANCH_REPOSITORY,
-  IBranchRepository,
-} from '../repositories/branch.repository';
+import { BRANCH_REPOSITORY, IBranchRepository } from '../repositories/branch.repository';
 
 @Injectable()
 export class ListBranchesUseCase {

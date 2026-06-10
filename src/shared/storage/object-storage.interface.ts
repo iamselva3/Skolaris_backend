@@ -41,4 +41,12 @@ export interface IObjectStorage {
    * consumer calls this directly via DI (no HTTP round-trip).
    */
   getObject(storageKey: string): Promise<ObjectData>;
+  /**
+   * Server-side direct upload. Distinct from createSignedUploadUrl (which is for
+   * the BROWSER to PUT to). putObject is for INTERNAL flows where the API/worker
+   * has bytes in hand and needs to persist them — e.g. OCR figure crops detected
+   * server-side, where presigning + round-tripping the bytes back through the
+   * client would be ridiculous.
+   */
+  putObject(storageKey: string, body: Buffer, contentType: string): Promise<void>;
 }

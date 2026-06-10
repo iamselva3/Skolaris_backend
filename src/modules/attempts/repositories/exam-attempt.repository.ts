@@ -38,10 +38,7 @@ export interface IExamAttemptRepository {
     studentId: string,
   ): Promise<ExamAttemptModel | null>;
   list(filter: ListAttemptsFilter): Promise<{ data: ExamAttemptModel[]; total: number }>;
-  listForStudent(
-    tenantId: string,
-    studentId: string,
-  ): Promise<ExamAttemptModel[]>;
+  listForStudent(tenantId: string, studentId: string): Promise<ExamAttemptModel[]>;
   start(input: {
     tenantId: string;
     id: string;
@@ -57,22 +54,14 @@ export interface IExamAttemptRepository {
     id: string;
     autoSubmitted?: boolean;
   }): Promise<ExamAttemptModel>;
-  setStatus(
-    tenantId: string,
-    id: string,
-    status: AttemptStatus,
-  ): Promise<ExamAttemptModel>;
+  setStatus(tenantId: string, id: string, status: AttemptStatus): Promise<ExamAttemptModel>;
   setGradedScore(input: {
     tenantId: string;
     id: string;
     score: Decimal;
     descriptivePending: boolean;
   }): Promise<ExamAttemptModel>;
-  incrementViolationCount(
-    tenantId: string,
-    id: string,
-    delta: number,
-  ): Promise<ExamAttemptModel>;
+  incrementViolationCount(tenantId: string, id: string, delta: number): Promise<ExamAttemptModel>;
   findExpiredInProgress(now: Date): Promise<ExamAttemptModel[]>;
 
   // Answers

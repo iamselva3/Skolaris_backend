@@ -20,6 +20,7 @@ export class PrismaUserRepository implements IUserRepository {
         tenantId: input.tenantId,
         branchId: input.branchId ?? null,
         email: input.email,
+        phone: input.phone,
         passwordHash: input.passwordHash,
         name: input.name,
         role: input.role as PrismaRole,
@@ -69,9 +70,11 @@ export class PrismaUserRepository implements IUserRepository {
   async update(tenantId: string, id: string, input: UpdateUserInput): Promise<UserModel> {
     const data: Prisma.UserUpdateInput = {};
     if (input.name !== undefined) data.name = input.name;
+    if (input.phone !== undefined) data.phone = input.phone;
     if (input.passwordHash !== undefined) data.passwordHash = input.passwordHash;
     if (input.branchId !== undefined) {
-      data.branch = input.branchId === null ? { disconnect: true } : { connect: { id: input.branchId } };
+      data.branch =
+        input.branchId === null ? { disconnect: true } : { connect: { id: input.branchId } };
     }
     if (input.status !== undefined) data.status = input.status;
 
@@ -105,6 +108,7 @@ export class PrismaUserRepository implements IUserRepository {
       r.tenantId,
       r.branchId,
       r.email,
+      r.phone,
       r.passwordHash,
       r.name,
       r.role as Role,

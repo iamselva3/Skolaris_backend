@@ -21,6 +21,8 @@ import { ListUploadsUseCase } from './use-cases/list-uploads.use-case';
     DeleteUploadUseCase,
     { provide: UPLOAD_REPOSITORY, useClass: PrismaUploadRepository },
   ],
-  exports: [UPLOAD_REPOSITORY],
+  // CompleteUploadUseCase is exported so the OCR batch orchestrator can reuse the
+  // single-file complete/dispatch path verbatim (no OCR-pipeline changes).
+  exports: [UPLOAD_REPOSITORY, CompleteUploadUseCase],
 })
 export class UploadsModule {}

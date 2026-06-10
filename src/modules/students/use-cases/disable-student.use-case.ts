@@ -1,8 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  IStudentRepository,
-  STUDENT_REPOSITORY,
-} from '../repositories/student.repository';
+import { IStudentRepository, STUDENT_REPOSITORY } from '../repositories/student.repository';
 
 @Injectable()
 export class DisableStudentUseCase {

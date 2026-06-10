@@ -43,8 +43,15 @@ export class PublishExamUseCase {
     if (input.actor.role === Role.TEACHER && exam.createdBy !== input.actor.sub) {
       throw new ForbiddenException('Teachers can only publish exams they created');
     }
+    if (exam.isPaper()) {
+      throw new ConflictException(
+        'Question papers cannot be published. Use "Create Test from Paper" to promote this composition to a test first.',
+      );
+    }
     if (exam.status !== 'DRAFT') {
-      throw new ConflictException(`Exam is in status ${exam.status}; only DRAFT exams can be published`);
+      throw new ConflictException(
+        `Exam is in status ${exam.status}; only DRAFT exams can be published`,
+      );
     }
 
     if (detail.questions.length === 0) {

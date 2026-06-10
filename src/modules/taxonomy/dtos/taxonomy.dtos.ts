@@ -14,11 +14,15 @@ import {
 /* ─────────────────────────── Programs ─────────────────────────── */
 
 export class CreateProgramDto {
-  @IsString() @MinLength(2) @MaxLength(40)
+  @IsString()
+  @MinLength(2)
+  @MaxLength(40)
   @Matches(/^[A-Z0-9_]+$/, { message: 'code must be uppercase letters, digits, or underscores' })
   code!: string;
 
-  @IsString() @MinLength(2) @MaxLength(120)
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
   name!: string;
 }
 
@@ -41,7 +45,7 @@ export class UpdateSubjectDto {
 
 export class ListSubjectsQueryDto {
   @IsOptional() @IsUUID() programId?: string;
-  @IsOptional() @IsString() isActive?: string;  // '1' | '0'
+  @IsOptional() @IsString() isActive?: string; // '1' | '0'
 }
 
 /* ─────────────────────────── Topics ─────────────────────────── */

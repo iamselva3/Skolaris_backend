@@ -33,6 +33,11 @@ export class ApproveDraftDto {
   type?: QuestionType;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  questionSnapshotKey?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ApproveDraftOptionDto)

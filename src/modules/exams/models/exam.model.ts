@@ -2,6 +2,12 @@ import { Decimal } from '@prisma/client/runtime/library';
 
 export type ExamStatus = 'DRAFT' | 'SCHEDULED' | 'LIVE' | 'CLOSED';
 export type TestMode = 'ONLINE' | 'OFFLINE_PRINT';
+/**
+ * Composition asset (PAPER) vs delivery asset (TEST). Papers stay status=DRAFT
+ * forever and cannot publish or be assigned to students — the Exam table is
+ * shared but the lifecycle is enforced at the use-case layer.
+ */
+export type ExamKind = 'PAPER' | 'TEST';
 
 export interface AntiCheatConfig {
   requireFullscreen: boolean;
@@ -43,9 +49,18 @@ export class ExamModel {
     public readonly subjectId: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    public readonly kind: ExamKind = 'TEST',
   ) {}
 
   isEditable(): boolean {
     return this.status === 'DRAFT';
+  }
+
+  isPaper(): boolean {
+    return this.kind === 'PAPER';
+  }
+
+  isTest(): boolean {
+    return this.kind === 'TEST';
   }
 }

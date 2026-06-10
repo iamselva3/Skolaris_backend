@@ -16,6 +16,7 @@ import { ExamsModule } from './modules/exams/exams.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OcrModule } from './modules/ocr/ocr.module';
 import { QuestionsModule } from './modules/questions/questions.module';
+import { QuestionPapersModule } from './modules/question-papers/question-papers.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { StudentsModule } from './modules/students/students.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
@@ -38,7 +39,6 @@ import { EmailModule } from './shared/email/email.module';
 import { QueueModule } from './shared/queue/queue.module';
 import { StorageModule } from './shared/storage/storage.module';
 import { WorkersModule } from './shared/workers/workers.module';
-import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -76,13 +76,13 @@ import { AppController } from './app.controller';
     AnalyticsModule,
     AttemptsModule,
     ExamsModule,
+    QuestionPapersModule,
     ViolationsModule,
     TaxonomyModule,
     ReportsModule,
     WorkersModule,
     CronModule,
   ],
-  controllers: [AppController],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: RequestIdInterceptor },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },

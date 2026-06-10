@@ -25,6 +25,11 @@ export class AssignExamUseCase {
     if (input.actor.role === Role.TEACHER && exam.createdBy !== input.actor.sub) {
       throw new ForbiddenException('Teachers can only assign exams they created');
     }
+    if (exam.isPaper()) {
+      throw new ConflictException(
+        'Question papers cannot be assigned to students. Create a test from this paper first.',
+      );
+    }
     if (!exam.isEditable()) throw new ConflictException('Exam is not editable');
 
     return this.exams.createAssignments({

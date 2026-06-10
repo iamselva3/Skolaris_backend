@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { TaxonomyResolverService } from '../../taxonomy/services/taxonomy-resolver.service';
 import { Difficulty, QuestionType } from '../models/question-type.enum';
 import { QuestionWithOptions } from '../models/question.model';
-import {
-  IQuestionRepository,
-  QUESTION_REPOSITORY,
-} from '../repositories/question.repository';
+import { IQuestionRepository, QUESTION_REPOSITORY } from '../repositories/question.repository';
 import { QuestionPayloadValidator } from '../services/question-payload-validator.service';
 
 export interface CreateQuestionInput {

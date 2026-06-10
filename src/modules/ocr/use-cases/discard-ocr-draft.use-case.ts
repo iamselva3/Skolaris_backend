@@ -1,14 +1,6 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { OcrDraftModel } from '../models/ocr-draft.model';
-import {
-  IOcrDraftRepository,
-  OCR_DRAFT_REPOSITORY,
-} from '../repositories/ocr-draft.repository';
+import { IOcrDraftRepository, OCR_DRAFT_REPOSITORY } from '../repositories/ocr-draft.repository';
 
 @Injectable()
 export class DiscardOcrDraftUseCase {

@@ -280,7 +280,9 @@ export class PrismaReportsRepository implements IReportsRepository {
         rollNo: s.rollNo,
         attemptsTotal: sa.length,
         gradedCount: graded.length,
-        avgScorePercent: avg(graded.map((a) => pct(Number(a.score ?? 0), Number(a.exam.totalMarks)))),
+        avgScorePercent: avg(
+          graded.map((a) => pct(Number(a.score ?? 0), Number(a.exam.totalMarks))),
+        ),
         accuracyPercent: sumAttempts === 0 ? 0 : round1((sumCorrect / sumAttempts) * 100),
         weakTopicCount: tr.filter((t) => t.isWeak).length,
       };
@@ -382,9 +384,15 @@ export class PrismaReportsRepository implements IReportsRepository {
     const buckets = new Map<string, Bucket>();
     for (const r of reports) {
       const key = `${r.subject} ${r.topic}`;
-      const b =
-        buckets.get(key) ??
-        { subject: r.subject, topic: r.topic, students: 0, scoreSum: 0, correct: 0, attempts: 0, weak: 0 };
+      const b = buckets.get(key) ?? {
+        subject: r.subject,
+        topic: r.topic,
+        students: 0,
+        scoreSum: 0,
+        correct: 0,
+        attempts: 0,
+        weak: 0,
+      };
       b.students += 1;
       b.scoreSum += Number(r.scorePercent);
       b.correct += r.correctCount;
@@ -405,9 +413,13 @@ export class PrismaReportsRepository implements IReportsRepository {
 
     if (weakOnly) {
       all = all.filter((r) => r.weakStudents > 0);
-      all.sort((a, b) => b.weakSharePercent - a.weakSharePercent || b.weakStudents - a.weakStudents);
+      all.sort(
+        (a, b) => b.weakSharePercent - a.weakSharePercent || b.weakStudents - a.weakStudents,
+      );
     } else {
-      all.sort((a, b) => a.avgScorePercent - b.avgScorePercent || b.studentsAssessed - a.studentsAssessed);
+      all.sort(
+        (a, b) => a.avgScorePercent - b.avgScorePercent || b.studentsAssessed - a.studentsAssessed,
+      );
     }
 
     const total = all.length;
@@ -467,7 +479,8 @@ export class PrismaReportsRepository implements IReportsRepository {
     const rows: QuestionReportRow[] = questions.map((q) => {
       const st = q.questionStat!;
       const totalAttempts = st.totalAttempts;
-      const correctPercent = totalAttempts === 0 ? 0 : round1((st.correctAttempts / totalAttempts) * 100);
+      const correctPercent =
+        totalAttempts === 0 ? 0 : round1((st.correctAttempts / totalAttempts) * 100);
       return {
         questionId: q.id,
         stem: stemFromPayload(q.payload),

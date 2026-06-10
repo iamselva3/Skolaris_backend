@@ -33,6 +33,7 @@ enum QuestionType {
   MATCH_FOLLOWING
   MATRIX_MATCH
   DESCRIPTIVE
+  VISUAL
 }
 
 enum UploadStatus {
@@ -93,6 +94,22 @@ enum TestMode {
   OFFLINE_PRINT
 }
 
+// Separates the composition asset (PAPER) from the delivery asset (TEST).
+// Papers stay status=DRAFT forever and cannot be published or assigned.
+// Tests follow the existing DRAFT -> SCHEDULED -> LIVE -> CLOSED lifecycle.
+// All pre-existing rows are TESTs (default).
+enum ExamKind {
+  PAPER
+  TEST
+}
+
+// Lifecycle for the standalone QuestionPaper module (decoupled from Exam).
+enum QuestionPaperStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model Tenant {
   id        String       @id @default(uuid()) @db.Uuid
   name      String
@@ -108,6 +125,7 @@ model Tenant {
   uploads          Upload[]
   ocrJobs          OcrJob[]
   ocrDrafts        OcrDraft[]
+  ocrDraftFigures  OcrDraftFigure[]
   questions        Question[]
   questionOptions  QuestionOption[]
   notifications    Notification[]
@@ -124,6 +142,8 @@ model Tenant {
   subjects         Subject[]
   topics           Topic[]
   chapters         Chapter[]
+  questionPapers   QuestionPaper[]
+  ocrBatches       OcrBatch[]
 
   @@map("tenants")
 }
@@ -140,6 +160,9 @@ model Branch {
   users      User[]
   students   Student[]
   classrooms Classroom[]
+  exams      Exam[]
+  questions  Question[]
+  uploads    Upload[]
 
   @@index([tenantId])
   @@map("branches")
@@ -150,6 +173,7 @@ model User {
   tenantId     String     @map("tenant_id") @db.Uuid
   branchId     String?    @map("branch_id") @db.Uuid
   email        String     @db.Citext
+  phone        String?
   passwordHash String     @map("password_hash")
   name         String
   role         Role
@@ -168,6 +192,8 @@ model User {
   notifications     Notification[]
   createdExams      Exam[]         @relation("ExamCreator")
   teacherSubjects   TeacherSubject[]
+  ocrBatches        OcrBatch[]
+  teacherClassrooms ClassroomTeacher[]
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
@@ -228,9 +254,13 @@ model Classroom {
   branch          Branch             @relation(fields: [branchId], references: [id], onDelete: Cascade)
   creator         User               @relation("ClassroomCreator", fields: [createdBy], references: [id], onDelete: Cascade)
   students        ClassroomStudent[]
+  teachers        ClassroomTeacher[]
   examAssignments ExamAssignment[]
 
-  @@unique([tenantId, branchId, name])
+  // A classroom is identified by name + academic year + section within a branch,
+  // so the same class/year can have multiple sections (A, B, C, …). Only an exact
+  // name+year+section duplicate is rejected.
+  @@unique([tenantId, branchId, name, year, section])
   @@index([tenantId, branchId])
   @@map("classrooms")
 }
@@ -244,8 +274,19 @@ model ClassroomStudent {
   student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@id([classroomId, studentId])
-  @@index([studentId])
   @@map("classroom_students")
+}
+
+model ClassroomTeacher {
+  classroomId String   @map("classroom_id") @db.Uuid
+  teacherId   String   @map("teacher_id") @db.Uuid
+  joinedAt    DateTime @default(now()) @map("joined_at") @db.Timestamptz(6)
+
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  teacher   User      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@id([classroomId, teacherId])
+  @@map("classroom_teachers")
 }
 
 model Upload {
@@ -260,6 +301,18 @@ model Upload {
   errorMessage  String?      @map("error_message")
   programId     String?      @map("program_id") @db.Uuid
   subjectId     String?      @map("subject_id") @db.Uuid
+  // Upload-level OCR diagnostics: source type, page classifications, layout
+  // issues. Populated by the parent OCR job; null for non-OCR uploads.
+  // Shape: { sourceType: 'DIGITAL_PDF'|'SCANNED_PDF'|'HANDWRITTEN'|'MIXED',
+  //          pageCount: number, hasLayoutIssues: boolean, notes?: string }
+  ocrMeta       Json?        @map("ocr_meta")
+  branchId      String?      @map("branch_id") @db.Uuid
+  // Multi-file batch import (orchestration only — does NOT change the OCR
+  // pipeline). batchId groups uploads imported together; batchOrder is the
+  // upload's position in that batch (0-based). Both null for single-file
+  // uploads, which behave exactly as before.
+  batchId       String?      @map("batch_id") @db.Uuid
+  batchOrder    Int?         @map("batch_order")
   createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -267,13 +320,38 @@ model Upload {
   uploader  User       @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
   program   Program?   @relation(fields: [programId], references: [id], onDelete: SetNull)
   subject   Subject?   @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  branch    Branch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  batch     OcrBatch?  @relation(fields: [batchId], references: [id], onDelete: SetNull)
   ocrJob    OcrJob?
   questions Question[]
 
+  @@index([tenantId, branchId])
   @@index([tenantId, uploadedBy])
   @@index([tenantId, status])
   @@index([tenantId, programId, subjectId])
+  @@index([tenantId, batchId])
   @@map("uploads")
+}
+
+// Multi-file OCR import batch — a pure orchestration grouping over Uploads.
+// Each upload still runs through the UNCHANGED single-file OCR pipeline one at a
+// time; the batch only records that they were imported together so the review
+// layer can show aggregate progress and continuous (batchSequence) numbering.
+// No drafts/questions are owned here — those stay on the per-upload OcrJob.
+model OcrBatch {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  createdBy  String   @map("created_by") @db.Uuid
+  totalFiles Int      @map("total_files")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  uploads Upload[]
+
+  @@index([tenantId])
+  @@map("ocr_batches")
 }
 
 model OcrJob {
@@ -286,7 +364,15 @@ model OcrJob {
   overallConfidence  Decimal?  @map("overall_confidence") @db.Decimal(4, 3)
   errorMessage       String?   @map("error_message")
   rawOutput          Json?     @map("raw_output")
-  providerUsed       String?   @map("provider_used") // 'paddle' | 'vision'
+  providerUsed       String?   @map("provider_used") // 'paddle' | 'vision' | 'tesseract' | 'pdfjs'
+  // Per-page classification — array of { pageNum, type, confidence, draftCount }
+  // where type ∈ INSTRUCTION | QUESTION | ANSWER_KEY | OMR | UNKNOWN.
+  pageMetadata       Json?     @map("page_metadata")
+  // Per-page layout — array of { pageNum, layout, columnCount, confidence }
+  // where layout ∈ SINGLE | TWO_COLUMN | MULTI_COLUMN | UNKNOWN.
+  layoutMetadata     Json?     @map("layout_metadata")
+  // Live progress for the parent OCR job — { processed: int, total: int, currentPage?: int }.
+  progress           Json?     @map("progress")
   createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -309,6 +395,45 @@ model OcrDraft {
   confidence          Decimal?       @db.Decimal(4, 3)
   status              OcrDraftStatus @default(PENDING_REVIEW)
   approvedQuestionId  String?        @unique @map("approved_question_id") @db.Uuid
+  figures             OcrDraftFigure[]
+  // Source page traceability — which page in the original PDF/image this draft
+  // came from. Null for legacy drafts created before per-page tracking.
+  sourcePageNumber    Int?           @map("source_page_number")
+  // For questions that span multiple pages (rare but real in NEET papers),
+  // spanPageStart and spanPageEnd bracket the range. spanPageStart equals
+  // sourcePageNumber when the question stays on one page.
+  spanPageStart       Int?           @map("span_page_start")
+  spanPageEnd         Int?           @map("span_page_end")
+  // Optional solution/explanation block when the source paper includes one
+  // (markers: "Solution:", "Explanation:", "Ans:" — separated from the stem).
+  solutionText        String?        @map("solution_text")
+  // Screenshot-first OCR: questionSnapshotKey is the R2 key of the cropped
+  // question-region image (the Visual Question's source of truth). optionCount
+  // is the number of answer slots detected on the crop (2..6); sourceCoordinates
+  // is the bounding box on the source page { x0, y0, x1, y1 }.
+  questionSnapshotKey String?        @map("question_snapshot_key")
+  optionCount         Int?           @map("option_count")
+  sourceCoordinates   Json?          @map("source_coordinates")
+  // Segmentation: the detected question number at the top of this crop (e.g. 103)
+  // and whether the crop is invalid (no number/stem/marker — diagram/footer/
+  // option fragment). These come from the engine and drive the Question Navigator
+  // (reliable count + missing/merged/invalid status) and answer-key mapping.
+  questionNumber      Int?           @map("question_number")
+  invalidCrop         Boolean?       @map("invalid_crop")
+  // Answer-key import: a pre-filled correct answer mapped from an uploaded/typed
+  // answer key ("1-A 2-C …"), so the teacher reviews exceptions instead of
+  // hand-picking every answer. Shape: { source, raw, correctIndex?, correct? }.
+  // Null until an answer key is imported for the draft's job.
+  suggestedAnswer     Json?          @map("suggested_answer")
+  // Bulk taxonomy: Program/Subject/Chapter/Topic + difficulty assigned once over
+  // a whole OCR batch ("apply to all/selected") so the teacher doesn't configure
+  // every question. Stored denormalized (no FK) — these are review-time defaults
+  // the approve flow inherits unless the approver overrides them. Null until set.
+  assignedProgramId   String?        @map("assigned_program_id") @db.Uuid
+  assignedSubjectId   String?        @map("assigned_subject_id") @db.Uuid
+  assignedTopicId     String?        @map("assigned_topic_id") @db.Uuid
+  assignedChapterId   String?        @map("assigned_chapter_id") @db.Uuid
+  assignedDifficulty  Difficulty?    @map("assigned_difficulty")
   createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -319,6 +444,37 @@ model OcrDraft {
   @@index([tenantId, ocrJobId])
   @@index([tenantId, status])
   @@map("ocr_drafts")
+}
+
+// OCR-detected visual asset (figure / table / circuit / chemistry structure)
+// attached to a draft. Explicitly 1:many (draft -> many figures) so that real
+// coaching-centre questions with multiple diagrams or image-based options work
+// naturally. Stays empty until figure detection ships (Phase B); the table is
+// defined now to lock the data-model contract in advance.
+//
+// When a draft is approved into a Question, the figure refs flow into
+// Question.payload.imageRefs[] (formalized DTO landing with figure detection).
+model OcrDraftFigure {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  draftId       String   @map("draft_id") @db.Uuid
+  /// Position within the draft (stem / option-image / solution-image, etc.).
+  figureIndex   Int      @map("figure_index")
+  /// Storage key (R2/S3) - same Upload category as the snipping-tool uploads.
+  storageKey    String   @map("storage_key")
+  /// Pixel-coord box on the source page: { x, y, w, h, page }.
+  boundingBox   Json     @map("bounding_box")
+  /// Detected role: 'figure' | 'table' | 'option_image' | 'solution_image'.
+  kind          String
+  /// Optional caption / alt-text.
+  caption       String?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  draft  OcrDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, draftId])
+  @@map("ocr_draft_figures")
 }
 
 model Question {
@@ -336,6 +492,7 @@ model Question {
   topic           String?      // denormalized for analytics rollups (TopicReport)
   difficulty      Difficulty   @default(MEDIUM)
   isActive        Boolean      @default(true) @map("is_active")
+  branchId        String?      @map("branch_id") @db.Uuid
   createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -346,11 +503,14 @@ model Question {
   subjectRef    Subject?         @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   topicRef      Topic?           @relation(fields: [topicId], references: [id], onDelete: SetNull)
   chapterRef    Chapter?         @relation(fields: [chapterId], references: [id], onDelete: SetNull)
-  options       QuestionOption[]
-  sourceDraft   OcrDraft?
-  examQuestions ExamQuestion[]
-  questionStat  QuestionStat?
+  branch        Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  options            QuestionOption[]
+  sourceDraft        OcrDraft?
+  examQuestions      ExamQuestion[]
+  questionStat       QuestionStat?
+  questionPaperLinks QuestionPaperQuestion[]
 
+  @@index([tenantId, branchId])
   @@index([tenantId, subject, topic])
   @@index([tenantId, programId, subjectId])
   @@index([tenantId, chapterId])
@@ -409,6 +569,7 @@ model Exam {
   defaultNegativeMarks   Decimal    @default(0) @map("default_negative_marks") @db.Decimal(5, 2)
   randomizeQuestions     Boolean    @default(false) @map("randomize_questions")
   randomizeOptions       Boolean    @default(false) @map("randomize_options")
+  kind                   ExamKind   @default(TEST)
   status                 ExamStatus @default(DRAFT)
   opensAt                DateTime?  @map("opens_at") @db.Timestamptz(6)
   closesAt               DateTime?  @map("closes_at") @db.Timestamptz(6)
@@ -417,6 +578,11 @@ model Exam {
   antiCheatConfig        Json       @default("{}") @map("anti_cheat_config")
   programId              String?    @map("program_id") @db.Uuid
   subjectId              String?    @map("subject_id") @db.Uuid
+  branchId               String?    @map("branch_id") @db.Uuid
+  // Provenance: the QuestionPaper this exam was snapshotted from (if any).
+  // The exam owns its own copied ExamQuestion rows, so deleting/editing the
+  // paper never changes this exam (SetNull on paper delete).
+  sourcePaperId          String?    @map("source_paper_id") @db.Uuid
   createdAt              DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt              DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -424,14 +590,18 @@ model Exam {
   creator      User              @relation("ExamCreator", fields: [createdBy], references: [id], onDelete: Cascade)
   program      Program?          @relation(fields: [programId], references: [id], onDelete: SetNull)
   subject      Subject?          @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  branch       Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  sourcePaper  QuestionPaper?    @relation(fields: [sourcePaperId], references: [id], onDelete: SetNull)
   sections     ExamSection[]
   questions    ExamQuestion[]
   assignments  ExamAssignment[]
   attempts     ExamAttempt[]
 
+  @@index([tenantId, branchId])
   @@index([tenantId, status])
   @@index([tenantId, createdBy])
   @@index([tenantId, programId, subjectId])
+  @@index([tenantId, kind, status])
   @@map("exams")
 }
 
@@ -492,6 +662,53 @@ model ExamAssignment {
 
   @@index([tenantId, examId])
   @@map("exam_assignments")
+}
+
+// Standalone, reusable academic asset composed from the Question Bank. Fully
+// decoupled from Exam: papers have their own lifecycle (DRAFT/PUBLISHED/ARCHIVED)
+// and are SNAPSHOTTED into an Exam at exam-creation time (see Exam.sourcePaperId),
+// so later paper edits never alter historical exams and vice-versa.
+model QuestionPaper {
+  id                   String              @id @default(uuid()) @db.Uuid
+  tenantId             String              @map("tenant_id") @db.Uuid
+  branchId             String?             @map("branch_id") @db.Uuid
+  createdBy            String              @map("created_by") @db.Uuid
+  title                String
+  description          String?
+  programId            String?             @map("program_id") @db.Uuid
+  subjectId            String?             @map("subject_id") @db.Uuid
+  durationSeconds      Int                 @map("duration_seconds")
+  defaultNegativeMarks Decimal             @default(0) @map("default_negative_marks") @db.Decimal(5, 2)
+  totalMarks           Decimal             @default(0) @map("total_marks") @db.Decimal(8, 2)
+  status               QuestionPaperStatus @default(DRAFT)
+  archivedAt           DateTime?           @map("archived_at") @db.Timestamptz(6)
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant    Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  questions QuestionPaperQuestion[]
+  exams     Exam[]
+
+  @@index([tenantId, branchId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdBy])
+  @@map("question_papers")
+}
+
+model QuestionPaperQuestion {
+  id            String  @id @default(uuid()) @db.Uuid
+  paperId       String  @map("paper_id") @db.Uuid
+  questionId    String  @map("question_id") @db.Uuid
+  position      Int
+  marks         Decimal @default(1) @db.Decimal(6, 2)
+  negativeMarks Decimal @default(0) @map("negative_marks") @db.Decimal(5, 2)
+
+  paper    QuestionPaper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  question Question      @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([paperId, questionId])
+  @@index([paperId])
+  @@map("question_paper_questions")
 }
 
 model ExamAttempt {

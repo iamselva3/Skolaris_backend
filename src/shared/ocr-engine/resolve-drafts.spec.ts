@@ -30,7 +30,14 @@ const lowConfResult = (): OcrEngineResult => ({
 const nodeResult = (over: Partial<OcrEngineResult> = {}): OcrEngineResult => ({
   providerUsed: 'tesseract',
   overallConfidence: 0.95,
-  drafts: [{ position: 0, text: 'A clear printed question with plenty of words', detectedType: 'DESCRIPTIVE', confidence: 0.95 }],
+  drafts: [
+    {
+      position: 0,
+      text: 'A clear printed question with plenty of words',
+      detectedType: 'DESCRIPTIVE',
+      confidence: 0.95,
+    },
+  ],
   ...over,
 });
 
@@ -42,7 +49,10 @@ describe('resolveDrafts', () => {
     const out = await resolveDrafts(bytes, 'image/png', 'k.png', { settings: settings(false) });
     expect(out.kind).toBe('node');
     expect(mockExtract).toHaveBeenCalledTimes(1);
-    expect(mockExtract).toHaveBeenCalledWith(bytes, 'image/png'); // no 3rd arg => recognize() unchanged
+    // storageKey is now plumbed through so the Slice 2.2 Paddle dispatcher can
+    // reach the read-proxy when PRINTED_OCR_VIA_PADDLE=true. With the flag off,
+    // extractDrafts ignores it and runs byte-identically to before.
+    expect(mockExtract).toHaveBeenCalledWith(bytes, 'image/png', { storageKey: 'k.png' });
   });
 
   it('flag ON + high-confidence printed: keeps Node result, requests words', async () => {
@@ -58,7 +68,10 @@ describe('resolveDrafts', () => {
     );
     const out = await resolveDrafts(bytes, 'image/png', 'k.png', { settings: settings(true) });
     expect(out.kind).toBe('node');
-    expect(mockExtract).toHaveBeenCalledWith(bytes, 'image/png', { withWords: true });
+    expect(mockExtract).toHaveBeenCalledWith(bytes, 'image/png', {
+      withWords: true,
+      storageKey: 'k.png',
+    });
   });
 
   it('flag ON + low-confidence handwriting-like: routes to the Python fallback', async () => {
@@ -90,7 +103,9 @@ describe('resolveDrafts', () => {
 
   it('SHADOW mode: would-route input is NOT routed (Node result kept)', async () => {
     mockExtract.mockResolvedValue(lowConfResult());
-    const out = await resolveDrafts(bytes, 'image/png', 'k.png', { settings: settings(true, true) });
+    const out = await resolveDrafts(bytes, 'image/png', 'k.png', {
+      settings: settings(true, true),
+    });
     expect(out.kind).toBe('node'); // classifier would route, but shadow suppresses it
   });
 });

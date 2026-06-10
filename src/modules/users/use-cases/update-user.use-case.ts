@@ -22,6 +22,7 @@ export interface UpdateUserInput {
   password?: string;
   branchId?: string | null;
   status?: UserStatus;
+  phone?: string | null;
 }
 
 @Injectable()
@@ -44,6 +45,7 @@ export class UpdateUserUseCase {
     const update: RepoUpdateUserInput = {};
 
     if (input.name !== undefined) update.name = input.name;
+    if (input.phone !== undefined) update.phone = input.phone;
     if (input.password !== undefined) {
       update.passwordHash = await argon2.hash(input.password, { type: argon2.argon2id });
     }

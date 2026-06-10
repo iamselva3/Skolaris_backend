@@ -1,9 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { TenantModel, TenantStatus } from '../models/tenant.model';
-import {
-  ITenantRepository,
-  TENANT_REPOSITORY,
-} from '../repositories/tenant.repository';
+import { ITenantRepository, TENANT_REPOSITORY } from '../repositories/tenant.repository';
 
 export interface UpdateTenantInput {
   id: string;

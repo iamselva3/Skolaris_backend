@@ -31,7 +31,20 @@ const upload = (overrides: Partial<UploadModel> = {}): UploadModel =>
   );
 
 const job = (id = 'job-1'): OcrJobModel =>
-  new OcrJobModel(id, 't-1', 'u-1', new Date(), null, null, null, null, null, null, new Date(), new Date());
+  new OcrJobModel(
+    id,
+    't-1',
+    'u-1',
+    new Date(),
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    new Date(),
+    new Date(),
+  );
 
 describe('CompleteUploadUseCase', () => {
   let uploads: jest.Mocked<IUploadRepository>;
@@ -48,6 +61,8 @@ describe('CompleteUploadUseCase', () => {
       updateStatus: jest.fn().mockImplementation(async (_t, _id, status) => upload({ status })),
       failStuckProcessing: jest.fn(),
       remove: jest.fn(),
+      assignBatch: jest.fn(),
+      listByBatch: jest.fn(),
     };
     ocrJobs = {
       create: jest.fn().mockResolvedValue(job()),
@@ -57,12 +72,14 @@ describe('CompleteUploadUseCase', () => {
       countDraftsByStatus: jest.fn(),
       markFinished: jest.fn(),
       markFailed: jest.fn(),
+      updateProgress: jest.fn(),
     };
     storage = {
       createSignedUploadUrl: jest.fn(),
       deleteObject: jest.fn(),
       objectExists: jest.fn().mockResolvedValue(true),
       getObject: jest.fn(),
+      putObject: jest.fn(),
     };
     dispatcher = {
       enqueue: jest.fn().mockResolvedValue('job-1'),

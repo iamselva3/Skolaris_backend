@@ -1,9 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { TenantModel } from '../models/tenant.model';
-import {
-  ITenantRepository,
-  TENANT_REPOSITORY,
-} from '../repositories/tenant.repository';
+import { ITenantRepository, TENANT_REPOSITORY } from '../repositories/tenant.repository';
 
 @Injectable()
 export class GetTenantUseCase {

@@ -2,10 +2,7 @@ import { ConflictException, Inject, Injectable, NotFoundException } from '@nestj
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { SubjectModel } from '../models/taxonomy.models';
-import {
-  ITaxonomyRepository,
-  TAXONOMY_REPOSITORY,
-} from '../repositories/taxonomy.repository';
+import { ITaxonomyRepository, TAXONOMY_REPOSITORY } from '../repositories/taxonomy.repository';
 
 @Injectable()
 export class ListSubjectsUseCase {
@@ -93,9 +90,6 @@ export class ListMySubjectsUseCase {
 
 function isUniqueConstraintError(e: unknown): boolean {
   return (
-    typeof e === 'object' &&
-    e !== null &&
-    'code' in e &&
-    (e as { code: string }).code === 'P2002'
+    typeof e === 'object' && e !== null && 'code' in e && (e as { code: string }).code === 'P2002'
   );
 }

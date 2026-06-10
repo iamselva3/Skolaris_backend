@@ -12,7 +12,22 @@ describe('ListUsersUseCase', () => {
       findByEmail: jest.fn(),
       findByEmailGlobal: jest.fn(),
       list: jest.fn().mockResolvedValue({
-        data: [new UserModel('u', 't', null, 'a@b.test', 'h', 'A', Role.STUDENT, 'ACTIVE', null, new Date(), new Date())],
+        data: [
+          new UserModel(
+            'u',
+            't',
+            null,
+            'a@b.test',
+            null,
+            'h',
+            'A',
+            Role.STUDENT,
+            'ACTIVE',
+            null,
+            new Date(),
+            new Date(),
+          ),
+        ],
         total: 1,
       }),
       update: jest.fn(),

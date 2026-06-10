@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PaginatedResponse } from '../../../shared/common/dtos/paginated-response.dto';
 import { TenantModel } from '../models/tenant.model';
-import {
-  ITenantRepository,
-  TENANT_REPOSITORY,
-} from '../repositories/tenant.repository';
+import { ITenantRepository, TENANT_REPOSITORY } from '../repositories/tenant.repository';
 
 @Injectable()
 export class ListTenantsUseCase {

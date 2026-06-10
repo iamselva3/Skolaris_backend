@@ -89,18 +89,44 @@ export const resolveDrafts = async (
   bytes: Buffer,
   mime: string,
   storageKey: string,
-  deps: { settings: HandwritingSettings },
+  deps: {
+    settings: HandwritingSettings;
+    /** Slice 2.3 — server-side direct upload for OCR-detected figure crops. */
+    putObject?: (key: string, body: Buffer, contentType: string) => Promise<void>;
+    /** Key prefix for figure uploads, e.g. `tenants/{T}/ocr-figures`. */
+    figureKeyPrefix?: string;
+    /** Phase 2 — per-page progress callback for the live OCR review UX. */
+    onPageComplete?: (processed: number, total: number) => Promise<void> | void;
+  },
 ): Promise<ResolveOutcome> => {
-  const { settings } = deps;
+  const { settings, putObject, figureKeyPrefix, onPageComplete } = deps;
 
-  // Flag OFF: exact current behaviour.
+  // Flag OFF: exact current behaviour. storageKey + figure upload + progress
+  // hooks are plumbed through so the Slice 2.2 Paddle dispatcher, Slice 2.3
+  // figure pipeline, and Phase 2 live-progress UX all engage when their
+  // respective flags are on. With handwriting flag off this remains
+  // byte-identical to today.
   if (!settings.enabled) {
-    return { kind: 'node', result: await extractDrafts(bytes, mime) };
+    return {
+      kind: 'node',
+      result: await extractDrafts(bytes, mime, {
+        storageKey,
+        putObject,
+        figureKeyPrefix,
+        onPageComplete,
+      }),
+    };
   }
 
   // Flag ON: first pass WITH word stats (extraction errors propagate to the
   // caller's existing try/catch exactly as before).
-  const result = await extractDrafts(bytes, mime, { withWords: true });
+  const result = await extractDrafts(bytes, mime, {
+    withWords: true,
+    storageKey,
+    putObject,
+    figureKeyPrefix,
+    onPageComplete,
+  });
 
   try {
     const pre = await preRoute({ storageKey, mime, bytes }, settings.routing);

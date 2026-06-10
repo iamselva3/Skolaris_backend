@@ -21,6 +21,9 @@ export class GradingService {
     [QuestionType.MATCH_FOLLOWING]: new MatchFollowingStrategy(),
     [QuestionType.MATRIX_MATCH]: new MatrixMatchStrategy(),
     [QuestionType.DESCRIPTIVE]: new DescriptiveStrategy(),
+    // VISUAL is single-correct over positional options (matched by option id),
+    // so it grades identically to SINGLE_CHOICE.
+    [QuestionType.VISUAL]: new SingleChoiceStrategy(),
   };
 
   grade(question: GradingQuestion, answer: GradingAnswer): GradingResult {

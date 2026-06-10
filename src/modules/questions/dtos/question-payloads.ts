@@ -94,6 +94,18 @@ export class DescriptivePayloadDto {
   @IsOptional() @IsInt() @Min(1) @Max(10000) maxWords?: number;
 }
 
+// VISUAL: the whole question is a single image carried in `contentHtml` (an
+// <img> produced by the upload/snip pipeline). The teacher marks one of N
+// positional options correct; option text is NOT stored (it lives in the
+// image). `optionCount` is the number of answer slots shown (2..6).
+export class VisualPayloadDto {
+  @IsString() @MinLength(1) @MaxLength(50_000) contentHtml!: string;
+
+  @IsOptional() @IsString() @MaxLength(2000) explanation?: string;
+
+  @IsInt() @Min(2) @Max(6) optionCount!: number;
+}
+
 /* ---- DTO option (used when type is choice-based) ----------------------------- */
 
 export class QuestionOptionDto {
@@ -128,6 +140,8 @@ export const payloadClassFor = (type: QuestionType): unknown => {
       return MatrixMatchPayloadDto;
     case QuestionType.DESCRIPTIVE:
       return DescriptivePayloadDto;
+    case QuestionType.VISUAL:
+      return VisualPayloadDto;
     default: {
       const _exhaustive: never = type;
       throw new Error(`Unknown question type: ${String(_exhaustive)}`);

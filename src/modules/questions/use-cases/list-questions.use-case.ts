@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PaginatedResponse } from '../../../shared/common/dtos/paginated-response.dto';
 import { Difficulty, QuestionType } from '../models/question-type.enum';
 import { QuestionWithOptions } from '../models/question.model';
-import {
-  IQuestionRepository,
-  QUESTION_REPOSITORY,
-} from '../repositories/question.repository';
+import { IQuestionRepository, QUESTION_REPOSITORY } from '../repositories/question.repository';
 
 @Injectable()
 export class ListQuestionsUseCase {

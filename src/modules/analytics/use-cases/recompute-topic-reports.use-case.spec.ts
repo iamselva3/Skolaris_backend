@@ -41,8 +41,6 @@ describe('RecomputeTopicReportsForStudentUseCase', () => {
       { subject: 'Math', topic: 'Algebra', total: 10, correct: 8 },
     ]);
     await useCase.execute({ tenantId: 't', studentId: 's' });
-    expect(repo.upsertTopicReport).toHaveBeenCalledWith(
-      expect.objectContaining({ isWeak: false }),
-    );
+    expect(repo.upsertTopicReport).toHaveBeenCalledWith(expect.objectContaining({ isWeak: false }));
   });
 });

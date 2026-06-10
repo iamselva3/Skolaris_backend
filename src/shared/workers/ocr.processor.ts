@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-  Inject,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Inject } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { Worker } from 'bullmq';
 import { Redis } from 'ioredis';

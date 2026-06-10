@@ -28,9 +28,7 @@ export class AutoSubmitExpiredCron {
         });
         await this.grader.execute({ tenantId: a.tenantId, attemptId: a.id });
       } catch (err) {
-        this.logger.warn(
-          `Auto-submit failed for attempt ${a.id}: ${(err as Error).message}`,
-        );
+        this.logger.warn(`Auto-submit failed for attempt ${a.id}: ${(err as Error).message}`);
       }
     }
     this.logger.log(`Auto-submitted ${expired.length} expired attempt(s)`);

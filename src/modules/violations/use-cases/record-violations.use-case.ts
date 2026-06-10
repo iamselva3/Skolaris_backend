@@ -13,10 +13,7 @@ import {
   IExamAttemptRepository,
 } from '../../attempts/repositories/exam-attempt.repository';
 import { ViolationType } from '../models/violation.model';
-import {
-  IViolationRepository,
-  VIOLATION_REPOSITORY,
-} from '../repositories/violation.repository';
+import { IViolationRepository, VIOLATION_REPOSITORY } from '../repositories/violation.repository';
 
 export interface RecordViolationsResult {
   inserted: number;
@@ -79,20 +76,13 @@ export class RecordViolationsUseCase {
 
       const totalCount = updated.violationCount;
       const tabSwitchCount = input.events.some((e) => e.type === 'TAB_SWITCH')
-        ? await this.violations.countByAttemptAndType(
-            input.tenantId,
-            input.attemptId,
-            'TAB_SWITCH',
-          )
+        ? await this.violations.countByAttemptAndType(input.tenantId, input.attemptId, 'TAB_SWITCH')
         : 0;
 
       let autoSubmitted = false;
       let flagged = false;
 
-      if (
-        cfg.totalViolationThreshold > 0 &&
-        totalCount >= cfg.totalViolationThreshold
-      ) {
+      if (cfg.totalViolationThreshold > 0 && totalCount >= cfg.totalViolationThreshold) {
         autoSubmitted = true;
       }
       if (

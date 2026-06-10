@@ -24,7 +24,8 @@ const EXT_MIME: Record<string, string> = {
   webp: 'image/webp',
   heic: 'image/heic',
 };
-const inferMime = (key: string): string => EXT_MIME[key.toLowerCase().split('.').pop() ?? ''] ?? 'application/octet-stream';
+const inferMime = (key: string): string =>
+  EXT_MIME[key.toLowerCase().split('.').pop() ?? ''] ?? 'application/octet-stream';
 
 /**
  * S3-compatible object storage. Works with real AWS S3, Cloudflare R2, and
@@ -132,7 +133,20 @@ export class S3Storage implements IObjectStorage {
       new GetObjectCommand({ Bucket: this.bucket, Key: storageKey }),
     );
     if (!res.Body) throw new Error(`Empty body for ${storageKey}`);
-    const bytes = await (res.Body as { transformToByteArray: () => Promise<Uint8Array> }).transformToByteArray();
+    const bytes = await (
+      res.Body as { transformToByteArray: () => Promise<Uint8Array> }
+    ).transformToByteArray();
     return { body: Buffer.from(bytes), contentType: res.ContentType ?? inferMime(storageKey) };
+  }
+
+  async putObject(storageKey: string, body: Buffer, contentType: string): Promise<void> {
+    await this.client().send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: storageKey,
+        Body: body,
+        ContentType: contentType,
+      }),
+    );
   }
 }

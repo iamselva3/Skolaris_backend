@@ -10,13 +10,7 @@ import {
   Min,
 } from 'class-validator';
 
-const ALLOWED_MIME = [
-  'application/pdf',
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/heic',
-];
+const ALLOWED_MIME = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic'];
 
 /**
  * Storage categories → top-level folder under `tenants/<id>/`. Whitelisted so

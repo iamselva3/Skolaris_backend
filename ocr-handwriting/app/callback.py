@@ -11,6 +11,7 @@ import hmac
 import json
 from typing import Any, List, Optional
 
+# pyrefly: ignore [missing-import]
 import httpx
 
 from .config import settings
@@ -68,6 +69,8 @@ async def post_callback(payload: dict) -> dict:
     except Exception:  # noqa: BLE001 - benign; the API always returns JSON on 200
         return {}
 
+
+from dataclasses import asdict, is_dataclass
 
 # asdict import kept for parity with dataclass payloads if a caller passes them.
 _ = (asdict, is_dataclass)

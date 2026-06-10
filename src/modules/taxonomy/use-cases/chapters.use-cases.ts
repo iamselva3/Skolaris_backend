@@ -1,10 +1,13 @@
-import { ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { ChapterModel } from '../models/taxonomy.models';
-import {
-  ITaxonomyRepository,
-  TAXONOMY_REPOSITORY,
-} from '../repositories/taxonomy.repository';
+import { ITaxonomyRepository, TAXONOMY_REPOSITORY } from '../repositories/taxonomy.repository';
 
 @Injectable()
 export class ListChaptersUseCase {
@@ -38,13 +41,6 @@ export class CreateChapterUseCase {
     const topic = await this.repo.getTopic(input.tenantId, input.topicId);
     if (!topic) throw new NotFoundException('Topic not found');
 
-    if (input.role === Role.TEACHER) {
-      const mine = await this.repo.listSubjectsForTeacher(input.tenantId, input.userId);
-      if (!mine.some((s) => s.id === topic.subjectId)) {
-        throw new ForbiddenException('Teachers may only add chapters under assigned subjects');
-      }
-    }
-
     try {
       return await this.repo.createChapter({
         tenantId: input.tenantId,
@@ -75,14 +71,6 @@ export class UpdateChapterUseCase {
     const existing = await this.repo.getChapter(input.tenantId, input.id);
     if (!existing) throw new NotFoundException('Chapter not found');
 
-    if (input.role === Role.TEACHER) {
-      const topic = await this.repo.getTopic(input.tenantId, existing.topicId);
-      const mine = await this.repo.listSubjectsForTeacher(input.tenantId, input.userId);
-      if (!topic || !mine.some((s) => s.id === topic.subjectId)) {
-        throw new ForbiddenException('Teachers may only edit chapters under assigned subjects');
-      }
-    }
-
     return this.repo.updateChapter(input.tenantId, input.id, {
       name: input.name,
       position: input.position,
@@ -102,9 +90,6 @@ export class DeleteChapterUseCase {
 
 function isUniqueConstraintError(e: unknown): boolean {
   return (
-    typeof e === 'object' &&
-    e !== null &&
-    'code' in e &&
-    (e as { code: string }).code === 'P2002'
+    typeof e === 'object' && e !== null && 'code' in e && (e as { code: string }).code === 'P2002'
   );
 }

@@ -91,10 +91,7 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     });
     const total = rows.length;
     const correct = rows.filter((r) => r.isCorrect === true).length;
-    const avgTime =
-      total === 0
-        ? 0
-        : rows.reduce((acc, r) => acc + r.timeSpentSeconds, 0) / total;
+    const avgTime = total === 0 ? 0 : rows.reduce((acc, r) => acc + r.timeSpentSeconds, 0) / total;
     return { total, correct, avgTime };
   }
 
@@ -115,7 +112,10 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
         examQuestion: { select: { question: { select: { subject: true, topic: true } } } },
       },
     });
-    const bucket = new Map<string, { subject: string; topic: string; total: number; correct: number }>();
+    const bucket = new Map<
+      string,
+      { subject: string; topic: string; total: number; correct: number }
+    >();
     for (const r of rows) {
       const subject = r.examQuestion.question.subject;
       const topic = r.examQuestion.question.topic;
@@ -149,7 +149,13 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
       select: { totalMarks: true },
     });
     const totalMarks = Number(exam.totalMarks) || 1;
-    const buckets: Record<string, number> = { '0-20': 0, '20-40': 0, '40-60': 0, '60-80': 0, '80-100': 0 };
+    const buckets: Record<string, number> = {
+      '0-20': 0,
+      '20-40': 0,
+      '40-60': 0,
+      '60-80': 0,
+      '80-100': 0,
+    };
     for (const s of gradedScores) {
       const pct = (s / totalMarks) * 100;
       if (pct < 20) buckets['0-20'] += 1;

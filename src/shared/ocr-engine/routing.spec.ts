@@ -18,7 +18,11 @@ const noHintPre: PreRouteResult = {
 
 describe('routing/wordStatsFromConfidences', () => {
   it('returns zeros for no words', () => {
-    expect(wordStatsFromConfidences([], 60)).toEqual({ wordCount: 0, medianWordConfidence: 0, lowWordRatio: 0 });
+    expect(wordStatsFromConfidences([], 60)).toEqual({
+      wordCount: 0,
+      medianWordConfidence: 0,
+      lowWordRatio: 0,
+    });
   });
 
   it('computes median and low-word ratio', () => {
@@ -45,7 +49,14 @@ describe('routing/decideRoute', () => {
 
   it('forces Node when pre-verdict is MACHINE_TEXT', () => {
     const d = decideRoute(
-      signalWith({ pre: { verdict: 'MACHINE_TEXT', forceNode: true, isAnswerSheetHint: false, embeddedCharsPerPage: 500 } }),
+      signalWith({
+        pre: {
+          verdict: 'MACHINE_TEXT',
+          forceNode: true,
+          isAnswerSheetHint: false,
+          embeddedCharsPerPage: 500,
+        },
+      }),
       cfg,
     );
     expect(d.route).toBe(false);
@@ -74,9 +85,15 @@ describe('routing/decideRoute', () => {
   });
 
   it('small sample trusts confidence only', () => {
-    const small = signalWith({ overallConfidence: 0.4, words: { wordCount: 3, medianWordConfidence: 0, lowWordRatio: 0 } });
+    const small = signalWith({
+      overallConfidence: 0.4,
+      words: { wordCount: 3, medianWordConfidence: 0, lowWordRatio: 0 },
+    });
     expect(decideRoute(small, cfg).route).toBe(true);
-    const smallHigh = signalWith({ overallConfidence: 0.95, words: { wordCount: 3, medianWordConfidence: 0, lowWordRatio: 0 } });
+    const smallHigh = signalWith({
+      overallConfidence: 0.95,
+      words: { wordCount: 3, medianWordConfidence: 0, lowWordRatio: 0 },
+    });
     expect(decideRoute(smallHigh, cfg).route).toBe(false);
   });
 });
@@ -84,7 +101,14 @@ describe('routing/decideRoute', () => {
 describe('routing/computeSignal + preRoute', () => {
   it('derives charsPerPage and nearEmpty from the engine output', () => {
     const sig = computeSignal(
-      { mime: 'application/pdf', overallConfidence: 0.5, text: 'abc', pageCount: 1, wordConfidences: [50], sentinel: false },
+      {
+        mime: 'application/pdf',
+        overallConfidence: 0.5,
+        text: 'abc',
+        pageCount: 1,
+        wordConfidences: [50],
+        sentinel: false,
+      },
       noHintPre,
       cfg,
     );

@@ -1,10 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../database/prisma.service';
-import {
-  ANALYTICS_DISPATCHER,
-  IAnalyticsDispatcher,
-} from '../queue/analytics-dispatcher';
+import { ANALYTICS_DISPATCHER, IAnalyticsDispatcher } from '../queue/analytics-dispatcher';
 
 @Injectable()
 export class TransitionExamStatusCron {

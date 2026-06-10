@@ -67,10 +67,7 @@ export class TenantsController {
 
   @Roles(Role.SUPER_ADMIN)
   @Patch(':id')
-  async update(
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: UpdateTenantDto,
-  ) {
+  async update(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateTenantDto) {
     const tenant = await this.updateTenantUseCase.execute({
       id,
       name: dto.name,

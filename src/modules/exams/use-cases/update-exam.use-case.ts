@@ -49,14 +49,28 @@ export class UpdateExamUseCase {
     const update: RepoUpdate = {};
     const isEditable = target.isEditable();
 
-    if (input.title !== undefined) this.assertEditable(isEditable, 'title'), (update.title = input.title);
-    if (input.description !== undefined) this.assertEditable(isEditable, 'description'), (update.description = input.description);
-    if (input.durationSeconds !== undefined) this.assertEditable(isEditable, 'durationSeconds'), (update.durationSeconds = input.durationSeconds);
-    if (input.defaultNegativeMarks !== undefined) this.assertEditable(isEditable, 'defaultNegativeMarks'), (update.defaultNegativeMarks = input.defaultNegativeMarks);
-    if (input.randomizeQuestions !== undefined) this.assertEditable(isEditable, 'randomizeQuestions'), (update.randomizeQuestions = input.randomizeQuestions);
-    if (input.randomizeOptions !== undefined) this.assertEditable(isEditable, 'randomizeOptions'), (update.randomizeOptions = input.randomizeOptions);
-    if (input.opensAt !== undefined) this.assertEditable(isEditable, 'opensAt'), (update.opensAt = input.opensAt ? new Date(input.opensAt) : null);
-    if (input.antiCheatConfig !== undefined) this.assertEditable(isEditable, 'antiCheatConfig'), (update.antiCheatConfig = input.antiCheatConfig);
+    if (input.title !== undefined)
+      (this.assertEditable(isEditable, 'title'), (update.title = input.title));
+    if (input.description !== undefined)
+      (this.assertEditable(isEditable, 'description'), (update.description = input.description));
+    if (input.durationSeconds !== undefined)
+      (this.assertEditable(isEditable, 'durationSeconds'),
+        (update.durationSeconds = input.durationSeconds));
+    if (input.defaultNegativeMarks !== undefined)
+      (this.assertEditable(isEditable, 'defaultNegativeMarks'),
+        (update.defaultNegativeMarks = input.defaultNegativeMarks));
+    if (input.randomizeQuestions !== undefined)
+      (this.assertEditable(isEditable, 'randomizeQuestions'),
+        (update.randomizeQuestions = input.randomizeQuestions));
+    if (input.randomizeOptions !== undefined)
+      (this.assertEditable(isEditable, 'randomizeOptions'),
+        (update.randomizeOptions = input.randomizeOptions));
+    if (input.opensAt !== undefined)
+      (this.assertEditable(isEditable, 'opensAt'),
+        (update.opensAt = input.opensAt ? new Date(input.opensAt) : null));
+    if (input.antiCheatConfig !== undefined)
+      (this.assertEditable(isEditable, 'antiCheatConfig'),
+        (update.antiCheatConfig = input.antiCheatConfig));
 
     if (input.programId !== undefined || input.subjectId !== undefined) {
       this.assertEditable(isEditable, 'taxonomy');
@@ -87,9 +101,7 @@ export class UpdateExamUseCase {
 
   private assertEditable(isEditable: boolean, field: string): void {
     if (!isEditable) {
-      throw new ConflictException(
-        `Field "${field}" cannot be changed after the exam is published`,
-      );
+      throw new ConflictException(`Field "${field}" cannot be changed after the exam is published`);
     }
   }
 }

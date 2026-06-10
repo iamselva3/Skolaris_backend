@@ -38,8 +38,8 @@ export interface StartAttemptResult {
     examQuestionId: string;
     questionId: string;
     type: string;
-    payload: Record<string, unknown>;     // sanitized — no answer-key fields
-    options: Array<{ id: string; label: string; position: number }>;  // no isCorrect
+    payload: Record<string, unknown>; // sanitized — no answer-key fields
+    options: Array<{ id: string; label: string; position: number }>; // no isCorrect
     marks: number;
     negativeMarks: number;
   }>;
@@ -107,9 +107,14 @@ export class StartAttemptUseCase {
         label: o.label,
         position: o.position,
       }));
-      const finalOpts = exam.randomizeOptions ? seededShuffle(opts, attempt.questionOrderSeed) : opts;
+      const finalOpts = exam.randomizeOptions
+        ? seededShuffle(opts, attempt.questionOrderSeed)
+        : opts;
       // Sanitize payload — strip fields that reveal the answer for non-choice types.
-      const payload = sanitizePayload(eq.question.type, eq.question.payload as Record<string, unknown>);
+      const payload = sanitizePayload(
+        eq.question.type,
+        eq.question.payload as Record<string, unknown>,
+      );
       return {
         examQuestionId: eq.id,
         questionId: eq.questionId,

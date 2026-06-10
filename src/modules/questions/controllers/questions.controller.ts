@@ -21,10 +21,7 @@ import { PaginatedResponse } from '../../../shared/common/dtos/paginated-respons
 import { Role } from '../../../shared/common/enums/role.enum';
 import { CreateQuestionDto } from '../dtos/create-question.dto';
 import { ListQuestionsQueryDto } from '../dtos/list-questions-query.dto';
-import {
-  QuestionResponse,
-  toQuestionResponse,
-} from '../dtos/question-response.dto';
+import { QuestionResponse, toQuestionResponse } from '../dtos/question-response.dto';
 import { UpdateQuestionDto } from '../dtos/update-question.dto';
 import { CreateQuestionUseCase } from '../use-cases/create-question.use-case';
 import { DeleteQuestionUseCase } from '../use-cases/delete-question.use-case';

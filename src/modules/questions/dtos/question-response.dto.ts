@@ -27,7 +27,10 @@ export interface QuestionResponse {
   updatedAt: string;
 }
 
-export const toQuestionResponse = ({ question, options }: QuestionWithOptions): QuestionResponse => ({
+export const toQuestionResponse = ({
+  question,
+  options,
+}: QuestionWithOptions): QuestionResponse => ({
   id: question.id,
   tenantId: question.tenantId,
   createdBy: question.createdBy,

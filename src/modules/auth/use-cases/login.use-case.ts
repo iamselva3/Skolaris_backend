@@ -1,14 +1,8 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { AuthTokensResponse } from '../dtos/auth-response.dto';
-import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '../../users/repositories/user.repository';
-import {
-  ITenantRepository,
-  TENANT_REPOSITORY,
-} from '../../tenants/repositories/tenant.repository';
+import { IUserRepository, USER_REPOSITORY } from '../../users/repositories/user.repository';
+import { ITenantRepository, TENANT_REPOSITORY } from '../../tenants/repositories/tenant.repository';
 import {
   IRefreshTokenRepository,
   REFRESH_TOKEN_REPOSITORY,

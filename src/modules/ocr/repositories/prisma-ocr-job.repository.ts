@@ -54,6 +54,7 @@ export class PrismaOcrJobRepository implements IOcrJobRepository {
     overallConfidence: Decimal | null;
     rawOutput: unknown;
     providerUsed: string | null;
+    pageMetadata?: unknown | null;
   }): Promise<OcrJobModel> {
     const row = await this.prisma.ocrJob.update({
       where: { id: input.id },
@@ -66,6 +67,14 @@ export class PrismaOcrJobRepository implements IOcrJobRepository {
             ? Prisma.JsonNull
             : (input.rawOutput as Prisma.InputJsonValue),
         providerUsed: input.providerUsed,
+        ...(input.pageMetadata !== undefined
+          ? {
+              pageMetadata:
+                input.pageMetadata === null
+                  ? Prisma.JsonNull
+                  : (input.pageMetadata as Prisma.InputJsonValue),
+            }
+          : {}),
       },
     });
     return this.toModel(row);
@@ -77,6 +86,42 @@ export class PrismaOcrJobRepository implements IOcrJobRepository {
       data: { finishedAt: new Date(), errorMessage: input.errorMessage },
     });
     return this.toModel(row);
+  }
+
+  async updateProgress(
+    id: string,
+    progress: { stage?: string; processed?: number; total?: number; currentPage?: number },
+  ): Promise<void> {
+    // Read-modify-write merge — Prisma 5 can't deep-merge JSON columns natively.
+    // The rate of updates is bounded by page count (25-50 for typical NEET PDFs)
+    // so two queries per page is acceptable. If this becomes a hotspot, switch
+    // to a single $executeRawUnsafe with jsonb_set.
+    //
+    // ALSO touches Upload.updatedAt — that column is the StuckUploadsCron's
+    // liveness signal. Without this touch, long Paddle/Tesseract runs (>5 min)
+    // get falsely flipped to FAILED by the watchdog while the worker is still
+    // processing. A per-page tick keeps the upload row fresh for the watchdog
+    // and is byte-identical for every other consumer (status unchanged).
+    const row = await this.prisma.ocrJob.findUnique({
+      where: { id },
+      select: { progress: true, uploadId: true },
+    });
+    if (!row) return;
+    const current = (row.progress as Record<string, unknown> | null) ?? {};
+    const merged: Record<string, unknown> = { ...current };
+    for (const [k, v] of Object.entries(progress)) {
+      if (v !== undefined) merged[k] = v;
+    }
+    await this.prisma.$transaction([
+      this.prisma.ocrJob.update({
+        where: { id },
+        data: { progress: merged as unknown as Prisma.InputJsonValue },
+      }),
+      this.prisma.upload.update({
+        where: { id: row.uploadId },
+        data: { updatedAt: new Date() },
+      }),
+    ]);
   }
 
   private toModel(r: PrismaOcrJob): OcrJobModel {
@@ -93,6 +138,7 @@ export class PrismaOcrJobRepository implements IOcrJobRepository {
       r.providerUsed,
       r.createdAt,
       r.updatedAt,
+      r.progress ?? null,
     );
   }
 }

@@ -1,9 +1,4 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AttemptAnswerModel } from '../models/attempt-answer.model';
 import { ExamAttemptModel } from '../models/exam-attempt.model';
 import {
@@ -18,9 +13,7 @@ export interface MyAttemptDetail {
 
 @Injectable()
 export class GetMyAttemptUseCase {
-  constructor(
-    @Inject(EXAM_ATTEMPT_REPOSITORY) private readonly attempts: IExamAttemptRepository,
-  ) {}
+  constructor(@Inject(EXAM_ATTEMPT_REPOSITORY) private readonly attempts: IExamAttemptRepository) {}
 
   async execute(input: {
     tenantId: string;

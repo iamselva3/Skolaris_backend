@@ -63,9 +63,9 @@ describe('RecordViolationsUseCase', () => {
       submit: jest.fn().mockResolvedValue(attempt({ status: 'SUBMITTED' })),
       setStatus: jest.fn().mockResolvedValue(attempt()),
       setGradedScore: jest.fn(),
-      incrementViolationCount: jest.fn().mockImplementation(async (_, __, delta) =>
-        attempt({ violationCount: delta }),
-      ),
+      incrementViolationCount: jest
+        .fn()
+        .mockImplementation(async (_, __, delta) => attempt({ violationCount: delta })),
       findExpiredInProgress: jest.fn(),
       upsertAnswer: jest.fn(),
       listAnswers: jest.fn(),

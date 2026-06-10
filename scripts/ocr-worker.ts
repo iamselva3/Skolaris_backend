@@ -54,6 +54,8 @@ interface CallbackPayload {
   overallConfidence: number;
   drafts: OcrEngineDraft[];
   errorMessage?: string;
+  /** Per-page classification (PDFs only). Backend persists onto OcrJob.pageMetadata. */
+  pageMetadata?: Array<Record<string, unknown>>;
 }
 
 const env = (key: string, fallback?: string): string => {
@@ -146,8 +148,14 @@ const worker = new Worker<OcrExtractJob>(
         return;
       }
 
-      const { providerUsed, overallConfidence, drafts } = outcome.result;
-      await postCallback({ ocrJobId, providerUsed, overallConfidence, drafts });
+      const { providerUsed, overallConfidence, drafts, pageMetadata } = outcome.result;
+      await postCallback({
+        ocrJobId,
+        providerUsed,
+        overallConfidence,
+        drafts,
+        pageMetadata: pageMetadata as unknown as Array<Record<string, unknown>> | undefined,
+      });
       // eslint-disable-next-line no-console
       console.log(
         `[ocr-worker] job=${job.id} delivered ${drafts.length} draft(s) | total=${Date.now() - t0}ms provider=${providerUsed}`,

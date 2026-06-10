@@ -1,9 +1,6 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthTokensResponse } from '../dtos/auth-response.dto';
-import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '../../users/repositories/user.repository';
+import { IUserRepository, USER_REPOSITORY } from '../../users/repositories/user.repository';
 import {
   IRefreshTokenRepository,
   REFRESH_TOKEN_REPOSITORY,

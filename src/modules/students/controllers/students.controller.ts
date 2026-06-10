@@ -69,7 +69,10 @@ export class StudentsController {
     const r = await this.listStudentsUseCase.execute({
       tenantId: actor.tenantId,
       branchId: query.branchId,
-      classroomId: query.classroomId,
+      batch: query.batch,
+      section: query.section,
+      subject: query.subject,
+      unallocated: query.unallocated,
       q: query.q,
       limit: query.limit ?? 50,
       offset: query.offset ?? 0,

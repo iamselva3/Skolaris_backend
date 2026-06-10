@@ -1,4 +1,4 @@
-import { OcrDraftModel } from '../models/ocr-draft.model';
+import { AssignedTaxonomy, OcrDraftModel, SuggestedAnswer } from '../models/ocr-draft.model';
 import { OcrJobModel } from '../models/ocr-job.model';
 
 export interface OcrJobResponse {
@@ -24,6 +24,16 @@ export interface OcrDraftResponse {
   confidence: number | null;
   status: string;
   approvedQuestionId: string | null;
+  questionSnapshotKey: string | null;
+  optionCount: number | null;
+  /** Detected question number + invalid-crop flag (Question Navigator). */
+  questionNumber: number | null;
+  invalidCrop: boolean | null;
+  sourceCoordinates: Record<string, number> | null;
+  /** Pre-filled answer from an imported answer key; FE pre-selects it. */
+  suggestedAnswer: SuggestedAnswer | null;
+  /** Bulk-assigned taxonomy defaults; FE pre-fills the taxonomy selectors. */
+  assignedTaxonomy: AssignedTaxonomy;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +64,13 @@ export const toOcrDraftResponse = (d: OcrDraftModel): OcrDraftResponse => ({
   confidence: d.confidence ? Number(d.confidence) : null,
   status: d.status,
   approvedQuestionId: d.approvedQuestionId,
+  questionSnapshotKey: d.questionSnapshotKey ?? null,
+  optionCount: d.optionCount ?? null,
+  questionNumber: d.questionNumber ?? null,
+  invalidCrop: d.invalidCrop ?? null,
+  sourceCoordinates: d.sourceCoordinates ?? null,
+  suggestedAnswer: d.suggestedAnswer ?? null,
+  assignedTaxonomy: d.assignedTaxonomy ?? {},
   createdAt: d.createdAt.toISOString(),
   updatedAt: d.updatedAt.toISOString(),
 });

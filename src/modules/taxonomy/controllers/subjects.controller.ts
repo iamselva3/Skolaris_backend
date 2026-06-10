@@ -17,11 +17,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
 import { Role } from '../../../shared/common/enums/role.enum';
-import {
-  CreateSubjectDto,
-  ListSubjectsQueryDto,
-  UpdateSubjectDto,
-} from '../dtos/taxonomy.dtos';
+import { CreateSubjectDto, ListSubjectsQueryDto, UpdateSubjectDto } from '../dtos/taxonomy.dtos';
 import { SubjectModel } from '../models/taxonomy.models';
 import {
   CreateSubjectUseCase,
@@ -65,10 +61,7 @@ export class SubjectsController {
 
   @Roles(Role.SUPER_ADMIN, Role.TEACHER, Role.STUDENT)
   @Get(':id')
-  async get(
-    @CurrentUser() actor: AuthenticatedUser,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
+  async get(@CurrentUser() actor: AuthenticatedUser, @Param('id', new ParseUUIDPipe()) id: string) {
     const s = await this.getUC.execute({ tenantId: actor.tenantId, id });
     return { data: toResponse(s) };
   }
@@ -86,7 +79,7 @@ export class SubjectsController {
     return { data: toResponse(s) };
   }
 
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.TEACHER)
   @Patch(':id')
   async update(
     @CurrentUser() actor: AuthenticatedUser,

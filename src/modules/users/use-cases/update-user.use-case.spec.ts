@@ -13,7 +13,20 @@ const makeActor = (o: Partial<AuthenticatedUser>): AuthenticatedUser => ({
 });
 
 const makeTarget = (role: Role = Role.STUDENT) =>
-  new UserModel('u-target', 'tenant-1', null, 'a@b.test', 'h', 'A', role, 'ACTIVE', null, new Date(), new Date());
+  new UserModel(
+    'u-target',
+    'tenant-1',
+    null,
+    'a@b.test',
+    null,
+    'h',
+    'A',
+    role,
+    'ACTIVE',
+    null,
+    new Date(),
+    new Date(),
+  );
 
 describe('UpdateUserUseCase', () => {
   let users: jest.Mocked<IUserRepository>;
@@ -27,21 +40,25 @@ describe('UpdateUserUseCase', () => {
       findByEmail: jest.fn(),
       findByEmailGlobal: jest.fn(),
       list: jest.fn(),
-      update: jest.fn().mockImplementation(async (_t, id, input) =>
-        new UserModel(
-          id,
-          'tenant-1',
-          input.branchId ?? null,
-          'a@b.test',
-          input.passwordHash ?? 'h',
-          input.name ?? 'A',
-          Role.STUDENT,
-          input.status ?? 'ACTIVE',
-          null,
-          new Date(),
-          new Date(),
+      update: jest
+        .fn()
+        .mockImplementation(
+          async (_t, id, input) =>
+            new UserModel(
+              id,
+              'tenant-1',
+              input.branchId ?? null,
+              'a@b.test',
+              null,
+              input.passwordHash ?? 'h',
+              input.name ?? 'A',
+              Role.STUDENT,
+              input.status ?? 'ACTIVE',
+              null,
+              new Date(),
+              new Date(),
+            ),
         ),
-      ),
       disable: jest.fn(),
       recordLogin: jest.fn(),
     };
@@ -111,7 +128,10 @@ describe('UpdateUserUseCase', () => {
   it('throws 400 when no fields', async () => {
     users.findById.mockResolvedValue(makeTarget());
     await expect(
-      useCase.execute({ actor: makeActor({ sub: 'u-target', role: Role.STUDENT }), id: 'u-target' }),
+      useCase.execute({
+        actor: makeActor({ sub: 'u-target', role: Role.STUDENT }),
+        id: 'u-target',
+      }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

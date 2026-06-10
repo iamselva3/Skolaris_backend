@@ -1,10 +1,13 @@
-import { ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { TopicModel } from '../models/taxonomy.models';
-import {
-  ITaxonomyRepository,
-  TAXONOMY_REPOSITORY,
-} from '../repositories/taxonomy.repository';
+import { ITaxonomyRepository, TAXONOMY_REPOSITORY } from '../repositories/taxonomy.repository';
 
 @Injectable()
 export class ListTopicsUseCase {
@@ -38,14 +41,6 @@ export class CreateTopicUseCase {
     const subject = await this.repo.getSubject(input.tenantId, input.subjectId);
     if (!subject) throw new NotFoundException('Subject not found');
 
-    if (input.role === Role.TEACHER) {
-      // Teacher must be assigned to this subject.
-      const mine = await this.repo.listSubjectsForTeacher(input.tenantId, input.userId);
-      if (!mine.some((s) => s.id === input.subjectId)) {
-        throw new ForbiddenException('Teachers may only add topics to assigned subjects');
-      }
-    }
-
     try {
       return await this.repo.createTopic({
         tenantId: input.tenantId,
@@ -76,13 +71,6 @@ export class UpdateTopicUseCase {
     const existing = await this.repo.getTopic(input.tenantId, input.id);
     if (!existing) throw new NotFoundException('Topic not found');
 
-    if (input.role === Role.TEACHER) {
-      const mine = await this.repo.listSubjectsForTeacher(input.tenantId, input.userId);
-      if (!mine.some((s) => s.id === existing.subjectId)) {
-        throw new ForbiddenException('Teachers may only edit topics in assigned subjects');
-      }
-    }
-
     return this.repo.updateTopic(input.tenantId, input.id, {
       name: input.name,
       position: input.position,
@@ -102,9 +90,6 @@ export class DeleteTopicUseCase {
 
 function isUniqueConstraintError(e: unknown): boolean {
   return (
-    typeof e === 'object' &&
-    e !== null &&
-    'code' in e &&
-    (e as { code: string }).code === 'P2002'
+    typeof e === 'object' && e !== null && 'code' in e && (e as { code: string }).code === 'P2002'
   );
 }

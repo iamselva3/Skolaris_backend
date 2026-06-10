@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PaginatedResponse } from '../../../shared/common/dtos/paginated-response.dto';
 import { OcrDraftModel } from '../models/ocr-draft.model';
-import {
-  IOcrDraftRepository,
-  OCR_DRAFT_REPOSITORY,
-} from '../repositories/ocr-draft.repository';
+import { IOcrDraftRepository, OCR_DRAFT_REPOSITORY } from '../repositories/ocr-draft.repository';
 
 @Injectable()
 export class ListOcrDraftsUseCase {

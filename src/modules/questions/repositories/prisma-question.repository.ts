@@ -8,11 +8,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { Difficulty, QuestionType } from '../models/question-type.enum';
-import {
-  QuestionModel,
-  QuestionOptionModel,
-  QuestionWithOptions,
-} from '../models/question.model';
+import { QuestionModel, QuestionOptionModel, QuestionWithOptions } from '../models/question.model';
 import {
   CreateQuestionInput,
   IQuestionRepository,
@@ -26,10 +22,18 @@ export class PrismaQuestionRepository implements IQuestionRepository {
 
   async create(input: CreateQuestionInput): Promise<QuestionWithOptions> {
     return this.prisma.$transaction(async (tx) => {
+      // Branch scoping: a question belongs to the branch of its creator (same
+      // rule as the backfill migration). Tenant-level admins (null branch)
+      // create tenant-wide questions.
+      const creator = await tx.user.findUnique({
+        where: { id: input.createdBy },
+        select: { branchId: true },
+      });
       const q = await tx.question.create({
         data: {
           tenantId: input.tenantId,
           createdBy: input.createdBy,
+          branchId: creator?.branchId ?? null,
           sourceUploadId: input.sourceUploadId ?? null,
           type: input.type as PrismaQuestionType,
           payload: input.payload as Prisma.InputJsonValue,
@@ -126,7 +130,9 @@ export class PrismaQuestionRepository implements IQuestionRepository {
       await tx.question.update({
         where: { id },
         data: {
-          ...(input.payload !== undefined ? { payload: input.payload as Prisma.InputJsonValue } : {}),
+          ...(input.payload !== undefined
+            ? { payload: input.payload as Prisma.InputJsonValue }
+            : {}),
           ...(input.programId !== undefined ? { programId: input.programId } : {}),
           ...(input.subjectId !== undefined ? { subjectId: input.subjectId } : {}),
           ...(input.topicId !== undefined ? { topicId: input.topicId } : {}),
@@ -202,6 +208,13 @@ export class PrismaQuestionRepository implements IQuestionRepository {
   }
 
   private toOption(o: PrismaQuestionOption): QuestionOptionModel {
-    return new QuestionOptionModel(o.id, o.tenantId, o.questionId, o.label, o.isCorrect, o.position);
+    return new QuestionOptionModel(
+      o.id,
+      o.tenantId,
+      o.questionId,
+      o.label,
+      o.isCorrect,
+      o.position,
+    );
   }
 }

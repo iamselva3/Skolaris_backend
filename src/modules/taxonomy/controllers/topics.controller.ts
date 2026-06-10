@@ -18,11 +18,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
 import { Role } from '../../../shared/common/enums/role.enum';
-import {
-  CreateTopicDto,
-  ListTopicsQueryDto,
-  UpdateTopicDto,
-} from '../dtos/taxonomy.dtos';
+import { CreateTopicDto, ListTopicsQueryDto, UpdateTopicDto } from '../dtos/taxonomy.dtos';
 import { TopicModel } from '../models/taxonomy.models';
 import {
   CreateTopicUseCase,
@@ -64,10 +60,7 @@ export class TopicsController {
 
   @Roles(Role.SUPER_ADMIN, Role.TEACHER, Role.STUDENT)
   @Get(':id')
-  async get(
-    @CurrentUser() actor: AuthenticatedUser,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
+  async get(@CurrentUser() actor: AuthenticatedUser, @Param('id', new ParseUUIDPipe()) id: string) {
     const t = await this.getUC.execute({ tenantId: actor.tenantId, id });
     return { data: toResponse(t) };
   }

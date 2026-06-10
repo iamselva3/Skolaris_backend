@@ -73,7 +73,11 @@ export const dispatchHandwritingHttp = async (
     const res = await fetch(`${deps.serviceUrl.replace(/\/+$/, '')}/ocr/extract`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ storageKey: input.storageKey, mime: input.mime, ocrJobId: input.ocrJobId }),
+      body: JSON.stringify({
+        storageKey: input.storageKey,
+        mime: input.mime,
+        ocrJobId: input.ocrJobId,
+      }),
       signal: controller.signal,
     });
     if (!res.ok) throw new Error(`handwriting service HTTP ${res.status}`);
@@ -88,7 +92,11 @@ export const dispatchHandwritingHttp = async (
       options: d.options,
       confidence: d.confidence ?? overall,
     }));
-    return { providerUsed: data.providerUsed || 'handwriting-http', overallConfidence: overall, drafts };
+    return {
+      providerUsed: data.providerUsed || 'handwriting-http',
+      overallConfidence: overall,
+      drafts,
+    };
   } catch {
     recordFailure();
     return null;

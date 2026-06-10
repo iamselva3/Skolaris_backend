@@ -40,6 +40,7 @@ import { AssignExamUseCase } from '../use-cases/assign-exam.use-case';
 import { CloseExamUseCase } from '../use-cases/close-exam.use-case';
 import { CreateExamSectionUseCase } from '../use-cases/create-exam-section.use-case';
 import { CreateExamUseCase } from '../use-cases/create-exam.use-case';
+import { CreateExamFromPaperUseCase } from '../use-cases/create-exam-from-paper.use-case';
 import { DeleteExamSectionUseCase } from '../use-cases/delete-exam-section.use-case';
 import { DeleteExamUseCase } from '../use-cases/delete-exam.use-case';
 import { GetExamAttemptDetailUseCase } from '../use-cases/get-exam-attempt-detail.use-case';
@@ -58,6 +59,7 @@ import { UpdateExamUseCase } from '../use-cases/update-exam.use-case';
 export class ExamsController {
   constructor(
     private readonly createExamUC: CreateExamUseCase,
+    private readonly createExamFromPaperUC: CreateExamFromPaperUseCase,
     private readonly listExamsUC: ListExamsUseCase,
     private readonly getExamUC: GetExamUseCase,
     private readonly updateExamUC: UpdateExamUseCase,
@@ -98,6 +100,23 @@ export class ExamsController {
       subjectId: dto.subjectId,
       antiCheatConfig: dto.antiCheatConfig,
     });
+    return { data: toExamResponse(e) };
+  }
+
+  /**
+   * Create an exam by snapshotting a standalone Question Paper: the exam gets
+   * its own copy of the paper's question set, then the teacher configures
+   * schedule/assignments and publishes. (The other path — picking questions
+   * manually — is the plain POST /exams above.)
+   */
+  @Roles(Role.SUPER_ADMIN, Role.TEACHER)
+  @Post('from-paper/:paperId')
+  @HttpCode(HttpStatus.CREATED)
+  async createFromPaper(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('paperId', new ParseUUIDPipe()) paperId: string,
+  ): Promise<{ data: ExamResponse }> {
+    const e = await this.createExamFromPaperUC.execute({ actor, paperId });
     return { data: toExamResponse(e) };
   }
 

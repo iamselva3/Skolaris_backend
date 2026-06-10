@@ -5,10 +5,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { NotificationChannel, NotificationModel } from '../models/notification.model';
-import {
-  CreateNotificationInput,
-  INotificationRepository,
-} from './notification.repository';
+import { CreateNotificationInput, INotificationRepository } from './notification.repository';
 
 @Injectable()
 export class PrismaNotificationRepository implements INotificationRepository {
@@ -48,11 +45,7 @@ export class PrismaNotificationRepository implements INotificationRepository {
     return { data: rows.map((r) => this.toModel(r)), total, unread };
   }
 
-  async markRead(
-    tenantId: string,
-    userId: string,
-    id: string,
-  ): Promise<NotificationModel | null> {
+  async markRead(tenantId: string, userId: string, id: string): Promise<NotificationModel | null> {
     const found = await this.prisma.notification.findFirst({
       where: { id, tenantId, recipientUserId: userId },
     });

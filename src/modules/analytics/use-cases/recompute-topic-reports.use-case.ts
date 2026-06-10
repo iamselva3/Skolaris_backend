@@ -1,17 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
-import {
-  ANALYTICS_REPOSITORY,
-  IAnalyticsRepository,
-} from '../repositories/analytics.repository';
+import { ANALYTICS_REPOSITORY, IAnalyticsRepository } from '../repositories/analytics.repository';
 
 const WEAK_THRESHOLD = 60; // percent
 
 @Injectable()
 export class RecomputeTopicReportsForStudentUseCase {
-  constructor(
-    @Inject(ANALYTICS_REPOSITORY) private readonly repo: IAnalyticsRepository,
-  ) {}
+  constructor(@Inject(ANALYTICS_REPOSITORY) private readonly repo: IAnalyticsRepository) {}
 
   async execute(input: { tenantId: string; studentId: string }): Promise<number> {
     const aggregates = await this.repo.computeStudentTopicAggregates(

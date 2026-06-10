@@ -6,6 +6,10 @@ export enum QuestionType {
   MATCH_FOLLOWING = 'MATCH_FOLLOWING',
   MATRIX_MATCH = 'MATRIX_MATCH',
   DESCRIPTIVE = 'DESCRIPTIVE',
+  // The entire question (stem + options + figures) is a single image; the
+  // teacher only marks which positional option (1..N) is correct. Graded like
+  // SINGLE_CHOICE on positional options. See VisualPayloadDto.
+  VISUAL = 'VISUAL',
 }
 
 export enum Difficulty {

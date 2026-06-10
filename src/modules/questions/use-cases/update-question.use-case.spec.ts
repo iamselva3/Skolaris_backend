@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { Difficulty, QuestionType } from '../models/question-type.enum';
 import { QuestionModel, QuestionOptionModel } from '../models/question.model';
@@ -40,14 +36,16 @@ describe('UpdateQuestionUseCase', () => {
       create: jest.fn(),
       findById: jest.fn(),
       list: jest.fn(),
-      update: jest.fn().mockImplementation(async (_t, id) =>
-        ({ question: q({ id }), options: [] }),
-      ),
+      update: jest
+        .fn()
+        .mockImplementation(async (_t, id) => ({ question: q({ id }), options: [] })),
       softDelete: jest.fn(),
       countActive: jest.fn(),
     };
     const taxonomy = {
-      resolve: jest.fn().mockResolvedValue({ program: null, subject: null, topic: null, chapter: null }),
+      resolve: jest
+        .fn()
+        .mockResolvedValue({ program: null, subject: null, topic: null, chapter: null }),
     } as unknown as TaxonomyResolverService;
     useCase = new UpdateQuestionUseCase(repo, new QuestionPayloadValidator(), taxonomy);
   });

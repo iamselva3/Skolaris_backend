@@ -35,9 +35,7 @@ export class AnalyticsJobRunner {
       this.logger.warn(`Analytics job ${label}: attempt ${attemptId} not found`);
       return;
     }
-    const questionIds = Array.from(
-      new Set(attempt.answers.map((a) => a.examQuestion.questionId)),
-    );
+    const questionIds = Array.from(new Set(attempt.answers.map((a) => a.examQuestion.questionId)));
     for (const qid of questionIds) {
       await this.recomputeQuestionStats.execute({ tenantId, questionId: qid });
     }

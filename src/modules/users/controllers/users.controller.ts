@@ -54,6 +54,7 @@ export class UsersController {
       password: dto.password,
       role: dto.role,
       branchId: dto.branchId,
+      phone: dto.phone,
     });
     return { data: toUserResponse(user) };
   }
@@ -97,6 +98,7 @@ export class UsersController {
       password: dto.password,
       branchId: dto.branchId,
       status: dto.status,
+      phone: dto.phone,
     });
     return { data: toUserResponse(user) };
   }

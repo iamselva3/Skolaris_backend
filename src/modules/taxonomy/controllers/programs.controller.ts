@@ -53,15 +53,12 @@ export class ProgramsController {
 
   @Roles(Role.SUPER_ADMIN, Role.TEACHER, Role.STUDENT)
   @Get(':id')
-  async get(
-    @CurrentUser() actor: AuthenticatedUser,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
+  async get(@CurrentUser() actor: AuthenticatedUser, @Param('id', new ParseUUIDPipe()) id: string) {
     const p = await this.getUC.execute({ tenantId: actor.tenantId, id });
     return { data: toResponse(p) };
   }
 
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.TEACHER)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@CurrentUser() actor: AuthenticatedUser, @Body() dto: CreateProgramDto) {
@@ -73,7 +70,7 @@ export class ProgramsController {
     return { data: toResponse(p) };
   }
 
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.TEACHER)
   @Patch(':id')
   async update(
     @CurrentUser() actor: AuthenticatedUser,

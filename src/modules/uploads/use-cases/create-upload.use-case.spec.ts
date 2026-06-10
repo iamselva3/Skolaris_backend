@@ -12,7 +12,15 @@ const cfg = {
   uploadMaxBytes: 25 * 1024 * 1024,
   uploadUrlTtlSeconds: 900,
   readBaseUrl: null,
-  s3: { bucket: 'b', region: 'auto', accessKeyId: null, secretAccessKey: null, endpoint: null, publicEndpoint: null, forcePathStyle: true },
+  s3: {
+    bucket: 'b',
+    region: 'auto',
+    accessKeyId: null,
+    secretAccessKey: null,
+    endpoint: null,
+    publicEndpoint: null,
+    forcePathStyle: true,
+  },
 } satisfies ConfigType<typeof storageConfig>;
 
 describe('CreateUploadUseCase', () => {
@@ -22,28 +30,33 @@ describe('CreateUploadUseCase', () => {
 
   beforeEach(() => {
     uploads = {
-      create: jest.fn().mockImplementation(async (i) =>
-        new UploadModel(
-          'u-1',
-          i.tenantId,
-          i.uploadedBy,
-          i.originalName,
-          i.mimeType,
-          i.sizeBytes !== null ? BigInt(i.sizeBytes) : null,
-          i.storageKey,
-          'PENDING_UPLOAD',
-          null,
-          null,
-          null,
-          new Date(),
-          new Date(),
+      create: jest
+        .fn()
+        .mockImplementation(
+          async (i) =>
+            new UploadModel(
+              'u-1',
+              i.tenantId,
+              i.uploadedBy,
+              i.originalName,
+              i.mimeType,
+              i.sizeBytes !== null ? BigInt(i.sizeBytes) : null,
+              i.storageKey,
+              'PENDING_UPLOAD',
+              null,
+              null,
+              null,
+              new Date(),
+              new Date(),
+            ),
         ),
-      ),
       findById: jest.fn(),
       list: jest.fn(),
       updateStatus: jest.fn(),
       failStuckProcessing: jest.fn(),
       remove: jest.fn(),
+      assignBatch: jest.fn(),
+      listByBatch: jest.fn(),
     };
     storage = {
       createSignedUploadUrl: jest.fn().mockResolvedValue({
@@ -54,9 +67,12 @@ describe('CreateUploadUseCase', () => {
       deleteObject: jest.fn(),
       objectExists: jest.fn(),
       getObject: jest.fn(),
+      putObject: jest.fn(),
     };
     const taxonomy = {
-      resolve: jest.fn().mockResolvedValue({ program: null, subject: null, topic: null, chapter: null }),
+      resolve: jest
+        .fn()
+        .mockResolvedValue({ program: null, subject: null, topic: null, chapter: null }),
     } as unknown as TaxonomyResolverService;
     useCase = new CreateUploadUseCase(uploads, storage, cfg, taxonomy);
   });

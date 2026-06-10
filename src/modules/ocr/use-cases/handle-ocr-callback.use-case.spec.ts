@@ -46,6 +46,7 @@ describe('HandleOcrCallbackUseCase', () => {
       countDraftsByStatus: jest.fn().mockResolvedValue({ PENDING_REVIEW: 3 }),
       markFinished: jest.fn().mockImplementation(async ({ id }) => makeJob({ id })),
       markFailed: jest.fn().mockImplementation(async ({ id }) => makeJob({ id })),
+      updateProgress: jest.fn().mockResolvedValue(undefined),
     };
     drafts = {
       bulkCreate: jest.fn().mockResolvedValue(3),
@@ -53,42 +54,44 @@ describe('HandleOcrCallbackUseCase', () => {
       findById: jest.fn(),
       update: jest.fn(),
       countByJob: jest.fn().mockResolvedValue(0),
+      setSuggestedAnswers: jest.fn(),
+      setTaxonomy: jest.fn(),
+      insertDraftAt: jest.fn(),
+      moveDraftToNumber: jest.fn(),
     };
     uploads = {
       create: jest.fn(),
-      findById: jest.fn().mockResolvedValue(
-        new UploadModel(
-          'upload-1',
-          'tenant-1',
-          'teacher-1',
-          'paper.pdf',
-          'application/pdf',
-          BigInt(1234),
-          'tenants/tenant-1/uploads/x.pdf',
-          'PROCESSING',
-          null,
-          null,
-          null,
-          new Date(),
-          new Date(),
+      findById: jest
+        .fn()
+        .mockResolvedValue(
+          new UploadModel(
+            'upload-1',
+            'tenant-1',
+            'teacher-1',
+            'paper.pdf',
+            'application/pdf',
+            BigInt(1234),
+            'tenants/tenant-1/uploads/x.pdf',
+            'PROCESSING',
+            null,
+            null,
+            null,
+            new Date(),
+            new Date(),
+          ),
         ),
-      ),
       list: jest.fn(),
       updateStatus: jest.fn().mockImplementation(async (_, __, ___) => null as never),
       failStuckProcessing: jest.fn(),
       remove: jest.fn(),
+      assignBatch: jest.fn(),
+      listByBatch: jest.fn(),
     };
     notifications = {
       execute: jest.fn().mockResolvedValue({} as never),
     } as unknown as jest.Mocked<CreateNotificationUseCase>;
 
-    useCase = new HandleOcrCallbackUseCase(
-      ocrJobs,
-      drafts,
-      uploads,
-      notifications,
-      fakePrisma,
-    );
+    useCase = new HandleOcrCallbackUseCase(ocrJobs, drafts, uploads, notifications, fakePrisma);
   });
 
   it('writes drafts, marks ready_for_review, and notifies on success', async () => {
@@ -113,7 +116,12 @@ describe('HandleOcrCallbackUseCase', () => {
       ]),
     );
     // 4th arg null intentionally clears any stale errorMessage left by the stuck-uploads cron.
-    expect(uploads.updateStatus).toHaveBeenCalledWith('tenant-1', 'upload-1', 'READY_FOR_REVIEW', null);
+    expect(uploads.updateStatus).toHaveBeenCalledWith(
+      'tenant-1',
+      'upload-1',
+      'READY_FOR_REVIEW',
+      null,
+    );
     expect(notifications.execute).toHaveBeenCalled();
     expect(result.draftsWritten).toBe(3);
     expect(result.alreadyProcessed).toBe(false);
@@ -123,7 +131,10 @@ describe('HandleOcrCallbackUseCase', () => {
     ocrJobs.findByIdAnyTenant.mockResolvedValue(makeJob());
     drafts.countByJob.mockResolvedValue(3); // already populated
 
-    const result = await useCase.execute({ ocrJobId: 'job-1', drafts: [{ position: 0, text: 'x' }] });
+    const result = await useCase.execute({
+      ocrJobId: 'job-1',
+      drafts: [{ position: 0, text: 'x' }],
+    });
 
     expect(drafts.bulkCreate).not.toHaveBeenCalled();
     expect(uploads.updateStatus).not.toHaveBeenCalled();
@@ -153,8 +164,8 @@ describe('HandleOcrCallbackUseCase', () => {
 
   it('throws 404 when ocr job is unknown', async () => {
     ocrJobs.findByIdAnyTenant.mockResolvedValue(null);
-    await expect(
-      useCase.execute({ ocrJobId: 'missing', drafts: [] }),
-    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(useCase.execute({ ocrJobId: 'missing', drafts: [] })).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 });

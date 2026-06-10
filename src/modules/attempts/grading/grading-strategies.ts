@@ -64,8 +64,7 @@ export class FillBlankStrategy implements IGradingStrategy {
     if (typeof given !== 'string') return { isCorrect: false, marksAwarded: neg(q) };
     const accepted = (q.payload['accepted'] as string[] | undefined) ?? [];
     const caseSensitive = q.payload['caseSensitive'] === true;
-    const norm = (s: string): string =>
-      caseSensitive ? s.trim() : s.trim().toLocaleLowerCase();
+    const norm = (s: string): string => (caseSensitive ? s.trim() : s.trim().toLocaleLowerCase());
     const target = norm(given);
     const hit = accepted.some((acc) => norm(acc) === target);
     return hit
@@ -80,7 +79,8 @@ export class MatchFollowingStrategy implements IGradingStrategy {
     if (isUnanswered(a)) return { isCorrect: false, marksAwarded: ZERO };
     const matches = a.payload?.['matches'];
     if (!Array.isArray(matches)) return { isCorrect: false, marksAwarded: neg(q) };
-    const expectedPairs = (q.payload['pairs'] as Array<{ left: string; right: string }> | undefined) ?? [];
+    const expectedPairs =
+      (q.payload['pairs'] as Array<{ left: string; right: string }> | undefined) ?? [];
     const expectedMap = new Map(expectedPairs.map((p) => [p.left, p.right]));
     if (matches.length !== expectedMap.size) {
       return { isCorrect: false, marksAwarded: neg(q) };
@@ -104,7 +104,8 @@ export class MatrixMatchStrategy implements IGradingStrategy {
   grade(q: GradingQuestion, a: GradingAnswer): GradingResult {
     if (isUnanswered(a)) return { isCorrect: false, marksAwarded: ZERO };
     const selections = a.payload?.['selections'];
-    if (!selections || typeof selections !== 'object') return { isCorrect: false, marksAwarded: neg(q) };
+    if (!selections || typeof selections !== 'object')
+      return { isCorrect: false, marksAwarded: neg(q) };
     const correctMap = q.payload['correctMap'] as Record<string, string[]> | undefined;
     if (!correctMap) return { isCorrect: false, marksAwarded: neg(q) };
     const rows = Object.keys(correctMap);

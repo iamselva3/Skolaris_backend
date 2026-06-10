@@ -5,6 +5,8 @@ import {
   IsUUID,
   MaxLength,
   MinLength,
+  Matches,
+  ValidateIf,
 } from 'class-validator';
 
 export class UpdateUserDto {
@@ -27,4 +29,9 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(['ACTIVE', 'DISABLED'])
   status?: 'ACTIVE' | 'DISABLED';
+
+  @IsOptional()
+  @ValidateIf((o) => o.phone !== null)
+  @Matches(/^\d{10}$/, { message: 'Phone must be exactly 10 digits' })
+  phone?: string | null;
 }

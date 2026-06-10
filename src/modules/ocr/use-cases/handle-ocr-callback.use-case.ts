@@ -3,20 +3,11 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { StageTimer } from '../../../shared/common/utils/stage-timer';
 import { CreateNotificationUseCase } from '../../notifications/use-cases/create-notification.use-case';
-import {
-  IUploadRepository,
-  UPLOAD_REPOSITORY,
-} from '../../uploads/repositories/upload.repository';
+import { IUploadRepository, UPLOAD_REPOSITORY } from '../../uploads/repositories/upload.repository';
 import { OcrCallbackDto } from '../dtos/ocr-callback.dto';
 import { OcrJobModel } from '../models/ocr-job.model';
-import {
-  IOcrDraftRepository,
-  OCR_DRAFT_REPOSITORY,
-} from '../repositories/ocr-draft.repository';
-import {
-  IOcrJobRepository,
-  OCR_JOB_REPOSITORY,
-} from '../repositories/ocr-job.repository';
+import { IOcrDraftRepository, OCR_DRAFT_REPOSITORY } from '../repositories/ocr-draft.repository';
+import { IOcrJobRepository, OCR_JOB_REPOSITORY } from '../repositories/ocr-job.repository';
 
 export interface HandleOcrCallbackResult {
   ocrJob: OcrJobModel;
@@ -50,6 +41,8 @@ export class HandleOcrCallbackUseCase {
 
     if (dto.errorMessage) {
       this.logger.error(`[FAIL] worker reported error for job ${job.id}: ${dto.errorMessage}`);
+      // Phase 2 — flip progress stage to FAILED before the FE polls again.
+      await this.ocrJobs.updateProgress(job.id, { stage: 'FAILED' }).catch(() => undefined);
       const updated = await this.ocrJobs.markFailed({
         id: job.id,
         errorMessage: dto.errorMessage,
@@ -82,6 +75,12 @@ export class HandleOcrCallbackUseCase {
     }
 
     this.logger.log(`[2/4] writing ${dto.drafts.length} draft(s) for job ${job.id} ${t.mark()}`);
+    // Phase 2 — flip progress stage to GENERATING_DRAFTS so the FE sees
+    // "Generating Drafts" instead of "OCR Processing" during the (usually
+    // short) callback transaction.
+    await this.ocrJobs
+      .updateProgress(job.id, { stage: 'GENERATING_DRAFTS' })
+      .catch(() => undefined);
 
     const draftsWritten = await this.prisma.$transaction(async () => {
       const written = await this.ocrDrafts.bulkCreate(
@@ -95,14 +94,35 @@ export class HandleOcrCallbackUseCase {
             ? d.options.map((o) => ({ label: o.label, isCorrect: o.isCorrect ?? false }))
             : null,
           confidence: d.confidence ?? null,
+          sourcePageNumber: d.sourcePageNumber ?? null,
+          spanPageStart: d.spanPageStart ?? null,
+          spanPageEnd: d.spanPageEnd ?? null,
+          solutionText: d.solutionText ?? null,
+          questionSnapshotKey: d.questionSnapshotKey ?? null,
+          optionCount: d.optionCount ?? null,
+          questionNumber: d.questionNumber ?? null,
+          invalidCrop: d.invalidCrop ?? null,
+          sourceCoordinates: d.sourceCoordinates ?? null,
+          // Slice 2.3 — figure crops detected on the same page, associated to
+          // this draft. The repo inserts OcrDraftFigure rows after the draft
+          // ids are known.
+          figures: d.figures?.map((f, idx) => ({
+            figureIndex: idx,
+            storageKey: f.storageKey,
+            boundingBox: f.boundingBox,
+            kind: f.kind,
+            caption: f.caption ?? null,
+          })),
         })),
       );
 
       await this.ocrJobs.markFinished({
         id: job.id,
-        overallConfidence: dto.overallConfidence !== undefined ? new Decimal(dto.overallConfidence) : null,
+        overallConfidence:
+          dto.overallConfidence !== undefined ? new Decimal(dto.overallConfidence) : null,
         rawOutput: dto,
         providerUsed: dto.providerUsed ?? null,
+        pageMetadata: dto.pageMetadata ?? null,
       });
 
       // Pass null to explicitly clear any stale errorMessage left by the
@@ -112,6 +132,9 @@ export class HandleOcrCallbackUseCase {
       await this.uploads.updateStatus(job.tenantId, job.uploadId, 'READY_FOR_REVIEW', null);
       return written;
     });
+    // Phase 2 — terminal happy stage. The FE's progress poll will see
+    // COMPLETED and stop polling + invalidate the drafts query.
+    await this.ocrJobs.updateProgress(job.id, { stage: 'COMPLETED' }).catch(() => undefined);
     this.logger.log(
       `[3/4] upload ${job.uploadId} → READY_FOR_REVIEW (${draftsWritten} drafts, errorMessage cleared) ${t.mark()}`,
     );

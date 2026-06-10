@@ -19,9 +19,7 @@ export class StuckUploadsCron {
   // fallback (PaddleOCR/TrOCR on answer sheets) is not prematurely FAILED.
   private readonly cutoffMs = Number(process.env.OCR_STUCK_CUTOFF_MS) || 5 * 60 * 1000;
 
-  constructor(
-    @Inject(UPLOAD_REPOSITORY) private readonly uploads: IUploadRepository,
-  ) {}
+  constructor(@Inject(UPLOAD_REPOSITORY) private readonly uploads: IUploadRepository) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
   async run(): Promise<void> {

@@ -12,6 +12,7 @@ export interface ExamResponse {
   defaultNegativeMarks: number;
   randomizeQuestions: boolean;
   randomizeOptions: boolean;
+  kind: 'PAPER' | 'TEST';
   status: string;
   opensAt: string | null;
   closesAt: string | null;
@@ -57,6 +58,7 @@ export const toExamResponse = (e: ExamModel): ExamResponse => ({
   defaultNegativeMarks: Number(e.defaultNegativeMarks),
   randomizeQuestions: e.randomizeQuestions,
   randomizeOptions: e.randomizeOptions,
+  kind: e.kind,
   status: e.status,
   opensAt: e.opensAt?.toISOString() ?? null,
   closesAt: e.closesAt?.toISOString() ?? null,

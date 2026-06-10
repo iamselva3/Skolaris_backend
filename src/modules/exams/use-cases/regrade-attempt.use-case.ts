@@ -7,7 +7,10 @@ import {
 } from '@nestjs/common';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
-import { GradeAttemptUseCase, GradeAttemptResult } from '../../attempts/use-cases/grade-attempt.use-case';
+import {
+  GradeAttemptUseCase,
+  GradeAttemptResult,
+} from '../../attempts/use-cases/grade-attempt.use-case';
 import {
   EXAM_ATTEMPT_REPOSITORY,
   IExamAttemptRepository,

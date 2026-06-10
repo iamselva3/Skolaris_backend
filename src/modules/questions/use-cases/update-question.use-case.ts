@@ -43,10 +43,7 @@ export class UpdateQuestionUseCase {
   async execute(input: UpdateQuestionInput): Promise<QuestionWithOptions> {
     const target = await this.questions.findById(input.actor.tenantId, input.id);
     if (!target) throw new NotFoundException('Question not found');
-    if (
-      input.actor.role === Role.TEACHER &&
-      target.question.createdBy !== input.actor.sub
-    ) {
+    if (input.actor.role === Role.TEACHER && target.question.createdBy !== input.actor.sub) {
       throw new ForbiddenException('Teachers can only edit questions they created');
     }
 
@@ -77,7 +74,8 @@ export class UpdateQuestionUseCase {
     }
 
     // Free-text subject/topic only honoured if no taxonomy FK provided this call.
-    if (input.subject !== undefined && repoInput.subject === undefined) repoInput.subject = input.subject;
+    if (input.subject !== undefined && repoInput.subject === undefined)
+      repoInput.subject = input.subject;
     if (input.topic !== undefined && repoInput.topic === undefined) repoInput.topic = input.topic;
     if (input.difficulty !== undefined) repoInput.difficulty = input.difficulty;
     if (input.isActive !== undefined) repoInput.isActive = input.isActive;
@@ -85,8 +83,7 @@ export class UpdateQuestionUseCase {
     if (input.payload !== undefined || input.options !== undefined) {
       const payload = input.payload ?? target.question.payload;
       const options =
-        input.options ??
-        target.options.map((o) => ({ label: o.label, isCorrect: o.isCorrect }));
+        input.options ?? target.options.map((o) => ({ label: o.label, isCorrect: o.isCorrect }));
       this.validator.validate({ type: target.question.type, payload, options });
       if (input.payload !== undefined) repoInput.payload = payload;
       if (input.options !== undefined) {

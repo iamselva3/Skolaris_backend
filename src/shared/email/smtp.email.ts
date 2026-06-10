@@ -1,10 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
@@ -24,9 +18,7 @@ export class SmtpEmail implements IEmailService, OnModuleInit, OnModuleDestroy {
       port: this.cfg.port,
       secure: this.cfg.secure,
       auth:
-        this.cfg.user && this.cfg.pass
-          ? { user: this.cfg.user, pass: this.cfg.pass }
-          : undefined,
+        this.cfg.user && this.cfg.pass ? { user: this.cfg.user, pass: this.cfg.pass } : undefined,
     });
     this.logger.log(
       `SMTP transport ready: ${this.cfg.host}:${this.cfg.port} from=${this.cfg.from}`,

@@ -27,13 +27,20 @@ export class UploadModel {
      * or when the loader didn't include it.
      */
     public readonly draftCount: number | null = null,
+    /**
+     * Multi-file batch import (orchestration only). batchId groups uploads
+     * imported together; batchOrder is the 0-based position in that batch.
+     * Both null for single-file uploads, which are unchanged.
+     */
+    public readonly batchId: string | null = null,
+    public readonly batchOrder: number | null = null,
   ) {}
 }
 
 export const ALLOWED_UPLOAD_MIME_TYPES = new Set<string>([
   'application/pdf',
   'image/jpeg',
-  'image/jpg',   // some browsers/clients send the non-standard variant; normalized to image/jpeg below
+  'image/jpg', // some browsers/clients send the non-standard variant; normalized to image/jpeg below
   'image/png',
   'image/webp',
   'image/heic',

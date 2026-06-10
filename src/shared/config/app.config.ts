@@ -8,7 +8,10 @@ export interface AppConfig {
 
 const parseOrigins = (raw: string | undefined, nodeEnv: string): string[] => {
   if (raw && raw.length > 0) {
-    return raw.split(',').map((s) => s.trim()).filter(Boolean);
+    return raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   // Dev defaults: Vite dev server. Production must set CORS_ORIGINS explicitly.
   return nodeEnv === 'production' ? [] : ['http://localhost:5173'];

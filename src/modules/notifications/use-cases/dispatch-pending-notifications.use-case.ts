@@ -1,9 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import {
-  EMAIL_SERVICE,
-  IEmailService,
-} from '../../../shared/email/email.interface';
+import { EMAIL_SERVICE, IEmailService } from '../../../shared/email/email.interface';
 
 const MAX_ATTEMPTS = 5;
 const BATCH_SIZE = 100;

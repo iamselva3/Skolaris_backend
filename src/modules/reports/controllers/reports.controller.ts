@@ -73,7 +73,10 @@ export class ReportsController {
   @Get('students')
   async students(@CurrentUser() actor: AuthenticatedUser, @Query() query: ReportFilterDto) {
     const filters = toFilters(query);
-    const { rows, total } = await this.studentReportsUC.execute({ tenantId: actor.tenantId, filters });
+    const { rows, total } = await this.studentReportsUC.execute({
+      tenantId: actor.tenantId,
+      filters,
+    });
     return { data: rows, meta: meta(total, filters) };
   }
 
@@ -90,14 +93,20 @@ export class ReportsController {
   @Get('topics')
   async topics(@CurrentUser() actor: AuthenticatedUser, @Query() query: ReportFilterDto) {
     const filters = toFilters(query);
-    const { rows, total } = await this.topicReportsUC.execute({ tenantId: actor.tenantId, filters });
+    const { rows, total } = await this.topicReportsUC.execute({
+      tenantId: actor.tenantId,
+      filters,
+    });
     return { data: rows, meta: meta(total, filters) };
   }
 
   @Get('weak-topics')
   async weakTopics(@CurrentUser() actor: AuthenticatedUser, @Query() query: ReportFilterDto) {
     const filters = toFilters(query);
-    const { rows, total } = await this.weakTopicReportUC.execute({ tenantId: actor.tenantId, filters });
+    const { rows, total } = await this.weakTopicReportUC.execute({
+      tenantId: actor.tenantId,
+      filters,
+    });
     return { data: rows, meta: meta(total, filters) };
   }
 
@@ -115,7 +124,10 @@ export class ReportsController {
   @Get('classes')
   async classes(@CurrentUser() actor: AuthenticatedUser, @Query() query: ReportFilterDto) {
     const filters = toFilters(query);
-    const { rows, total } = await this.classReportsUC.execute({ tenantId: actor.tenantId, filters });
+    const { rows, total } = await this.classReportsUC.execute({
+      tenantId: actor.tenantId,
+      filters,
+    });
     return { data: rows, meta: meta(total, filters) };
   }
 

@@ -1,8 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import {
-  resetTesseract,
-  type OcrEngineResult,
-} from '../ocr-engine/ocr-engine';
+import { resetTesseract, type OcrEngineResult } from '../ocr-engine/ocr-engine';
 import { readHandwritingSettings, resolveDrafts } from '../ocr-engine/resolve-drafts';
 import { dispatchHandwritingHttp } from '../ocr-engine/handwriting-http';
 import { IObjectStorage, OBJECT_STORAGE } from '../storage/object-storage.interface';
@@ -10,6 +7,10 @@ import { OcrExtractJob } from '../queue/ocr-queue.service';
 import { OcrHandwritingQueueService } from '../queue/ocr-handwriting-queue.service';
 import { HandleOcrCallbackUseCase } from '../../modules/ocr/use-cases/handle-ocr-callback.use-case';
 import { RoutingMetricsService } from '../../modules/ocr/services/routing-metrics.service';
+import {
+  IOcrJobRepository,
+  OCR_JOB_REPOSITORY,
+} from '../../modules/ocr/repositories/ocr-job.repository';
 import { QuestionType } from '../../modules/questions/models/question-type.enum';
 
 /**
@@ -32,6 +33,7 @@ export class OcrJobRunner {
 
   constructor(
     @Inject(OBJECT_STORAGE) private readonly storage: IObjectStorage,
+    @Inject(OCR_JOB_REPOSITORY) private readonly ocrJobs: IOcrJobRepository,
     private readonly handleCallback: HandleOcrCallbackUseCase,
     private readonly handwritingQueue: OcrHandwritingQueueService,
     private readonly metrics: RoutingMetricsService,
@@ -49,7 +51,25 @@ export class OcrJobRunner {
         detectedType: d.detectedType as QuestionType,
         options: d.options,
         confidence: d.confidence,
+        sourcePageNumber: d.sourcePageNumber,
+        spanPageStart: d.spanPageStart,
+        spanPageEnd: d.spanPageEnd,
+        solutionText: d.solutionText,
+        questionSnapshotKey: d.questionSnapshotKey,
+        optionCount: d.optionCount,
+        questionNumber: d.questionNumber ?? undefined,
+        invalidCrop: d.invalidCrop ?? undefined,
+        sourceCoordinates: d.sourceCoordinates,
+        // Slice 2.3 — figure crops attached to this draft (storageKey already
+        // points at R2; OcrDraftFigure rows are written in the callback).
+        figures: d.figures?.map((f) => ({
+          storageKey: f.storageKey,
+          kind: f.kind,
+          boundingBox: f.boundingBox,
+          caption: f.caption,
+        })),
       })),
+      pageMetadata: r.pageMetadata as unknown as Array<Record<string, unknown>> | undefined,
     });
   }
 
@@ -72,13 +92,43 @@ export class OcrJobRunner {
     const label = opts.jobLabel ?? ocrJobId;
     const t0 = Date.now();
     this.logger.log(`OCR job=${label} ocrJob=${ocrJobId} upload=${uploadId} accepted`);
+    this.logger.log(`[ocr-timing] job_started job=${label} t=${new Date(t0).toISOString()}`);
     try {
       // Read bytes DIRECTLY from the active storage adapter (R2/S3) via DI —
       // no HTTP round-trip to our own read-proxy and no GCS_* env resolution,
       // so the legacy localhost:4443 fallback can never occur on this path.
       const { body, contentType } = await this.storage.getObject(storageKey);
+      this.logger.log(
+        `[ocr-timing] storage_read_complete job=${label} +${Date.now() - t0}ms bytes=${body.length}`,
+      );
       const settings = readHandwritingSettings();
-      const outcome = await resolveDrafts(body, contentType, storageKey, { settings });
+      // Phase 2 — initialize live progress: stage OCR_PROCESSING, processed=0.
+      // Subsequent updates land via the onPageComplete callback below.
+      await this.ocrJobs
+        .updateProgress(ocrJobId, { stage: 'OCR_PROCESSING', processed: 0, total: 0 })
+        .catch(() => undefined);
+      // Slice 2.3 + Phase 2: hand the storage adapter to the engine so figure
+      // crops detected during OCR can be uploaded directly (no client
+      // round-trip), AND hand a progress callback so the UI can show per-page
+      // completion while the OCR loop runs.
+      const outcome = await resolveDrafts(body, contentType, storageKey, {
+        settings,
+        putObject: (key, payload, ct) => this.storage.putObject(key, payload, ct),
+        figureKeyPrefix: `tenants/${job.tenantId}/ocr-figures/${ocrJobId}`,
+        onPageComplete: async (processed, total) => {
+          await this.ocrJobs
+            .updateProgress(ocrJobId, {
+              stage: 'OCR_PROCESSING',
+              processed,
+              total,
+              currentPage: processed,
+            })
+            .catch(() => undefined);
+        },
+      });
+      this.logger.log(
+        `[ocr-timing] extract_complete job=${label} +${Date.now() - t0}ms outcome=${outcome.kind}`,
+      );
 
       // Handwriting fallback (flag ON + classifier routes).
       if (outcome.kind === 'route') {
@@ -114,7 +164,12 @@ export class OcrJobRunner {
         return;
       }
 
+      const persistT0 = Date.now();
+      this.logger.log(`[ocr-timing] persist_started job=${label} +${persistT0 - t0}ms`);
       await this.persist(ocrJobId, outcome.result);
+      this.logger.log(
+        `[ocr-timing] persist_complete job=${label} +${Date.now() - t0}ms persist_dur=${Date.now() - persistT0}ms`,
+      );
       this.metrics.record('kept_node');
       this.logger.log(
         `OCR job=${label} delivered ${outcome.result.drafts.length} draft(s) | total=${Date.now() - t0}ms provider=${outcome.result.providerUsed}`,

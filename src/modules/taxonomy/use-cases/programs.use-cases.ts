@@ -1,9 +1,6 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ProgramModel } from '../models/taxonomy.models';
-import {
-  ITaxonomyRepository,
-  TAXONOMY_REPOSITORY,
-} from '../repositories/taxonomy.repository';
+import { ITaxonomyRepository, TAXONOMY_REPOSITORY } from '../repositories/taxonomy.repository';
 
 @Injectable()
 export class ListProgramsUseCase {
@@ -26,11 +23,7 @@ export class GetProgramUseCase {
 @Injectable()
 export class CreateProgramUseCase {
   constructor(@Inject(TAXONOMY_REPOSITORY) private readonly repo: ITaxonomyRepository) {}
-  async execute(input: {
-    tenantId: string;
-    code: string;
-    name: string;
-  }): Promise<ProgramModel> {
+  async execute(input: { tenantId: string; code: string; name: string }): Promise<ProgramModel> {
     const existing = await this.repo.getProgramByCode(input.tenantId, input.code);
     if (existing) throw new ConflictException('A program with that code already exists');
     return this.repo.createProgram(input);

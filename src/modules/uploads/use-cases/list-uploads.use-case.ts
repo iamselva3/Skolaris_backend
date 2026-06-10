@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PaginatedResponse } from '../../../shared/common/dtos/paginated-response.dto';
 import { UploadModel, UploadStatus } from '../models/upload.model';
-import {
-  IUploadRepository,
-  UPLOAD_REPOSITORY,
-} from '../repositories/upload.repository';
+import { IUploadRepository, UPLOAD_REPOSITORY } from '../repositories/upload.repository';
 
 @Injectable()
 export class ListUploadsUseCase {

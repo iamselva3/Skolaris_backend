@@ -15,9 +15,7 @@ export interface OcrConfig {
 export const ocrConfig = registerAs<OcrConfig>('ocr', () => {
   const callbackSecret = process.env.OCR_CALLBACK_SECRET;
   if (!callbackSecret || callbackSecret.length < 16) {
-    throw new Error(
-      'Missing or weak OCR_CALLBACK_SECRET (must be at least 16 characters)',
-    );
+    throw new Error('Missing or weak OCR_CALLBACK_SECRET (must be at least 16 characters)');
   }
   return {
     callbackSecret,

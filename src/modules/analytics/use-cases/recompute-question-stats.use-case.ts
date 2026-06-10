@@ -1,15 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
-import {
-  ANALYTICS_REPOSITORY,
-  IAnalyticsRepository,
-} from '../repositories/analytics.repository';
+import { ANALYTICS_REPOSITORY, IAnalyticsRepository } from '../repositories/analytics.repository';
 
 @Injectable()
 export class RecomputeQuestionStatsUseCase {
-  constructor(
-    @Inject(ANALYTICS_REPOSITORY) private readonly repo: IAnalyticsRepository,
-  ) {}
+  constructor(@Inject(ANALYTICS_REPOSITORY) private readonly repo: IAnalyticsRepository) {}
 
   async execute(input: { tenantId: string; questionId: string }): Promise<void> {
     const agg = await this.repo.computeQuestionAggregate(input.tenantId, input.questionId);

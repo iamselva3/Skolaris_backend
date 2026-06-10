@@ -1,9 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { QuestionWithOptions } from '../models/question.model';
-import {
-  IQuestionRepository,
-  QUESTION_REPOSITORY,
-} from '../repositories/question.repository';
+import { IQuestionRepository, QUESTION_REPOSITORY } from '../repositories/question.repository';
 
 @Injectable()
 export class GetQuestionUseCase {

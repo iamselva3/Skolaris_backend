@@ -13,6 +13,9 @@ export interface StudentResponse {
   status: 'ACTIVE' | 'DISABLED';
   createdAt: string;
   updatedAt: string;
+  batch?: string | null;
+  section?: string | null;
+  subject?: string | null;
 }
 
 export const toStudentResponse = ({ student, user }: StudentWithUser): StudentResponse => ({
@@ -28,4 +31,7 @@ export const toStudentResponse = ({ student, user }: StudentWithUser): StudentRe
   status: user.status,
   createdAt: student.createdAt.toISOString(),
   updatedAt: student.updatedAt.toISOString(),
+  batch: student.batch,
+  section: student.section,
+  subject: student.subject,
 });

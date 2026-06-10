@@ -15,9 +15,13 @@ const ctx = (user?: AuthenticatedUser): ExecutionContext =>
 
 describe('RolesGuard', () => {
   it('allows when no @Roles metadata is set', () => {
-    const reflector = { getAllAndOverride: jest.fn().mockReturnValue(undefined) } as unknown as Reflector;
+    const reflector = {
+      getAllAndOverride: jest.fn().mockReturnValue(undefined),
+    } as unknown as Reflector;
     const guard = new RolesGuard(reflector);
-    expect(guard.canActivate(ctx({ sub: 'x', tenantId: 't', branchId: null, role: Role.STUDENT }))).toBe(true);
+    expect(
+      guard.canActivate(ctx({ sub: 'x', tenantId: 't', branchId: null, role: Role.STUDENT })),
+    ).toBe(true);
   });
 
   it('allows when user role matches', () => {
@@ -25,7 +29,9 @@ describe('RolesGuard', () => {
       getAllAndOverride: jest.fn().mockReturnValue([Role.SUPER_ADMIN, Role.TEACHER]),
     } as unknown as Reflector;
     const guard = new RolesGuard(reflector);
-    expect(guard.canActivate(ctx({ sub: 'x', tenantId: 't', branchId: null, role: Role.TEACHER }))).toBe(true);
+    expect(
+      guard.canActivate(ctx({ sub: 'x', tenantId: 't', branchId: null, role: Role.TEACHER })),
+    ).toBe(true);
   });
 
   it('throws 403 when role does not match', () => {

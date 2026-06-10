@@ -9,12 +9,16 @@ export interface ClassroomResponse {
   section: string | null;
   subject: string | null;
   createdBy: string;
+  teacherIds?: string[];
   studentCount?: number;
   createdAt: string;
   updatedAt: string;
 }
 
-export const toClassroomResponse = (c: ClassroomModel, studentCount?: number): ClassroomResponse => ({
+export const toClassroomResponse = (
+  c: ClassroomModel,
+  studentCount?: number,
+): ClassroomResponse => ({
   id: c.id,
   tenantId: c.tenantId,
   branchId: c.branchId,
@@ -23,6 +27,7 @@ export const toClassroomResponse = (c: ClassroomModel, studentCount?: number): C
   section: c.section,
   subject: c.subject,
   createdBy: c.createdBy,
+  teacherIds: c.teacherIds,
   studentCount,
   createdAt: c.createdAt.toISOString(),
   updatedAt: c.updatedAt.toISOString(),

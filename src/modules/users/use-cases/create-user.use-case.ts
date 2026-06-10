@@ -9,10 +9,7 @@ import * as argon2 from 'argon2';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
 import { UserModel } from '../models/user.model';
-import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '../repositories/user.repository';
+import { IUserRepository, USER_REPOSITORY } from '../repositories/user.repository';
 
 export interface CreateUserInput {
   actor: AuthenticatedUser;
@@ -21,6 +18,7 @@ export interface CreateUserInput {
   password: string;
   role: Role;
   branchId?: string;
+  phone?: string;
 }
 
 @Injectable()
@@ -43,6 +41,7 @@ export class CreateUserUseCase {
       passwordHash,
       name: input.name,
       role: input.role,
+      phone: input.phone,
     });
   }
 
@@ -61,7 +60,7 @@ export class CreateUserUseCase {
         throw new BadRequestException('Teachers must assign a branchId when creating students');
       }
       if (actor.branchId === null || input.branchId !== actor.branchId) {
-        throw new ForbiddenException("Teachers can only create students in their own branch");
+        throw new ForbiddenException('Teachers can only create students in their own branch');
       }
       return;
     }

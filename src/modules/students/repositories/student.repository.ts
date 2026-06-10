@@ -26,8 +26,11 @@ export interface UpdateStudentInput {
 export interface ListStudentsFilter {
   tenantId: string;
   branchId?: string;
-  classroomId?: string;
+  batch?: string;
+  section?: string;
+  subject?: string;
   q?: string;
+  unallocated?: boolean;
   limit: number;
   offset: number;
 }

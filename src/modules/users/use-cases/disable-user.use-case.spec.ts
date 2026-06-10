@@ -25,7 +25,20 @@ describe('DisableUserUseCase', () => {
 
   it('disables existing user', async () => {
     users.findById.mockResolvedValue(
-      new UserModel('u', 't', null, 'a@b.test', 'h', 'A', Role.STUDENT, 'ACTIVE', null, new Date(), new Date()),
+      new UserModel(
+        'u',
+        't',
+        null,
+        'a@b.test',
+        null,
+        'h',
+        'A',
+        Role.STUDENT,
+        'ACTIVE',
+        null,
+        new Date(),
+        new Date(),
+      ),
     );
     await useCase.execute({ tenantId: 't', id: 'u' });
     expect(users.disable).toHaveBeenCalledWith('t', 'u');

@@ -6,12 +6,7 @@ import {
   Topic as PrismaTopic,
 } from '@prisma/client';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import {
-  ChapterModel,
-  ProgramModel,
-  SubjectModel,
-  TopicModel,
-} from '../models/taxonomy.models';
+import { ChapterModel, ProgramModel, SubjectModel, TopicModel } from '../models/taxonomy.models';
 import { ITaxonomyRepository, ListSubjectsFilter } from './taxonomy.repository';
 
 @Injectable()
@@ -248,9 +243,25 @@ function toSubject(r: SubjectWithProgram): SubjectModel {
 }
 
 function toTopic(r: PrismaTopic): TopicModel {
-  return new TopicModel(r.id, r.tenantId, r.subjectId, r.name, r.position, r.createdAt, r.updatedAt);
+  return new TopicModel(
+    r.id,
+    r.tenantId,
+    r.subjectId,
+    r.name,
+    r.position,
+    r.createdAt,
+    r.updatedAt,
+  );
 }
 
 function toChapter(r: PrismaChapter): ChapterModel {
-  return new ChapterModel(r.id, r.tenantId, r.topicId, r.name, r.position, r.createdAt, r.updatedAt);
+  return new ChapterModel(
+    r.id,
+    r.tenantId,
+    r.topicId,
+    r.name,
+    r.position,
+    r.createdAt,
+    r.updatedAt,
+  );
 }

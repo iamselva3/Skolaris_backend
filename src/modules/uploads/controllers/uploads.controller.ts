@@ -99,10 +99,7 @@ export class UploadsController {
 
   @Roles(Role.SUPER_ADMIN, Role.TEACHER)
   @Get(':id')
-  async get(
-    @CurrentUser() actor: AuthenticatedUser,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
+  async get(@CurrentUser() actor: AuthenticatedUser, @Param('id', new ParseUUIDPipe()) id: string) {
     const r = await this.getUploadUseCase.execute({ tenantId: actor.tenantId, id });
     return {
       data: {

@@ -20,10 +20,7 @@ import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
 import { PaginationQueryDto } from '../../../shared/common/dtos/pagination-query.dto';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { PaginatedResponse } from '../../../shared/common/dtos/paginated-response.dto';
-import {
-  StudentResponse,
-  toStudentResponse,
-} from '../../students/dtos/student-response.dto';
+import { StudentResponse, toStudentResponse } from '../../students/dtos/student-response.dto';
 import { AddStudentsDto } from '../dtos/add-students.dto';
 import {
   ClassroomResponse,
@@ -41,6 +38,7 @@ import { ListClassroomStudentsUseCase } from '../use-cases/list-classroom-studen
 import { ListClassroomsUseCase } from '../use-cases/list-classrooms.use-case';
 import { RemoveStudentFromClassroomUseCase } from '../use-cases/remove-student-from-classroom.use-case';
 import { UpdateClassroomUseCase } from '../use-cases/update-classroom.use-case';
+import { GetClassroomFiltersUseCase } from '../use-cases/get-classroom-filters.use-case';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('classrooms')
@@ -48,6 +46,7 @@ export class ClassroomsController {
   constructor(
     private readonly createClassroomUseCase: CreateClassroomUseCase,
     private readonly listClassroomsUseCase: ListClassroomsUseCase,
+    private readonly getClassroomFiltersUseCase: GetClassroomFiltersUseCase,
     private readonly getClassroomUseCase: GetClassroomUseCase,
     private readonly updateClassroomUseCase: UpdateClassroomUseCase,
     private readonly deleteClassroomUseCase: DeleteClassroomUseCase,
@@ -70,7 +69,7 @@ export class ClassroomsController {
       year: dto.year,
       section: dto.section,
       subject: dto.subject,
-      teacherId: dto.teacherId,
+      teacherIds: dto.teacherIds,
     });
     return { data: toClassroomResponse(c, 0) };
   }
@@ -85,10 +84,30 @@ export class ClassroomsController {
       tenantId: actor.tenantId,
       branchId: query.branchId,
       createdBy: query.teacherId,
+      name: query.name,
+      section: query.section,
+      year: query.year,
+      subject: query.subject,
+      search: query.search,
       limit: query.limit ?? 50,
       offset: query.offset ?? 0,
     });
     return { data: r.data.map(toClassroomResponseFromWithCount), meta: r.meta };
+  }
+
+  @Roles(Role.SUPER_ADMIN, Role.TEACHER)
+  @Get('filters')
+  async getFilters(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Query('branchId') branchId?: string,
+  ): Promise<{
+    data: { names: string[]; sections: string[]; years: string[]; subjects: string[] };
+  }> {
+    const filters = await this.getClassroomFiltersUseCase.execute({
+      tenantId: actor.tenantId,
+      branchId,
+    });
+    return { data: filters };
   }
 
   @Roles(Role.SUPER_ADMIN, Role.TEACHER)
@@ -115,6 +134,7 @@ export class ClassroomsController {
       year: dto.year,
       section: dto.section,
       subject: dto.subject,
+      teacherIds: dto.teacherIds,
     });
     return { data: toClassroomResponse(c) };
   }

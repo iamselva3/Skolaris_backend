@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { DEFAULT_ANTI_CHEAT_CONFIG, ExamModel } from '../models/exam.model';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -63,7 +59,16 @@ describe('PublishExamUseCase', () => {
         exam: baseExam({ status: 'DRAFT' }),
         sections: [] as ExamSectionModel[],
         questions: [
-          new ExamQuestionModel('eq-1', 't-1', 'e-1', null, 'q-1', 0, new Decimal(2), new Decimal(0)),
+          new ExamQuestionModel(
+            'eq-1',
+            't-1',
+            'e-1',
+            null,
+            'q-1',
+            0,
+            new Decimal(2),
+            new Decimal(0),
+          ),
         ] as ExamQuestionModel[],
         assignments: [
           new ExamAssignmentModel('asg-1', 't-1', 'e-1', 'c-1', null),
@@ -82,6 +87,9 @@ describe('PublishExamUseCase', () => {
       removeExamQuestion: jest.fn(),
       createAssignments: jest.fn(),
       expandAssignmentsToStudentIds: jest.fn().mockResolvedValue(['s-1', 's-2']),
+      listWithCounts: jest.fn(),
+      summarizeQuestionPapers: jest.fn(),
+      cloneExam: jest.fn(),
     };
     attempts = {
       bulkCreate: jest.fn().mockResolvedValue(2),
@@ -110,7 +118,9 @@ describe('PublishExamUseCase', () => {
     exams.findDetail.mockResolvedValueOnce({
       exam: baseExam({ opensAt: new Date(Date.now() - 60_000) }),
       sections: [],
-      questions: [new ExamQuestionModel('eq-1', 't-1', 'e-1', null, 'q-1', 0, new Decimal(2), new Decimal(0))],
+      questions: [
+        new ExamQuestionModel('eq-1', 't-1', 'e-1', null, 'q-1', 0, new Decimal(2), new Decimal(0)),
+      ],
       assignments: [new ExamAssignmentModel('asg-1', 't-1', 'e-1', 'c-1', null)],
     });
     await useCase.execute({
@@ -120,11 +130,13 @@ describe('PublishExamUseCase', () => {
     expect(exams.setStatus).toHaveBeenCalledWith('t-1', 'e-1', 'LIVE', expect.any(Date));
   });
 
-  it('forbids TEACHER publishing another teacher\'s exam', async () => {
+  it("forbids TEACHER publishing another teacher's exam", async () => {
     exams.findDetail.mockResolvedValue({
       exam: baseExam({ createdBy: 'other' }),
       sections: [],
-      questions: [new ExamQuestionModel('eq-1', 't-1', 'e-1', null, 'q-1', 0, new Decimal(2), new Decimal(0))],
+      questions: [
+        new ExamQuestionModel('eq-1', 't-1', 'e-1', null, 'q-1', 0, new Decimal(2), new Decimal(0)),
+      ],
       assignments: [new ExamAssignmentModel('asg-1', 't-1', 'e-1', 'c-1', null)],
     });
     await expect(
@@ -154,7 +166,9 @@ describe('PublishExamUseCase', () => {
     exams.findDetail.mockResolvedValueOnce({
       exam: baseExam({ status: 'LIVE' }),
       sections: [],
-      questions: [new ExamQuestionModel('eq-1', 't-1', 'e-1', null, 'q-1', 0, new Decimal(2), new Decimal(0))],
+      questions: [
+        new ExamQuestionModel('eq-1', 't-1', 'e-1', null, 'q-1', 0, new Decimal(2), new Decimal(0)),
+      ],
       assignments: [new ExamAssignmentModel('asg-1', 't-1', 'e-1', 'c-1', null)],
     });
     await expect(

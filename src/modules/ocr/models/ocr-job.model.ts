@@ -14,5 +14,7 @@ export class OcrJobModel {
     public readonly providerUsed: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    /** Phase 2 — live progress JSON ({ stage, processed, total, currentPage }). */
+    public readonly progress: unknown = null,
   ) {}
 }

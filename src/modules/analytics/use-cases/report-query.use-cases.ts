@@ -1,9 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { TopicReportModel } from '../models/analytics.models';
-import {
-  ANALYTICS_REPOSITORY,
-  IAnalyticsRepository,
-} from '../repositories/analytics.repository';
+import { ANALYTICS_REPOSITORY, IAnalyticsRepository } from '../repositories/analytics.repository';
 
 @Injectable()
 export class GetExamSummaryUseCase {

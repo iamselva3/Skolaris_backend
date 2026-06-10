@@ -7,9 +7,7 @@ import { ExamAttemptModel } from '../../attempts/models/exam-attempt.model';
 
 @Injectable()
 export class ListExamAttemptsUseCase {
-  constructor(
-    @Inject(EXAM_ATTEMPT_REPOSITORY) private readonly attempts: IExamAttemptRepository,
-  ) {}
+  constructor(@Inject(EXAM_ATTEMPT_REPOSITORY) private readonly attempts: IExamAttemptRepository) {}
 
   async execute(input: {
     tenantId: string;

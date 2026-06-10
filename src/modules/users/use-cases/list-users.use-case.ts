@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PaginatedResponse } from '../../../shared/common/dtos/paginated-response.dto';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { UserModel } from '../models/user.model';
-import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '../repositories/user.repository';
+import { IUserRepository, USER_REPOSITORY } from '../repositories/user.repository';
 
 @Injectable()
 export class ListUsersUseCase {

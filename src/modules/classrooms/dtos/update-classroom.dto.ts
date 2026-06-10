@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength, MinLength, IsUUID } from 'class-validator';
 
 export class UpdateClassroomDto {
   @IsOptional()
@@ -21,4 +21,8 @@ export class UpdateClassroomDto {
   @IsString()
   @MaxLength(80)
   subject?: string | null;
+
+  @IsOptional()
+  @IsUUID('all', { each: true })
+  teacherIds?: string[];
 }

@@ -7,6 +7,7 @@ export interface CreateUserInput {
   tenantId: string;
   branchId?: string | null;
   email: string;
+  phone?: string;
   passwordHash: string;
   name: string;
   role: Role;
@@ -14,6 +15,7 @@ export interface CreateUserInput {
 
 export interface UpdateUserInput {
   name?: string;
+  phone?: string | null;
   passwordHash?: string;
   branchId?: string | null;
   status?: UserStatus;

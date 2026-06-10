@@ -12,9 +12,7 @@ export interface ListNotificationsResult {
 
 @Injectable()
 export class ListNotificationsForUserUseCase {
-  constructor(
-    @Inject(NOTIFICATION_REPOSITORY) private readonly repo: INotificationRepository,
-  ) {}
+  constructor(@Inject(NOTIFICATION_REPOSITORY) private readonly repo: INotificationRepository) {}
 
   async execute(input: {
     tenantId: string;

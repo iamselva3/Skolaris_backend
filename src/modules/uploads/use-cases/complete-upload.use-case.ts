@@ -10,20 +10,11 @@ import {
 import { Role } from '../../../shared/common/enums/role.enum';
 import { StageTimer } from '../../../shared/common/utils/stage-timer';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
-import {
-  IObjectStorage,
-  OBJECT_STORAGE,
-} from '../../../shared/storage/object-storage.interface';
+import { IObjectStorage, OBJECT_STORAGE } from '../../../shared/storage/object-storage.interface';
 import { OCR_DISPATCHER, IOcrDispatcher } from '../../../shared/queue/ocr-dispatcher';
-import {
-  IOcrJobRepository,
-  OCR_JOB_REPOSITORY,
-} from '../../ocr/repositories/ocr-job.repository';
+import { IOcrJobRepository, OCR_JOB_REPOSITORY } from '../../ocr/repositories/ocr-job.repository';
 import { UploadModel } from '../models/upload.model';
-import {
-  IUploadRepository,
-  UPLOAD_REPOSITORY,
-} from '../repositories/upload.repository';
+import { IUploadRepository, UPLOAD_REPOSITORY } from '../repositories/upload.repository';
 
 @Injectable()
 export class CompleteUploadUseCase {
@@ -54,7 +45,9 @@ export class CompleteUploadUseCase {
     }
 
     if (upload.status !== 'PENDING_UPLOAD') {
-      this.logger.warn(`[reject] upload ${upload.id} in status ${upload.status}, not PENDING_UPLOAD`);
+      this.logger.warn(
+        `[reject] upload ${upload.id} in status ${upload.status}, not PENDING_UPLOAD`,
+      );
       throw new ConflictException(`Upload is in status ${upload.status}; cannot complete`);
     }
 
@@ -86,9 +79,7 @@ export class CompleteUploadUseCase {
     const ocrJob =
       existingJob ??
       (await this.ocrJobs.create({ tenantId: upload.tenantId, uploadId: upload.id }));
-    this.logger.log(
-      `[3/5] ocr job ${ocrJob.id} ${existingJob ? '(reused)' : '(new)'} ${t.mark()}`,
-    );
+    this.logger.log(`[3/5] ocr job ${ocrJob.id} ${existingJob ? '(reused)' : '(new)'} ${t.mark()}`);
 
     await this.uploads.updateStatus(upload.tenantId, upload.id, 'UPLOADED');
     const processed = await this.uploads.updateStatus(upload.tenantId, upload.id, 'PROCESSING');

@@ -1,6 +1,6 @@
-import { Controller, Get, Inject, Logger, Param, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, Logger, Req, Res, UseGuards } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { Public } from '../../modules/auth/decorators/public.decorator';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { IObjectStorage, OBJECT_STORAGE } from './object-storage.interface';
@@ -31,9 +31,21 @@ export class StorageReadController {
 
   constructor(@Inject(OBJECT_STORAGE) private readonly storage: IObjectStorage) {}
 
+  // Wildcard after `/o/` so object keys WITH slashes work regardless of whether
+  // the path is percent-encoded ("a%2Fb", one segment) or arrives decoded
+  // ("a/b", many segments). A single-segment `:key` param 404s the latter before
+  // getObject ever runs — which silently broke ocr-figures/ snapshot reads.
   @Public()
-  @Get(['storage/v1/b/:bucket/o/:key', 'download/storage/v1/b/:bucket/o/:key'])
-  async read(@Param('key') key: string, @Res() res: Response): Promise<void> {
+  @Get(['storage/v1/b/:bucket/o/*', 'download/storage/v1/b/:bucket/o/*'])
+  async read(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const raw = (req.params as Record<string, string>)['0'] ?? '';
+    let key = raw;
+    try {
+      // Decode percent-escapes when present; a no-op for an already-decoded path.
+      key = raw.includes('%') ? decodeURIComponent(raw) : raw;
+    } catch {
+      /* malformed escape — fall back to the raw value */
+    }
     try {
       const { body, contentType } = await this.storage.getObject(key);
       res.setHeader('Content-Type', contentType);

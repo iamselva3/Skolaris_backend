@@ -13,10 +13,6 @@ export interface CreateViolationInput {
 export interface IViolationRepository {
   bulkCreate(input: CreateViolationInput[]): Promise<number>;
   countByAttempt(tenantId: string, attemptId: string): Promise<number>;
-  countByAttemptAndType(
-    tenantId: string,
-    attemptId: string,
-    type: ViolationType,
-  ): Promise<number>;
+  countByAttemptAndType(tenantId: string, attemptId: string, type: ViolationType): Promise<number>;
   listByAttempt(tenantId: string, attemptId: string): Promise<ViolationModel[]>;
 }

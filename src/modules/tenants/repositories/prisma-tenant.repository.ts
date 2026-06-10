@@ -64,7 +64,14 @@ export class PrismaTenantRepository implements ITenantRepository {
   }
 
   private toTenant(r: PrismaTenant): TenantModel {
-    return new TenantModel(r.id, r.name, r.slug, r.status as TenantStatus, r.createdAt, r.updatedAt);
+    return new TenantModel(
+      r.id,
+      r.name,
+      r.slug,
+      r.status as TenantStatus,
+      r.createdAt,
+      r.updatedAt,
+    );
   }
 
   private toUser(r: PrismaUser): UserModel {
@@ -73,6 +80,7 @@ export class PrismaTenantRepository implements ITenantRepository {
       r.tenantId,
       r.branchId,
       r.email,
+      r.phone,
       r.passwordHash,
       r.name,
       r.role as Role,

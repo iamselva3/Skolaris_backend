@@ -7,14 +7,8 @@ import {
 } from '@nestjs/common';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
-import {
-  IObjectStorage,
-  OBJECT_STORAGE,
-} from '../../../shared/storage/object-storage.interface';
-import {
-  IUploadRepository,
-  UPLOAD_REPOSITORY,
-} from '../repositories/upload.repository';
+import { IObjectStorage, OBJECT_STORAGE } from '../../../shared/storage/object-storage.interface';
+import { IUploadRepository, UPLOAD_REPOSITORY } from '../repositories/upload.repository';
 
 @Injectable()
 export class DeleteUploadUseCase {

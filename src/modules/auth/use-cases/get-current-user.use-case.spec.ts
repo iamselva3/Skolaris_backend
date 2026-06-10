@@ -25,7 +25,20 @@ describe('GetCurrentUserUseCase', () => {
 
   it('returns user profile when found', async () => {
     users.findById.mockResolvedValue(
-      new UserModel('u', 't', 'b', 'a@b.test', 'h', 'A', Role.STUDENT, 'ACTIVE', null, new Date(), new Date()),
+      new UserModel(
+        'u',
+        't',
+        'b',
+        'a@b.test',
+        null,
+        'h',
+        'A',
+        Role.STUDENT,
+        'ACTIVE',
+        null,
+        new Date(),
+        new Date(),
+      ),
     );
     const result = await useCase.execute({ userId: 'u', tenantId: 't' });
     expect(result.id).toBe('u');

@@ -10,6 +10,7 @@ export class ClassroomModel {
     public readonly createdBy: string,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    public readonly teacherIds: string[] = [],
   ) {}
 }
 

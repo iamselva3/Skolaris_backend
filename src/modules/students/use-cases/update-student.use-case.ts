@@ -52,9 +52,7 @@ export class UpdateStudentUseCase {
 
     if (input.actor.role === Role.TEACHER) {
       if (!input.actor.branchId || target.student.branchId !== input.actor.branchId) {
-        throw new ForbiddenException(
-          'Teachers can only update students in their own branch',
-        );
+        throw new ForbiddenException('Teachers can only update students in their own branch');
       }
     }
 

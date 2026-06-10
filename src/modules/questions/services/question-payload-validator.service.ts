@@ -15,11 +15,7 @@ import {
  */
 @Injectable()
 export class QuestionPayloadValidator {
-  validate(input: {
-    type: QuestionType;
-    payload: unknown;
-    options?: ChoiceOptionInput[];
-  }): void {
+  validate(input: { type: QuestionType; payload: unknown; options?: ChoiceOptionInput[] }): void {
     const cls = payloadClassFor(input.type) as new () => object;
     const instance = plainToInstance(cls, input.payload ?? {});
     const errors = validateSync(instance, {
@@ -37,21 +33,28 @@ export class QuestionPayloadValidator {
       });
     }
 
-    if (CHOICE_TYPES.has(input.type)) {
+    if (input.type === QuestionType.VISUAL) {
+      // The image IS the question; option text lives in the image, so we only
+      // validate the positional answer slots: 2..6 of them, exactly one correct.
+      const options = input.options ?? [];
+      if (options.length < 2 || options.length > 6) {
+        throw new BadRequestException('VISUAL requires between 2 and 6 options');
+      }
+      const correct = options.filter((o) => o.isCorrect).length;
+      if (correct !== 1) {
+        throw new BadRequestException('VISUAL requires exactly one correct option');
+      }
+    } else if (CHOICE_TYPES.has(input.type)) {
       const options = input.options ?? [];
       if (options.length < 2) {
-        throw new BadRequestException(
-          `${input.type} requires at least 2 options`,
-        );
+        throw new BadRequestException(`${input.type} requires at least 2 options`);
       }
       const check = expectedCorrectCount(input.type, options);
       if (!check.ok) {
         throw new BadRequestException(check.reason);
       }
     } else if (input.options && input.options.length > 0) {
-      throw new BadRequestException(
-        `Options are not allowed for question type ${input.type}`,
-      );
+      throw new BadRequestException(`Options are not allowed for question type ${input.type}`);
     }
   }
 }

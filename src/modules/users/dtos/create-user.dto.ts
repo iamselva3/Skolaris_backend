@@ -7,6 +7,7 @@ import {
   IsUUID,
   MaxLength,
   MinLength,
+  Matches,
 } from 'class-validator';
 import { Role } from '../../../shared/common/enums/role.enum';
 
@@ -31,4 +32,8 @@ export class CreateUserDto {
   @IsOptional()
   @IsUUID()
   branchId?: string;
+
+  @IsOptional()
+  @Matches(/^\d{10}$/, { message: 'Phone must be exactly 10 digits' })
+  phone?: string;
 }

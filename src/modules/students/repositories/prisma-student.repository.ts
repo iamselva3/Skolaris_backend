@@ -50,7 +50,7 @@ export class PrismaStudentRepository implements IStudentRepository {
   async findById(tenantId: string, id: string): Promise<StudentWithUser | null> {
     const row = await this.prisma.student.findFirst({
       where: { id, tenantId },
-      include: { user: true },
+      include: { user: true, classrooms: { include: { classroom: true } } },
     });
     return row ? { student: this.toStudent(row), user: this.toUser(row.user) } : null;
   }
@@ -58,17 +58,27 @@ export class PrismaStudentRepository implements IStudentRepository {
   async findByUserId(tenantId: string, userId: string): Promise<StudentWithUser | null> {
     const row = await this.prisma.student.findFirst({
       where: { tenantId, userId },
-      include: { user: true },
+      include: { user: true, classrooms: { include: { classroom: true } } },
     });
     return row ? { student: this.toStudent(row), user: this.toUser(row.user) } : null;
   }
 
   async list(filter: ListStudentsFilter): Promise<{ data: StudentWithUser[]; total: number }> {
     const where: Prisma.StudentWhereInput = { tenantId: filter.tenantId };
-    if (filter.branchId) where.branchId = filter.branchId;
-    if (filter.classroomId) {
-      where.classrooms = { some: { classroomId: filter.classroomId } };
+    if (filter.unallocated) {
+      where.classrooms = { none: {} };
+    } else if (filter.batch || filter.section) {
+      where.classrooms = {
+        some: {
+          classroom: {
+            ...(filter.batch ? { name: filter.batch } : {}),
+            ...(filter.section ? { section: filter.section } : {}),
+            ...(filter.subject ? { subject: filter.subject } : {}),
+          },
+        },
+      };
     }
+    if (filter.branchId) where.branchId = filter.branchId;
     if (filter.q && filter.q.length > 0) {
       where.OR = [
         { rollNo: { contains: filter.q, mode: 'insensitive' } },
@@ -77,10 +87,50 @@ export class PrismaStudentRepository implements IStudentRepository {
       ];
     }
 
+    // ─── TEMP DIAGNOSTIC (remove after debugging students-list count) ───
+    // Isolates which condition reduces the result set. Each count adds ONE
+    // constraint on top of the previous.
+    const membershipWhere = where.classrooms ? { classrooms: where.classrooms } : {};
+    const qWhere = where.OR ? { OR: where.OR } : {};
+    const [cTenant, cMembership, cBranch, cFull] = await this.prisma.$transaction([
+      this.prisma.student.count({ where: { tenantId: filter.tenantId } }),
+      this.prisma.student.count({
+        where: { tenantId: filter.tenantId, ...membershipWhere },
+      }),
+      this.prisma.student.count({
+        where: {
+          tenantId: filter.tenantId,
+          ...membershipWhere,
+          ...(filter.branchId ? { branchId: filter.branchId } : {}),
+        },
+      }),
+      this.prisma.student.count({ where }),
+    ]);
+    // eslint-disable-next-line no-console
+    console.log('[students.list] input =', {
+      tenantId: filter.tenantId,
+      batch: filter.batch,
+      section: filter.section,
+      subject: filter.subject,
+      branchId: filter.branchId,
+      q: filter.q,
+      unallocated: filter.unallocated,
+    });
+    // eslint-disable-next-line no-console
+    console.log('[students.list] WHERE =', JSON.stringify(where, null, 2));
+    // eslint-disable-next-line no-console
+    console.log('[students.list] counts =', {
+      tenantOnly: cTenant,
+      afterMembership: cMembership,
+      afterBranchId: cBranch,
+      afterAll_q: cFull,
+    });
+    // ─── END TEMP DIAGNOSTIC ───
+
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.student.findMany({
         where,
-        include: { user: true },
+        include: { user: true, classrooms: { include: { classroom: true } } },
         take: filter.limit,
         skip: filter.offset,
         orderBy: { createdAt: 'desc' },
@@ -93,11 +143,7 @@ export class PrismaStudentRepository implements IStudentRepository {
     };
   }
 
-  async update(
-    tenantId: string,
-    id: string,
-    input: UpdateStudentInput,
-  ): Promise<StudentWithUser> {
+  async update(tenantId: string, id: string, input: UpdateStudentInput): Promise<StudentWithUser> {
     const found = await this.prisma.student.findFirst({ where: { id, tenantId } });
     if (!found) {
       throw new NotFoundException('Student not found');
@@ -110,7 +156,7 @@ export class PrismaStudentRepository implements IStudentRepository {
         ...(input.parentContact !== undefined ? { parentContact: input.parentContact } : {}),
         ...(input.branchId !== undefined ? { branchId: input.branchId } : {}),
       },
-      include: { user: true },
+      include: { user: true, classrooms: { include: { classroom: true } } },
     });
     return { student: this.toStudent(updated), user: this.toUser(updated.user) };
   }
@@ -129,7 +175,8 @@ export class PrismaStudentRepository implements IStudentRepository {
     });
   }
 
-  private toStudent(r: PrismaStudent): StudentModel {
+  private toStudent(r: PrismaStudent & { classrooms?: any[] }): StudentModel {
+    const firstClassroom = r.classrooms?.[0]?.classroom;
     return new StudentModel(
       r.id,
       r.tenantId,
@@ -140,6 +187,9 @@ export class PrismaStudentRepository implements IStudentRepository {
       r.parentContact,
       r.createdAt,
       r.updatedAt,
+      firstClassroom?.name ?? null,
+      firstClassroom?.section ?? null,
+      firstClassroom?.subject ?? null,
     );
   }
 
@@ -149,6 +199,7 @@ export class PrismaStudentRepository implements IStudentRepository {
       u.tenantId,
       u.branchId,
       u.email,
+      u.phone,
       u.passwordHash,
       u.name,
       u.role as Role,

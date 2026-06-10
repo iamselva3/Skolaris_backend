@@ -6,10 +6,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { ViolationModel, ViolationType } from '../models/violation.model';
-import {
-  CreateViolationInput,
-  IViolationRepository,
-} from './violation.repository';
+import { CreateViolationInput, IViolationRepository } from './violation.repository';
 
 @Injectable()
 export class PrismaViolationRepository implements IViolationRepository {

@@ -100,3 +100,49 @@ async def extract(req: ExtractRequest):
         "overallConfidence": round(conf, 3),
         "drafts": [_draft_to_dict(d) for d in drafts],
     }
+
+
+@app.post("/ocr/extract-structured")
+async def extract_structured(req: ExtractRequest):
+    """Slice 2.2 — printed-paper PaddleOCR path. Returns per-page text + per-word
+    bounding boxes so the Node side can run column reorder + page classification
+    + parseDrafts itself. The HEAVY work (OCR) happens here; the smart work
+    (layout / parsing) stays in Node where it's tested.
+
+    Engines that lack `recognize_structured` (the stub) return HTTP 501; the
+    Node dispatcher then degrades to the existing tesseract path so callers
+    are never silently downgraded.
+    """
+    content, mime = await fetch_object(req.storageKey)
+    engine = app.state.engine
+    if not hasattr(engine, "recognize_structured"):
+        return JSONResponse(
+            status_code=501,
+            content={
+                "error": "structured_unsupported",
+                "engine": engine.name,
+                "message": "This engine does not implement recognize_structured(); use HW_OCR_MODEL=paddle.",
+            },
+        )
+    pages, provider = await asyncio.get_event_loop().run_in_executor(
+        None, engine.recognize_structured, content, req.mime or mime
+    )
+    overall = sum(p["confidence"] for p in pages) / len(pages) if pages else 0.0
+
+    # Phase B — flatten per-page typed regions into a top-level regions[]
+    # array with a global readingOrder index. The flat top-level shape is
+    # what the Node side and Phase C consumers will read; the per-page field
+    # is dropped from the wire so we never double-serialize the data.
+    regions: list = []
+    for page in pages:
+        page_regions = page.pop("regions", None) or []
+        for r in page_regions:
+            r["readingOrder"] = len(regions)
+            regions.append(r)
+
+    return {
+        "providerUsed": provider,
+        "overallConfidence": round(overall, 3),
+        "pages": pages,
+        "regions": regions,
+    }

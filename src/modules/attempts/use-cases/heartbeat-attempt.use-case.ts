@@ -43,9 +43,7 @@ export class HeartbeatAttemptUseCase {
     if (!attempt.startedAt) {
       throw new ConflictException('Attempt has no startedAt — cannot compute time');
     }
-    const elapsedSeconds = Math.floor(
-      (Date.now() - attempt.startedAt.getTime()) / 1000,
-    );
+    const elapsedSeconds = Math.floor((Date.now() - attempt.startedAt.getTime()) / 1000);
     const serverRemaining = Math.max(0, exam.durationSeconds - elapsedSeconds);
     // Use the lower of (server-authoritative remaining) and (client-reported) — defensive.
     const remaining = Math.min(serverRemaining, input.clientTimeRemainingSeconds);

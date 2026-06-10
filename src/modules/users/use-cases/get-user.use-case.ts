@@ -2,10 +2,7 @@ import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nest
 import { Role } from '../../../shared/common/enums/role.enum';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
 import { UserModel } from '../models/user.model';
-import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '../repositories/user.repository';
+import { IUserRepository, USER_REPOSITORY } from '../repositories/user.repository';
 
 @Injectable()
 export class GetUserUseCase {
@@ -18,10 +15,7 @@ export class GetUserUseCase {
     }
 
     const { actor } = input;
-    if (
-      actor.role === Role.STUDENT &&
-      actor.sub !== user.id
-    ) {
+    if (actor.role === Role.STUDENT && actor.sub !== user.id) {
       throw new ForbiddenException('Students may only read their own profile');
     }
     return user;

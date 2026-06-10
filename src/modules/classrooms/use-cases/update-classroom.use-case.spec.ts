@@ -26,11 +26,13 @@ describe('UpdateClassroomUseCase', () => {
     repo = {
       create: jest.fn(),
       findById: jest.fn(),
+      findByUniqueAttributes: jest.fn(),
       findWithCount: jest.fn(),
       list: jest.fn(),
-      update: jest.fn().mockImplementation(async (_t, id, input) =>
-        cls({ id, name: input.name ?? 'Name' }),
-      ),
+      getFilters: jest.fn(),
+      update: jest
+        .fn()
+        .mockImplementation(async (_t, id, input) => cls({ id, name: input.name ?? 'Name' })),
       remove: jest.fn(),
       addStudents: jest.fn(),
       removeStudent: jest.fn(),

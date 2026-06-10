@@ -7,9 +7,7 @@ import {
 
 @Injectable()
 export class NotificationsDispatchCron {
-  constructor(
-    @Inject(NOTIFICATIONS_DISPATCHER) private readonly queue: INotificationsDispatcher,
-  ) {}
+  constructor(@Inject(NOTIFICATIONS_DISPATCHER) private readonly queue: INotificationsDispatcher) {}
 
   // Every 30 seconds. The queue service dedupes by 30s bucket to avoid duplicate jobs.
   @Cron('*/30 * * * * *')

@@ -14,7 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 ARG INSTALL_ML=none
 COPY requirements-ml.txt requirements-paddle.txt requirements-trocr.txt ./
 RUN if [ "$INSTALL_ML" != "none" ]; then \
-        apt-get update && apt-get install -y --no-install-recommends poppler-utils && \
+        apt-get update && apt-get install -y --no-install-recommends \
+            poppler-utils \
+            libgomp1 \
+            libglib2.0-0 libsm6 libxext6 libxrender1 libgl1 && \
         rm -rf /var/lib/apt/lists/* && \
         pip install --no-cache-dir -r requirements-ml.txt; \
     fi

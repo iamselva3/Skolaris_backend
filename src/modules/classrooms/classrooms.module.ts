@@ -8,6 +8,7 @@ import { DeleteClassroomUseCase } from './use-cases/delete-classroom.use-case';
 import { GetClassroomUseCase } from './use-cases/get-classroom.use-case';
 import { ListClassroomStudentsUseCase } from './use-cases/list-classroom-students.use-case';
 import { ListClassroomsUseCase } from './use-cases/list-classrooms.use-case';
+import { GetClassroomFiltersUseCase } from './use-cases/get-classroom-filters.use-case';
 import { RemoveStudentFromClassroomUseCase } from './use-cases/remove-student-from-classroom.use-case';
 import { UpdateClassroomUseCase } from './use-cases/update-classroom.use-case';
 
@@ -16,6 +17,7 @@ import { UpdateClassroomUseCase } from './use-cases/update-classroom.use-case';
   providers: [
     CreateClassroomUseCase,
     ListClassroomsUseCase,
+    GetClassroomFiltersUseCase,
     GetClassroomUseCase,
     UpdateClassroomUseCase,
     DeleteClassroomUseCase,

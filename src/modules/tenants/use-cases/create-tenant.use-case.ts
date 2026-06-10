@@ -1,9 +1,6 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import {
-  ITenantRepository,
-  TENANT_REPOSITORY,
-} from '../repositories/tenant.repository';
+import { ITenantRepository, TENANT_REPOSITORY } from '../repositories/tenant.repository';
 
 export interface CreateTenantInput {
   name: string;

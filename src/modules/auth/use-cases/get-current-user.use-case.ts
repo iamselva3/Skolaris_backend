@@ -1,9 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CurrentUserResponse } from '../dtos/auth-response.dto';
-import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '../../users/repositories/user.repository';
+import { IUserRepository, USER_REPOSITORY } from '../../users/repositories/user.repository';
 
 @Injectable()
 export class GetCurrentUserUseCase {

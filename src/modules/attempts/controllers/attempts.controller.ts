@@ -1,5 +1,13 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { IsBooleanString, IsDateString, IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsBooleanString,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -33,10 +41,7 @@ export class AttemptsController {
 
   @Roles(Role.SUPER_ADMIN, Role.TEACHER)
   @Get()
-  async list(
-    @CurrentUser() actor: AuthenticatedUser,
-    @Query() query: ListAttemptsQueryDto,
-  ) {
+  async list(@CurrentUser() actor: AuthenticatedUser, @Query() query: ListAttemptsQueryDto) {
     const where: import('@prisma/client').Prisma.ExamAttemptWhereInput = {
       tenantId: actor.tenantId,
     };

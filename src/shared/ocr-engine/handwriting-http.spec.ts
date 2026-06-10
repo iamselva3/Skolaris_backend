@@ -25,7 +25,11 @@ describe('handwriting-http dispatcher', () => {
   it('maps a successful response to an OcrEngineResult (detectedType defaulted)', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => ({ providerUsed: 'paddle-hw', overallConfidence: 0.62, drafts: [{ position: 0, text: 'Q1' }] }),
+      json: async () => ({
+        providerUsed: 'paddle-hw',
+        overallConfidence: 0.62,
+        drafts: [{ position: 0, text: 'Q1' }],
+      }),
     });
     const r = await dispatchHandwritingHttp(input, deps);
     expect(r).not.toBeNull();

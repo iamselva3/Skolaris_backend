@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
 import { OcrDraftModel } from '../models/ocr-draft.model';
 import { OcrJobModel } from '../models/ocr-job.model';
@@ -30,6 +30,15 @@ const draft = (overrides: Partial<OcrDraftModel> = {}): OcrDraftModel =>
     overrides.updatedAt ?? new Date(),
   );
 
+// Approval now REQUIRES complete taxonomy; success cases must supply it (the
+// upload mock returns null, so there is no upload-level fallback).
+const COMPLETE_TAXONOMY = {
+  programId: 'p-1',
+  subjectId: 's-1',
+  topicId: 't-1',
+  chapterId: 'c-1',
+};
+
 describe('ApproveOcrDraftUseCase', () => {
   let drafts: jest.Mocked<IOcrDraftRepository>;
   let ocrJobs: jest.Mocked<IOcrJobRepository>;
@@ -43,15 +52,38 @@ describe('ApproveOcrDraftUseCase', () => {
       list: jest.fn(),
       findById: jest.fn(),
       update: jest.fn().mockImplementation(async (_, id, input) =>
-        draft({ id, status: input.status ?? 'APPROVED', approvedQuestionId: input.approvedQuestionId ?? null }),
+        draft({
+          id,
+          status: input.status ?? 'APPROVED',
+          approvedQuestionId: input.approvedQuestionId ?? null,
+        }),
       ),
       countByJob: jest.fn(),
+      setSuggestedAnswers: jest.fn(),
+      setTaxonomy: jest.fn(),
+      insertDraftAt: jest.fn(),
+      moveDraftToNumber: jest.fn(),
     };
     ocrJobs = {
       create: jest.fn(),
-      findById: jest.fn().mockResolvedValue(
-        new OcrJobModel('job-1', 'tenant-1', 'upload-1', new Date(), null, null, null, null, null, null, new Date(), new Date()),
-      ),
+      findById: jest
+        .fn()
+        .mockResolvedValue(
+          new OcrJobModel(
+            'job-1',
+            'tenant-1',
+            'upload-1',
+            new Date(),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            new Date(),
+            new Date(),
+          ),
+        ),
       findByIdAnyTenant: jest.fn(),
       findByUploadId: jest.fn(),
       countDraftsByStatus: jest
@@ -59,6 +91,7 @@ describe('ApproveOcrDraftUseCase', () => {
         .mockResolvedValue({ APPROVED: 1, DISCARDED: 0, PENDING_REVIEW: 1, EDITED: 0 }),
       markFinished: jest.fn(),
       markFailed: jest.fn(),
+      updateProgress: jest.fn(),
     };
     uploads = {
       create: jest.fn(),
@@ -67,6 +100,8 @@ describe('ApproveOcrDraftUseCase', () => {
       updateStatus: jest.fn(),
       failStuckProcessing: jest.fn(),
       remove: jest.fn(),
+      assignBatch: jest.fn(),
+      listByBatch: jest.fn(),
     };
     createQuestion = {
       execute: jest.fn().mockResolvedValue({
@@ -102,6 +137,7 @@ describe('ApproveOcrDraftUseCase', () => {
       tenantId: 'tenant-1',
       actorUserId: 'teacher-1',
       draftId: 'd-1',
+      ...COMPLETE_TAXONOMY,
       options: [
         { label: '3', isCorrect: false },
         { label: '4', isCorrect: true },
@@ -141,9 +177,29 @@ describe('ApproveOcrDraftUseCase', () => {
       draftId: 'd-1',
       type: QuestionType.TRUE_FALSE,
       correctAnswer: { correct: true },
+      ...COMPLETE_TAXONOMY,
     });
 
     expect(uploads.updateStatus).toHaveBeenCalledWith('tenant-1', 'upload-1', 'APPROVED');
+  });
+
+  it('refuses approval when taxonomy is incomplete and creates no question', async () => {
+    drafts.findById.mockResolvedValue(draft());
+
+    await expect(
+      useCase.execute({
+        tenantId: 'tenant-1',
+        actorUserId: 'teacher-1',
+        draftId: 'd-1',
+        // Only Program + Subject — Topic and Chapter missing, no upload fallback.
+        programId: 'p-1',
+        subjectId: 's-1',
+        options: [{ label: '4', isCorrect: true }],
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(createQuestion.execute).not.toHaveBeenCalled();
+    expect(drafts.update).not.toHaveBeenCalled();
   });
 
   it('rejects an already-approved draft', async () => {

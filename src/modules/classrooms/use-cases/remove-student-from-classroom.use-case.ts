@@ -1,21 +1,11 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
-import {
-  CLASSROOM_REPOSITORY,
-  IClassroomRepository,
-} from '../repositories/classroom.repository';
+import { CLASSROOM_REPOSITORY, IClassroomRepository } from '../repositories/classroom.repository';
 
 @Injectable()
 export class RemoveStudentFromClassroomUseCase {
-  constructor(
-    @Inject(CLASSROOM_REPOSITORY) private readonly classrooms: IClassroomRepository,
-  ) {}
+  constructor(@Inject(CLASSROOM_REPOSITORY) private readonly classrooms: IClassroomRepository) {}
 
   async execute(input: {
     actor: AuthenticatedUser;

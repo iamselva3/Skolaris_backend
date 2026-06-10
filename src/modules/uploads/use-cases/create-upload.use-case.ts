@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
 import { storageConfig } from '../../../shared/config/storage.config';
@@ -14,15 +9,8 @@ import {
   SignedUploadUrl,
 } from '../../../shared/storage/object-storage.interface';
 import { TaxonomyResolverService } from '../../taxonomy/services/taxonomy-resolver.service';
-import {
-  ALLOWED_UPLOAD_MIME_TYPES,
-  normalizeMimeType,
-  UploadModel,
-} from '../models/upload.model';
-import {
-  IUploadRepository,
-  UPLOAD_REPOSITORY,
-} from '../repositories/upload.repository';
+import { ALLOWED_UPLOAD_MIME_TYPES, normalizeMimeType, UploadModel } from '../models/upload.model';
+import { IUploadRepository, UPLOAD_REPOSITORY } from '../repositories/upload.repository';
 
 export interface CreateUploadInput {
   tenantId: string;
@@ -72,9 +60,7 @@ export class CreateUploadUseCase {
     input = { ...input, mimeType };
     if (input.sizeBytes !== null && input.sizeBytes > this.cfg.uploadMaxBytes) {
       this.logger.warn(`[reject] oversize ${input.sizeBytes} > ${this.cfg.uploadMaxBytes}`);
-      throw new BadRequestException(
-        `File too large (max ${this.cfg.uploadMaxBytes} bytes)`,
-      );
+      throw new BadRequestException(`File too large (max ${this.cfg.uploadMaxBytes} bytes)`);
     }
 
     await this.taxonomy.resolve(input.tenantId, {

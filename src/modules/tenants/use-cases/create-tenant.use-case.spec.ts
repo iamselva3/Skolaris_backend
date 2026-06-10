@@ -30,6 +30,7 @@ describe('CreateTenantUseCase', () => {
         't-1',
         null,
         input.admin.email,
+        null,
         input.admin.passwordHash,
         input.admin.name,
         Role.SUPER_ADMIN,

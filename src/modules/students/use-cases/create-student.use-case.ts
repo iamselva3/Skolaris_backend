@@ -1,16 +1,8 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { ConflictException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
-import {
-  IUserRepository,
-  USER_REPOSITORY,
-} from '../../users/repositories/user.repository';
+import { IUserRepository, USER_REPOSITORY } from '../../users/repositories/user.repository';
 import {
   IStudentRepository,
   STUDENT_REPOSITORY,

@@ -8,9 +8,7 @@ import {
 
 @Injectable()
 export class CreateNotificationUseCase {
-  constructor(
-    @Inject(NOTIFICATION_REPOSITORY) private readonly repo: INotificationRepository,
-  ) {}
+  constructor(@Inject(NOTIFICATION_REPOSITORY) private readonly repo: INotificationRepository) {}
 
   execute(input: {
     tenantId: string;

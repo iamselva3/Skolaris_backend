@@ -1,14 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import {
-  ChapterModel,
-  ProgramModel,
-  SubjectModel,
-  TopicModel,
-} from '../models/taxonomy.models';
-import {
-  ITaxonomyRepository,
-  TAXONOMY_REPOSITORY,
-} from '../repositories/taxonomy.repository';
+import { ChapterModel, ProgramModel, SubjectModel, TopicModel } from '../models/taxonomy.models';
+import { ITaxonomyRepository, TAXONOMY_REPOSITORY } from '../repositories/taxonomy.repository';
 
 export interface TaxonomySelection {
   programId?: string | null;
@@ -36,9 +28,7 @@ export interface ResolvedTaxonomy {
  */
 @Injectable()
 export class TaxonomyResolverService {
-  constructor(
-    @Inject(TAXONOMY_REPOSITORY) private readonly repo: ITaxonomyRepository,
-  ) {}
+  constructor(@Inject(TAXONOMY_REPOSITORY) private readonly repo: ITaxonomyRepository) {}
 
   async resolve(tenantId: string, sel: TaxonomySelection): Promise<ResolvedTaxonomy> {
     const out: ResolvedTaxonomy = { program: null, subject: null, topic: null, chapter: null };

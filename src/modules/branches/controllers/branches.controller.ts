@@ -61,10 +61,7 @@ export class BranchesController {
 
   @Roles(Role.SUPER_ADMIN, Role.TEACHER)
   @Get(':id')
-  async get(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
+  async get(@CurrentUser() user: AuthenticatedUser, @Param('id', new ParseUUIDPipe()) id: string) {
     const branch = await this.getBranchUseCase.execute({ tenantId: user.tenantId, id });
     return { data: branch };
   }

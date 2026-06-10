@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
@@ -23,21 +19,25 @@ describe('CreateUserUseCase', () => {
 
   beforeEach(() => {
     users = {
-      create: jest.fn().mockImplementation(async (i) =>
-        new UserModel(
-          'u-new',
-          i.tenantId,
-          i.branchId ?? null,
-          i.email,
-          i.passwordHash,
-          i.name,
-          i.role,
-          'ACTIVE',
-          null,
-          new Date(),
-          new Date(),
+      create: jest
+        .fn()
+        .mockImplementation(
+          async (i) =>
+            new UserModel(
+              'u-new',
+              i.tenantId,
+              i.branchId ?? null,
+              i.email,
+              null,
+              i.passwordHash,
+              i.name,
+              i.role,
+              'ACTIVE',
+              null,
+              new Date(),
+              new Date(),
+            ),
         ),
-      ),
       findById: jest.fn(),
       findByIdAnyTenant: jest.fn(),
       findByEmail: jest.fn().mockResolvedValue(null),
@@ -127,7 +127,20 @@ describe('CreateUserUseCase', () => {
 
   it('rejects duplicate email within tenant', async () => {
     users.findByEmail.mockResolvedValue(
-      new UserModel('x', 'tenant-1', null, 'a@b.test', 'h', 'X', Role.STUDENT, 'ACTIVE', null, new Date(), new Date()),
+      new UserModel(
+        'x',
+        'tenant-1',
+        null,
+        'a@b.test',
+        null,
+        'h',
+        'X',
+        Role.STUDENT,
+        'ACTIVE',
+        null,
+        new Date(),
+        new Date(),
+      ),
     );
     await expect(
       useCase.execute({

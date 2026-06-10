@@ -7,10 +7,7 @@ import {
 } from '@nestjs/common';
 import { QuestionType } from '../../questions/models/question-type.enum';
 import { DraftOption, OcrDraftModel } from '../models/ocr-draft.model';
-import {
-  IOcrDraftRepository,
-  OCR_DRAFT_REPOSITORY,
-} from '../repositories/ocr-draft.repository';
+import { IOcrDraftRepository, OCR_DRAFT_REPOSITORY } from '../repositories/ocr-draft.repository';
 
 export interface UpdateOcrDraftInput {
   tenantId: string;
@@ -30,7 +27,11 @@ export class UpdateOcrDraftUseCase {
     if (draft.status === 'APPROVED' || draft.status === 'DISCARDED') {
       throw new ConflictException(`Cannot edit draft in status ${draft.status}`);
     }
-    if (input.text === undefined && input.detectedType === undefined && input.options === undefined) {
+    if (
+      input.text === undefined &&
+      input.detectedType === undefined &&
+      input.options === undefined
+    ) {
       throw new BadRequestException('No fields to update');
     }
     return this.drafts.update(input.tenantId, input.id, {

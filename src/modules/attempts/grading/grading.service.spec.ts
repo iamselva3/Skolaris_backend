@@ -24,7 +24,9 @@ describe('GradingService', () => {
       ],
     });
     it('full marks for correct', () => {
-      expect(svc.grade(q, { payload: { selectedOptionId: 'b' } }).marksAwarded.equals(4)).toBe(true);
+      expect(svc.grade(q, { payload: { selectedOptionId: 'b' } }).marksAwarded.equals(4)).toBe(
+        true,
+      );
     });
     it('-negative for wrong', () => {
       const r = svc.grade(q, { payload: { selectedOptionId: 'a' } });
@@ -35,7 +37,9 @@ describe('GradingService', () => {
       expect(svc.grade(q, { payload: null }).marksAwarded.equals(0)).toBe(true);
     });
     it('-negative for unknown option id', () => {
-      expect(svc.grade(q, { payload: { selectedOptionId: 'zzz' } }).marksAwarded.equals(-1)).toBe(true);
+      expect(svc.grade(q, { payload: { selectedOptionId: 'zzz' } }).marksAwarded.equals(-1)).toBe(
+        true,
+      );
     });
   });
 
@@ -54,9 +58,9 @@ describe('GradingService', () => {
       ).toBe(true);
     });
     it('-negative when missing a correct one', () => {
-      expect(
-        svc.grade(q, { payload: { selectedOptionIds: ['a'] } }).marksAwarded.equals(-1),
-      ).toBe(true);
+      expect(svc.grade(q, { payload: { selectedOptionIds: ['a'] } }).marksAwarded.equals(-1)).toBe(
+        true,
+      );
     });
     it('-negative when an incorrect one is selected too', () => {
       expect(
@@ -108,16 +112,30 @@ describe('GradingService', () => {
     });
     it('all correct → full marks', () => {
       expect(
-        svc.grade(q, {
-          payload: { matches: [{ left: 'A', right: '1' }, { left: 'B', right: '2' }] },
-        }).marksAwarded.equals(4),
+        svc
+          .grade(q, {
+            payload: {
+              matches: [
+                { left: 'A', right: '1' },
+                { left: 'B', right: '2' },
+              ],
+            },
+          })
+          .marksAwarded.equals(4),
       ).toBe(true);
     });
     it('one wrong → -negative', () => {
       expect(
-        svc.grade(q, {
-          payload: { matches: [{ left: 'A', right: '2' }, { left: 'B', right: '2' }] },
-        }).marksAwarded.equals(-1),
+        svc
+          .grade(q, {
+            payload: {
+              matches: [
+                { left: 'A', right: '2' },
+                { left: 'B', right: '2' },
+              ],
+            },
+          })
+          .marksAwarded.equals(-1),
       ).toBe(true);
     });
   });

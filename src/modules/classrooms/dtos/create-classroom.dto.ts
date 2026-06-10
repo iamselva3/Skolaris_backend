@@ -1,10 +1,4 @@
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUUID,
-  MaxLength,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateClassroomDto {
   @IsString()
@@ -16,8 +10,8 @@ export class CreateClassroomDto {
   branchId!: string;
 
   @IsOptional()
-  @IsUUID()
-  teacherId?: string;
+  @IsUUID('all', { each: true })
+  teacherIds?: string[];
 
   @IsOptional()
   @IsString()
