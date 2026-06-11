@@ -489,7 +489,8 @@ model Question {
   topicId         String?      @map("topic_id") @db.Uuid
   chapterId       String?      @map("chapter_id") @db.Uuid
   subject         String?      // denormalized for analytics rollups (TopicReport)
-  topic           String?      // denormalized for analytics rollups (TopicReport)
+  topic           String?      // denormalized (leaf) for analytics rollups (TopicReport)
+  chapter         String?      // denormalized (mid-level) for future chapter-level reporting
   difficulty      Difficulty   @default(MEDIUM)
   isActive        Boolean      @default(true) @map("is_active")
   branchId        String?      @map("branch_id") @db.Uuid
@@ -815,7 +816,7 @@ model TopicReport {
   @@map("topic_reports")
 }
 
-// ===== Coaching-centre taxonomy: Program → Subject → Topic → Chapter =====
+// ===== Coaching-centre taxonomy: Program → Subject → Chapter → Topic =====
 
 model Program {
   id        String   @id @default(uuid()) @db.Uuid
@@ -848,7 +849,7 @@ model Subject {
 
   tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   program   Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
-  topics    Topic[]
+  chapters  Chapter[]
   teachers  TeacherSubject[]
   questions Question[]
   exams     Exam[]
@@ -859,7 +860,9 @@ model Subject {
   @@map("subjects")
 }
 
-model Topic {
+// Chapter is the broad mid-level (child of Subject), Topic is the leaf (child of
+// Chapter): Subject → Chapter → Topic.
+model Chapter {
   id        String   @id @default(uuid()) @db.Uuid
   tenantId  String   @map("tenant_id") @db.Uuid
   subjectId String   @map("subject_id") @db.Uuid
@@ -870,30 +873,30 @@ model Topic {
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   subject   Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  chapters  Chapter[]
+  topics    Topic[]
   questions Question[]
 
   @@unique([tenantId, subjectId, name])
   @@index([tenantId, subjectId])
-  @@map("topics")
+  @@map("chapters")
 }
 
-model Chapter {
+model Topic {
   id        String   @id @default(uuid()) @db.Uuid
   tenantId  String   @map("tenant_id") @db.Uuid
-  topicId   String   @map("topic_id") @db.Uuid
+  chapterId String   @map("chapter_id") @db.Uuid
   name      String
   position  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  topic     Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  chapter   Chapter    @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   questions Question[]
 
-  @@unique([tenantId, topicId, name])
-  @@index([tenantId, topicId])
-  @@map("chapters")
+  @@unique([tenantId, chapterId, name])
+  @@index([tenantId, chapterId])
+  @@map("topics")
 }
 
 model TeacherSubject {

@@ -103,7 +103,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
-      DATABASE_URL: postgresql://neondb_owner:npg_kRYIreSOW0j1@ep-fragrant-firefly-aph8n88b-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      DATABASE_URL: postgresql://skolaris:skolaris@db:5432/skolaris?schema=public
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-me-please}
       JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-me-please}

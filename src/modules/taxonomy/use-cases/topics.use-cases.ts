@@ -12,8 +12,8 @@ import { ITaxonomyRepository, TAXONOMY_REPOSITORY } from '../repositories/taxono
 @Injectable()
 export class ListTopicsUseCase {
   constructor(@Inject(TAXONOMY_REPOSITORY) private readonly repo: ITaxonomyRepository) {}
-  execute(input: { tenantId: string; subjectId?: string }): Promise<TopicModel[]> {
-    return this.repo.listTopics(input.tenantId, input.subjectId);
+  execute(input: { tenantId: string; chapterId?: string }): Promise<TopicModel[]> {
+    return this.repo.listTopics(input.tenantId, input.chapterId);
   }
 }
 
@@ -34,23 +34,23 @@ export class CreateTopicUseCase {
     tenantId: string;
     userId: string;
     role: Role;
-    subjectId: string;
+    chapterId: string;
     name: string;
     position?: number;
   }): Promise<TopicModel> {
-    const subject = await this.repo.getSubject(input.tenantId, input.subjectId);
-    if (!subject) throw new NotFoundException('Subject not found');
+    const chapter = await this.repo.getChapter(input.tenantId, input.chapterId);
+    if (!chapter) throw new NotFoundException('Chapter not found');
 
     try {
       return await this.repo.createTopic({
         tenantId: input.tenantId,
-        subjectId: input.subjectId,
+        chapterId: input.chapterId,
         name: input.name,
         position: input.position,
       });
     } catch (e: unknown) {
       if (isUniqueConstraintError(e)) {
-        throw new ConflictException('A topic with that name already exists for this subject');
+        throw new ConflictException('A topic with that name already exists for this chapter');
       }
       throw e;
     }

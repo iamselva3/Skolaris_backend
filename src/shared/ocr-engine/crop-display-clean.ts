@@ -79,6 +79,31 @@ const KEEP_MARGIN = Number(process.env.OCR_DISPLAY_WM_KEEP_MARGIN ?? 28);
  *  regardless of the flat field (a hard guarantee for medium-dark strokes). */
 const WHITE_FLOOR = Number(process.env.OCR_DISPLAY_WM_WHITE_FLOOR ?? 120);
 
+/**
+ * AGGRESSIVE, FLAT-AWARE dark-core removal (OPT-IN; default OFF — the verified
+ * output is unchanged unless this is set to 'true'). It answers the "dark watermark
+ * strokes survive" / "watermark still visible after the mask pass" problem.
+ *
+ * The dark-core guards (C) CORE_DARK and (F) WHITE_FLOOR are ABSOLUTE — they keep
+ * ANY dark pixel, so a solid/dark watermark stroke (which is just as dark as ink)
+ * is always protected. But the flat field already knows which dark pixels are
+ * watermark: a pixel that is dark on THIS page AND whose flat field is ALSO dark
+ * there is dark on EVERY page ⇒ persistent ⇒ the watermark itself; a dark pixel
+ * whose flat is bright is unique ⇒ content. When this flag is on, inside the large
+ * mask the (C)/(F) absolute guards are dropped and a dark pixel is whitened ONLY
+ * when the flat confirms the darkness is persistent:
+ *    • (E) still protects unique-content locations  (flat bright ⇒ kept), and
+ *    • (D) still protects content drawn OVER the watermark (darker than the
+ *          persistent background by KEEP_MARGIN ⇒ kept).
+ * So it removes watermark cores WITHOUT the content loss a flat-blind threshold
+ * would cause (a diagram stroke unique to the page has a bright flat and survives
+ * via (E); a formula crossing the banner is darker-than-bg and survives via (D)).
+ * It depends entirely on flat-field accuracy, so it is gated to the large mask and
+ * OFF by default — validate with scripts/diag-mask.ts / diag-display.ts on the real
+ * PDF before enabling on a new layout. */
+export const persistentCoreEnabled = (): boolean =>
+  process.env.OCR_DISPLAY_WM_PERSISTENT_CORE === 'true';
+
 // ---------------------------------------------------------------------------
 // CONSERVATIVE BACKGROUND POST-PASSES (additive; run AFTER the mask pass above).
 // They only ever set pixels to white, never darken, and are guarded so they
@@ -95,6 +120,29 @@ export const backgroundCleanupEnabled = (): boolean =>
 const BG_INK_DARK = Number(process.env.OCR_DISPLAY_BG_INK_DARK ?? 150);
 /** Protect this many px around every ink pixel (covers anti-alias edges). */
 const BG_HALO = Math.max(0, Math.round(Number(process.env.OCR_DISPLAY_BG_HALO ?? 8)));
+
+/**
+ * TRAIL mode (OPT-IN; default OFF — Pass 2 is byte-identical until set to 'true').
+ * Targets the faint trail that survives Pass 2 in EMPTY background. It survives
+ * because a MEDIUM-grey trail pixel (luma in [BG_HARD_INK, BG_INK_DARK)) is itself
+ * counted as ink above and then shields an 8px halo of the fainter trail around it.
+ *
+ * With this on, a medium-grey pixel counts as ink ONLY when the cross-page flat
+ * field says it is content: it is genuinely DARK (< BG_HARD_INK ⇒ real ink), OR it
+ * sits at a flat-BRIGHT location (white on some page ⇒ unique content of any
+ * intensity). A PERSISTENT medium-grey pixel (flat not bright) is watermark by
+ * cross-page consensus, so it no longer self-protects and the empty-background trail
+ * around it clears. This is diagram/formula-safe BY CONSTRUCTION:
+ *   • a unique diagram/formula stroke of ANY intensity keeps its bright flat ⇒ still
+ *     seeds the protective halo AND is kept by the flat-bright guard below;
+ *   • genuinely dark ink (< BG_HARD_INK) still seeds the halo;
+ *   • watermark TOUCHING content is kept because the CONTENT seeds the halo around it.
+ * Only persistent medium-grey in genuinely empty space (no dark ink and no unique
+ * content within BG_HALO) loses protection. Validate on the Q108 page before enabling. */
+export const backgroundTrailEnabled = (): boolean =>
+  process.env.OCR_DISPLAY_BG_TRAIL === 'true';
+/** Below this luma a pixel is real ink regardless of the flat field (TRAIL mode). */
+const BG_HARD_INK = Number(process.env.OCR_DISPLAY_BG_HARD_INK ?? 110);
 
 /** Pass 3 — remove the two-column page DIVIDER line, but ONLY where it is a
  *  PERSISTENT (cross-page) line that is horizontally ISOLATED (no ink beside it).
@@ -229,14 +277,26 @@ export const cleanCropForDisplay = async (
       ? await flatForRegion(mask, region, pageWidth, pageHeight, width, height)
       : null;
 
+    // When ON, drop the flat-BLIND dark guards (C)/(F) inside the mask so dark
+    // watermark cores can be removed; the flat-AWARE guards (D)/(E) below still
+    // protect all real content. Default OFF ⇒ guards apply ⇒ output unchanged.
+    const persistentCore = persistentCoreEnabled();
     for (let i = 0, p = 0; p < n; p += 1, i += channels) {
-      if (protectedSet[p]) continue; // (C) dark content + halo → keep verbatim
-      if (mreg && mreg[p] < 128) continue; // (A) outside the large-watermark mask → keep verbatim
+      // (A) the large-watermark mask gates EVERYTHING — outside it, keep verbatim.
+      if (mreg && mreg[p] < 128) continue;
+      // Flat-AWARE content protections — these always hold (they ARE the cross-page
+      // signal that separates content from watermark), so they run first.
       const F = f[p];
-      if (F >= PROTECT_ABOVE) continue; // (E) content-capable location → keep (saves light diagrams)
+      if (F >= PROTECT_ABOVE) continue; // (E) content-capable location (white on some page) → keep
       const L = luma[p];
-      if (L < WHITE_FLOOR) continue; // (F) absolute content floor → keep verbatim
-      if (L < F - KEEP_MARGIN) continue; // (D) darker than persistent background → content → keep
+      if (L < F - KEEP_MARGIN) continue; // (D) darker than persistent background → content on top → keep
+      // Flat-BLIND dark guards — kept by default; dropped in persistent-core mode,
+      // where (D)/(E) above have already let through ONLY persistent (watermark)
+      // darkness, so a dark pixel here is a confident watermark core.
+      if (!persistentCore) {
+        if (protectedSet[p]) continue; // (C) dark content + halo → keep verbatim
+        if (L < WHITE_FLOOR) continue; // (F) absolute content floor → keep verbatim
+      }
 
       // Confident watermark on NON-content → remove fully to white. BINARY: this is
       // the ONLY write; kept pixels above are never touched, so content is byte-faithful.
@@ -252,8 +312,17 @@ export const cleanCropForDisplay = async (
     // touches dark ink or its halo (text/diagram edges) and never touches a
     // content-capable (flat-bright) location. `luma`/`f` are from the ORIGINAL crop.
     if (backgroundCleanupEnabled()) {
+      const trail = backgroundTrailEnabled();
       const ink = new Uint8Array(n);
-      for (let p = 0; p < n; p += 1) if (luma[p] < BG_INK_DARK) ink[p] = 1;
+      for (let p = 0; p < n; p += 1) {
+        if (luma[p] >= BG_INK_DARK) continue;
+        // DEFAULT: anything below BG_INK_DARK is ink (and self-protects). TRAIL mode:
+        // a MEDIUM-grey pixel is ink only if the flat field says it is content — it
+        // is genuinely dark OR at a flat-bright (unique) location; a persistent
+        // medium grey is a watermark trail, so it no longer shields a halo.
+        if (trail && luma[p] >= BG_HARD_INK && f[p] < PROTECT_ABOVE) continue;
+        ink[p] = 1;
+      }
       const inkRegion = dilate(ink, width, height, BG_HALO);
       for (let i = 0, p = 0; p < n; p += 1, i += channels) {
         if (inkRegion[p]) continue; // near real ink → keep (protects text/diagram edges)

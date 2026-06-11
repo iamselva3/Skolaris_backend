@@ -113,3 +113,45 @@ describe('buildWatermarkMask (large-watermark-only, page-level)', () => {
     expect(mask.data.some((v) => v !== 0)).toBe(false);
   });
 });
+
+describe('OCR_DISPLAY_WM_MASK_CLOSE (seal dark-core holes in the mask)', () => {
+  // A large grey watermark blob (accepted) with a DARK core hole in the middle — the
+  // core is below GREY_FLOOR so it is not a candidate, leaving a hole through the
+  // mask that keeps the stroke core alive. A close fills the hole; it does NOT grow
+  // the outer boundary and cannot resurrect rejected components.
+  const W = 200;
+  const H = 200;
+  const makeHoledFlat = (): Uint8Array => {
+    const data = new Uint8Array(W * H).fill(255);
+    // 60×60 grey (180) square at [70,130) — large ⇒ accepted.
+    for (let y = 70; y < 130; y += 1) for (let x = 70; x < 130; x += 1) data[y * W + x] = 180;
+    // 16×16 DARK core hole (50 < GREY_FLOOR) at the centre ⇒ not a candidate.
+    for (let y = 92; y < 108; y += 1) for (let x = 92; x < 108; x += 1) data[y * W + x] = 50;
+    return data;
+  };
+  const at = (m: { width: number; data: Uint8Array }, x: number, y: number): number =>
+    m.data[y * m.width + x];
+
+  afterEach(() => {
+    delete process.env.OCR_DISPLAY_WM_MASK_CLOSE;
+    jest.resetModules();
+  });
+
+  it('DEFAULT (close=0): the dark core is a HOLE in the mask', () => {
+    jest.resetModules();
+    const { buildWatermarkMask: build } = require('./watermark-clean');
+    const mask = build({ width: W, height: H, data: makeHoledFlat() });
+    expect(at(mask, 100, 100)).toBe(0); // stroke-centre hole → not masked → watermark survives
+    expect(at(mask, 75, 75)).toBe(255); // the surrounding blob IS masked
+  });
+
+  it('close=10 seals the hole without growing the outer boundary', () => {
+    process.env.OCR_DISPLAY_WM_MASK_CLOSE = '10';
+    jest.resetModules();
+    const { buildWatermarkMask: build } = require('./watermark-clean');
+    const mask = build({ width: W, height: H, data: makeHoledFlat() });
+    expect(at(mask, 100, 100)).toBe(255); // hole filled → core now removable in display
+    expect(at(mask, 75, 75)).toBe(255); // blob still masked
+    expect(at(mask, 60, 60)).toBe(0); // OUTSIDE the blob → still not masked (no outward growth)
+  });
+});

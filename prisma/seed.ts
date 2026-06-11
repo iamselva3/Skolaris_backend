@@ -261,30 +261,30 @@ async function main(): Promise<void> {
     });
   }
 
-  // --- Coaching-centre taxonomy: Program → Subject → Topic → Chapter ------
+  // --- Coaching-centre taxonomy: Program → Subject → Chapter → Topic ------
 
   await seedTaxonomy({ tenantId: tenant.id, teacherId: teacher.id });
 
   // eslint-disable-next-line no-console
   console.log(
-    `Seeded tenant "${tenant.slug}": admin + teacher + 2 students, 1 classroom, 1 upload (READY_FOR_REVIEW + 3 drafts), 1 Q-bank question, 1 published Phase 3 exam (6 questions), 4 programs (Foundation/NEET/IIT-JEE/JEE Advanced) with subjects + starter topics/chapters; teacher assigned to NEET Physics + NEET Chemistry.`,
+    `Seeded tenant "${tenant.slug}": admin + teacher + 2 students, 1 classroom, 1 upload (READY_FOR_REVIEW + 3 drafts), 1 Q-bank question, 1 published Phase 3 exam (6 questions), 4 programs (Foundation/NEET/IIT-JEE/JEE Advanced) with subjects + starter chapters/topics; teacher assigned to NEET Physics + NEET Chemistry.`,
   );
 }
 
 /**
- * Seed the full coaching-centre taxonomy:
+ * Seed the full coaching-centre taxonomy (Program → Subject → Chapter → Topic):
  *   - 4 programs (Foundation / NEET / IIT-JEE / JEE Advanced)
  *   - subjects per program (per spec)
- *   - 3–5 starter topics per subject, with 3–5 chapters each
+ *   - 2–4 starter chapters per subject, with 2–4 leaf topics each
  *   - assign the demo teacher to NEET Physics + NEET Chemistry
  * Idempotent: upserts by unique constraints.
  */
 async function seedTaxonomy(input: { tenantId: string; teacherId: string }): Promise<void> {
   const { tenantId, teacherId } = input;
 
-  type ChapterSpec = string;
-  type TopicSpec = { name: string; chapters: ChapterSpec[] };
-  type SubjectSpec = { name: string; topics: TopicSpec[] };
+  type TopicSpec = string;
+  type ChapterSpec = { name: string; topics: TopicSpec[] };
+  type SubjectSpec = { name: string; chapters: ChapterSpec[] };
   type ProgramSpec = { code: string; name: string; subjects: SubjectSpec[] };
 
   // Generic, syllabus-aligned starter taxonomy. Names are deliberately broad
@@ -296,30 +296,30 @@ async function seedTaxonomy(input: { tenantId: string; teacherId: string }): Pro
       subjects: [
         {
           name: 'Science',
-          topics: [
-            { name: 'Physical Science', chapters: ['Motion', 'Force', 'Energy'] },
-            { name: 'Life Science', chapters: ['Cells', 'Plants', 'Animals'] },
+          chapters: [
+            { name: 'Physical Science', topics: ['Motion', 'Force', 'Energy'] },
+            { name: 'Life Science', topics: ['Cells', 'Plants', 'Animals'] },
           ],
         },
         {
           name: 'Mathematics',
-          topics: [
-            { name: 'Arithmetic', chapters: ['Numbers', 'Fractions', 'Percentages'] },
-            { name: 'Geometry', chapters: ['Lines & Angles', 'Triangles', 'Circles'] },
+          chapters: [
+            { name: 'Arithmetic', topics: ['Numbers', 'Fractions', 'Percentages'] },
+            { name: 'Geometry', topics: ['Lines & Angles', 'Triangles', 'Circles'] },
           ],
         },
         {
           name: 'Reasoning',
-          topics: [
-            { name: 'Verbal', chapters: ['Analogies', 'Series', 'Coding–Decoding'] },
-            { name: 'Non-Verbal', chapters: ['Pattern Recognition', 'Mirror Images'] },
+          chapters: [
+            { name: 'Verbal', topics: ['Analogies', 'Series', 'Coding–Decoding'] },
+            { name: 'Non-Verbal', topics: ['Pattern Recognition', 'Mirror Images'] },
           ],
         },
         {
           name: 'English',
-          topics: [
-            { name: 'Grammar', chapters: ['Parts of Speech', 'Tenses', 'Voice'] },
-            { name: 'Comprehension', chapters: ['Passage Reading', 'Vocabulary'] },
+          chapters: [
+            { name: 'Grammar', topics: ['Parts of Speech', 'Tenses', 'Voice'] },
+            { name: 'Comprehension', topics: ['Passage Reading', 'Vocabulary'] },
           ],
         },
       ],
@@ -330,34 +330,34 @@ async function seedTaxonomy(input: { tenantId: string; teacherId: string }): Pro
       subjects: [
         {
           name: 'Physics',
-          topics: [
-            { name: 'Mechanics', chapters: ['Kinematics', 'Laws of Motion', 'Work, Energy & Power', 'Rotational Motion'] },
-            { name: 'Electrodynamics', chapters: ['Current Electricity', 'Magnetic Effects', 'EM Induction'] },
-            { name: 'Modern Physics', chapters: ['Dual Nature', 'Atoms', 'Nuclei'] },
+          chapters: [
+            { name: 'Mechanics', topics: ['Kinematics', 'Laws of Motion', 'Work, Energy & Power', 'Rotational Motion'] },
+            { name: 'Electrodynamics', topics: ['Current Electricity', 'Magnetic Effects', 'EM Induction'] },
+            { name: 'Modern Physics', topics: ['Dual Nature', 'Atoms', 'Nuclei'] },
           ],
         },
         {
           name: 'Chemistry',
-          topics: [
-            { name: 'Physical Chemistry', chapters: ['Mole Concept', 'Thermodynamics', 'Chemical Kinetics'] },
-            { name: 'Inorganic Chemistry', chapters: ['Periodic Table', 'Chemical Bonding', 'Coordination Compounds'] },
-            { name: 'Organic Chemistry', chapters: ['GOC', 'Hydrocarbons', 'Biomolecules'] },
+          chapters: [
+            { name: 'Physical Chemistry', topics: ['Mole Concept', 'Thermodynamics', 'Chemical Kinetics'] },
+            { name: 'Inorganic Chemistry', topics: ['Periodic Table', 'Chemical Bonding', 'Coordination Compounds'] },
+            { name: 'Organic Chemistry', topics: ['GOC', 'Hydrocarbons', 'Biomolecules'] },
           ],
         },
         {
           name: 'Botany',
-          topics: [
-            { name: 'Plant Physiology', chapters: ['Photosynthesis', 'Respiration', 'Mineral Nutrition'] },
-            { name: 'Plant Morphology', chapters: ['Root', 'Stem', 'Leaf'] },
-            { name: 'Reproduction', chapters: ['Sexual Reproduction in Plants'] },
+          chapters: [
+            { name: 'Plant Physiology', topics: ['Photosynthesis', 'Respiration', 'Mineral Nutrition'] },
+            { name: 'Plant Morphology', topics: ['Root', 'Stem', 'Leaf'] },
+            { name: 'Reproduction', topics: ['Sexual Reproduction in Plants'] },
           ],
         },
         {
           name: 'Zoology',
-          topics: [
-            { name: 'Human Physiology', chapters: ['Digestion', 'Breathing', 'Body Fluids & Circulation'] },
-            { name: 'Animal Diversity', chapters: ['Non-Chordates', 'Chordates'] },
-            { name: 'Genetics & Evolution', chapters: ['Principles of Inheritance', 'Molecular Basis'] },
+          chapters: [
+            { name: 'Human Physiology', topics: ['Digestion', 'Breathing', 'Body Fluids & Circulation'] },
+            { name: 'Animal Diversity', topics: ['Non-Chordates', 'Chordates'] },
+            { name: 'Genetics & Evolution', topics: ['Principles of Inheritance', 'Molecular Basis'] },
           ],
         },
       ],
@@ -368,26 +368,26 @@ async function seedTaxonomy(input: { tenantId: string; teacherId: string }): Pro
       subjects: [
         {
           name: 'Physics',
-          topics: [
-            { name: 'Mechanics', chapters: ['Kinematics', 'Newton\'s Laws', 'Work & Energy', 'Rotational Dynamics'] },
-            { name: 'Thermodynamics', chapters: ['Heat Transfer', 'Kinetic Theory', 'Laws of Thermodynamics'] },
-            { name: 'Optics', chapters: ['Ray Optics', 'Wave Optics'] },
+          chapters: [
+            { name: 'Mechanics', topics: ['Kinematics', 'Newton\'s Laws', 'Work & Energy', 'Rotational Dynamics'] },
+            { name: 'Thermodynamics', topics: ['Heat Transfer', 'Kinetic Theory', 'Laws of Thermodynamics'] },
+            { name: 'Optics', topics: ['Ray Optics', 'Wave Optics'] },
           ],
         },
         {
           name: 'Chemistry',
-          topics: [
-            { name: 'Physical Chemistry', chapters: ['Atomic Structure', 'Solutions', 'Electrochemistry'] },
-            { name: 'Inorganic Chemistry', chapters: ['s-Block', 'p-Block', 'd & f-Block'] },
-            { name: 'Organic Chemistry', chapters: ['Isomerism', 'Alcohols & Ethers', 'Aldehydes & Ketones'] },
+          chapters: [
+            { name: 'Physical Chemistry', topics: ['Atomic Structure', 'Solutions', 'Electrochemistry'] },
+            { name: 'Inorganic Chemistry', topics: ['s-Block', 'p-Block', 'd & f-Block'] },
+            { name: 'Organic Chemistry', topics: ['Isomerism', 'Alcohols & Ethers', 'Aldehydes & Ketones'] },
           ],
         },
         {
           name: 'Mathematics',
-          topics: [
-            { name: 'Algebra', chapters: ['Quadratic Equations', 'Sequences & Series', 'Permutations & Combinations'] },
-            { name: 'Calculus', chapters: ['Limits & Continuity', 'Differentiation', 'Integration'] },
-            { name: 'Coordinate Geometry', chapters: ['Straight Lines', 'Circles', 'Conics'] },
+          chapters: [
+            { name: 'Algebra', topics: ['Quadratic Equations', 'Sequences & Series', 'Permutations & Combinations'] },
+            { name: 'Calculus', topics: ['Limits & Continuity', 'Differentiation', 'Integration'] },
+            { name: 'Coordinate Geometry', topics: ['Straight Lines', 'Circles', 'Conics'] },
           ],
         },
       ],
@@ -398,26 +398,26 @@ async function seedTaxonomy(input: { tenantId: string; teacherId: string }): Pro
       subjects: [
         {
           name: 'Physics',
-          topics: [
-            { name: 'Mechanics', chapters: ['Rotational Mechanics', 'Gravitation', 'Fluid Mechanics'] },
-            { name: 'Electromagnetism', chapters: ['Electrostatics', 'Capacitors', 'Magnetism'] },
-            { name: 'Modern Physics', chapters: ['Photoelectric Effect', 'Bohr Model', 'Nuclear Physics'] },
+          chapters: [
+            { name: 'Mechanics', topics: ['Rotational Mechanics', 'Gravitation', 'Fluid Mechanics'] },
+            { name: 'Electromagnetism', topics: ['Electrostatics', 'Capacitors', 'Magnetism'] },
+            { name: 'Modern Physics', topics: ['Photoelectric Effect', 'Bohr Model', 'Nuclear Physics'] },
           ],
         },
         {
           name: 'Chemistry',
-          topics: [
-            { name: 'Physical Chemistry', chapters: ['Ionic Equilibrium', 'Solid State', 'Surface Chemistry'] },
-            { name: 'Inorganic Chemistry', chapters: ['Qualitative Analysis', 'Metallurgy'] },
-            { name: 'Organic Chemistry', chapters: ['Reaction Mechanisms', 'Amines', 'Polymers'] },
+          chapters: [
+            { name: 'Physical Chemistry', topics: ['Ionic Equilibrium', 'Solid State', 'Surface Chemistry'] },
+            { name: 'Inorganic Chemistry', topics: ['Qualitative Analysis', 'Metallurgy'] },
+            { name: 'Organic Chemistry', topics: ['Reaction Mechanisms', 'Amines', 'Polymers'] },
           ],
         },
         {
           name: 'Mathematics',
-          topics: [
-            { name: 'Algebra', chapters: ['Complex Numbers', 'Matrices & Determinants', 'Probability'] },
-            { name: 'Calculus', chapters: ['Application of Derivatives', 'Definite Integration', 'Differential Equations'] },
-            { name: 'Vectors & 3D', chapters: ['Vector Algebra', '3D Geometry'] },
+          chapters: [
+            { name: 'Algebra', topics: ['Complex Numbers', 'Matrices & Determinants', 'Probability'] },
+            { name: 'Calculus', topics: ['Application of Derivatives', 'Definite Integration', 'Differential Equations'] },
+            { name: 'Vectors & 3D', topics: ['Vector Algebra', '3D Geometry'] },
           ],
         },
       ],
@@ -444,45 +444,45 @@ async function seedTaxonomy(input: { tenantId: string; teacherId: string }): Pro
         create: { tenantId, programId: program.id, name: subjectSpec.name },
       });
 
-      let topicPos = 0;
-      for (const topicSpec of subjectSpec.topics) {
-        const topic = await prisma.topic.upsert({
+      let chapterPos = 0;
+      for (const chapterSpec of subjectSpec.chapters) {
+        const chapter = await prisma.chapter.upsert({
           where: {
             tenantId_subjectId_name: {
               tenantId,
               subjectId: subject.id,
-              name: topicSpec.name,
+              name: chapterSpec.name,
             },
           },
-          update: { position: topicPos },
+          update: { position: chapterPos },
           create: {
             tenantId,
             subjectId: subject.id,
-            name: topicSpec.name,
-            position: topicPos,
+            name: chapterSpec.name,
+            position: chapterPos,
           },
         });
-        topicPos += 1;
+        chapterPos += 1;
 
-        let chapterPos = 0;
-        for (const chapterName of topicSpec.chapters) {
-          await prisma.chapter.upsert({
+        let topicPos = 0;
+        for (const topicName of chapterSpec.topics) {
+          await prisma.topic.upsert({
             where: {
-              tenantId_topicId_name: {
+              tenantId_chapterId_name: {
                 tenantId,
-                topicId: topic.id,
-                name: chapterName,
+                chapterId: chapter.id,
+                name: topicName,
               },
             },
-            update: { position: chapterPos },
+            update: { position: topicPos },
             create: {
               tenantId,
-              topicId: topic.id,
-              name: chapterName,
-              position: chapterPos,
+              chapterId: chapter.id,
+              name: topicName,
+              position: topicPos,
             },
           });
-          chapterPos += 1;
+          topicPos += 1;
         }
       }
     }

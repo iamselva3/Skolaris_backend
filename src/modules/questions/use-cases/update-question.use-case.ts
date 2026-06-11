@@ -70,7 +70,10 @@ export class UpdateQuestionUseCase {
         repoInput.topicId = input.topicId ?? null;
         repoInput.topic = resolved.topic?.name ?? null;
       }
-      if (input.chapterId !== undefined) repoInput.chapterId = input.chapterId ?? null;
+      if (input.chapterId !== undefined) {
+        repoInput.chapterId = input.chapterId ?? null;
+        repoInput.chapter = resolved.chapter?.name ?? null;
+      }
     }
 
     // Free-text subject/topic only honoured if no taxonomy FK provided this call.

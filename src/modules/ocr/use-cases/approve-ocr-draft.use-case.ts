@@ -89,8 +89,8 @@ export class ApproveOcrDraftUseCase {
         const missing = [
           !programId && 'Program',
           !subjectId && 'Subject',
-          !topicId && 'Topic',
           !chapterId && 'Chapter',
+          !topicId && 'Topic',
         ]
           .filter(Boolean)
           .join(', ');

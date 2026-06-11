@@ -15,6 +15,7 @@ export interface CreateQuestionInput {
   chapterId?: string | null;
   subject?: string | null;
   topic?: string | null;
+  chapter?: string | null;
   difficulty?: Difficulty;
   options?: { label: string; isCorrect: boolean; position: number }[];
 }
@@ -27,6 +28,7 @@ export interface UpdateQuestionInput {
   chapterId?: string | null;
   subject?: string | null;
   topic?: string | null;
+  chapter?: string | null;
   difficulty?: Difficulty;
   isActive?: boolean;
   options?: { label: string; isCorrect: boolean; position: number }[];

@@ -18,13 +18,13 @@ export interface ResolvedTaxonomy {
 
 /**
  * Validates a taxonomy selection against the tenant and enforces the chain:
- * subject ∈ program, topic ∈ subject, chapter ∈ topic. Throws 400 on any
+ * subject ∈ program, chapter ∈ subject, topic ∈ chapter. Throws 400 on any
  * mismatch. `null`/`undefined` levels are skipped; partial selections are
  * permitted (e.g. only programId+subjectId for an upload pre-tag).
  *
  * Used by uploads / questions / exams to enforce taxonomy consistency at
- * write time and to fetch the resolved entities (callers use `subject.name`
- * and `topic.name` to denormalize for analytics).
+ * write time and to fetch the resolved entities (callers use `subject.name`,
+ * `chapter.name` and `topic.name` to denormalize for analytics).
  */
 @Injectable()
 export class TaxonomyResolverService {
@@ -46,19 +46,19 @@ export class TaxonomyResolverService {
       }
     }
 
-    if (sel.topicId) {
-      out.topic = await this.repo.getTopic(tenantId, sel.topicId);
-      if (!out.topic) throw new BadRequestException('topicId is invalid for this tenant');
-      if (out.subject && out.topic.subjectId !== out.subject.id) {
-        throw new BadRequestException('topicId does not belong to the supplied subjectId');
-      }
-    }
-
     if (sel.chapterId) {
       out.chapter = await this.repo.getChapter(tenantId, sel.chapterId);
       if (!out.chapter) throw new BadRequestException('chapterId is invalid for this tenant');
-      if (out.topic && out.chapter.topicId !== out.topic.id) {
-        throw new BadRequestException('chapterId does not belong to the supplied topicId');
+      if (out.subject && out.chapter.subjectId !== out.subject.id) {
+        throw new BadRequestException('chapterId does not belong to the supplied subjectId');
+      }
+    }
+
+    if (sel.topicId) {
+      out.topic = await this.repo.getTopic(tenantId, sel.topicId);
+      if (!out.topic) throw new BadRequestException('topicId is invalid for this tenant');
+      if (out.chapter && out.topic.chapterId !== out.chapter.id) {
+        throw new BadRequestException('topicId does not belong to the supplied chapterId');
       }
     }
 

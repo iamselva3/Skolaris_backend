@@ -136,11 +136,11 @@ export class PrismaTaxonomyRepository implements ITaxonomyRepository {
     );
   }
 
-  /* ─── topics ─── */
+  /* ─── topics (leaf, child of Chapter) ─── */
 
-  async listTopics(tenantId: string, subjectId?: string): Promise<TopicModel[]> {
+  async listTopics(tenantId: string, chapterId?: string): Promise<TopicModel[]> {
     const rows = await this.prisma.topic.findMany({
-      where: { tenantId, subjectId },
+      where: { tenantId, chapterId },
       orderBy: [{ position: 'asc' }, { name: 'asc' }],
     });
     return rows.map(toTopic);
@@ -153,7 +153,7 @@ export class PrismaTaxonomyRepository implements ITaxonomyRepository {
 
   async createTopic(input: {
     tenantId: string;
-    subjectId: string;
+    chapterId: string;
     name: string;
     position?: number;
   }): Promise<TopicModel> {
@@ -177,11 +177,11 @@ export class PrismaTaxonomyRepository implements ITaxonomyRepository {
     await this.prisma.topic.deleteMany({ where: { id, tenantId } });
   }
 
-  /* ─── chapters ─── */
+  /* ─── chapters (mid-level, child of Subject) ─── */
 
-  async listChapters(tenantId: string, topicId?: string): Promise<ChapterModel[]> {
+  async listChapters(tenantId: string, subjectId?: string): Promise<ChapterModel[]> {
     const rows = await this.prisma.chapter.findMany({
-      where: { tenantId, topicId },
+      where: { tenantId, subjectId },
       orderBy: [{ position: 'asc' }, { name: 'asc' }],
     });
     return rows.map(toChapter);
@@ -194,7 +194,7 @@ export class PrismaTaxonomyRepository implements ITaxonomyRepository {
 
   async createChapter(input: {
     tenantId: string;
-    topicId: string;
+    subjectId: string;
     name: string;
     position?: number;
   }): Promise<ChapterModel> {
@@ -246,7 +246,7 @@ function toTopic(r: PrismaTopic): TopicModel {
   return new TopicModel(
     r.id,
     r.tenantId,
-    r.subjectId,
+    r.chapterId,
     r.name,
     r.position,
     r.createdAt,
@@ -258,7 +258,7 @@ function toChapter(r: PrismaChapter): ChapterModel {
   return new ChapterModel(
     r.id,
     r.tenantId,
-    r.topicId,
+    r.subjectId,
     r.name,
     r.position,
     r.createdAt,

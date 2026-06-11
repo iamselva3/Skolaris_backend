@@ -30,7 +30,7 @@ import {
 
 const toResponse = (c: ChapterModel) => ({
   id: c.id,
-  topicId: c.topicId,
+  subjectId: c.subjectId,
   name: c.name,
   position: c.position,
   createdAt: c.createdAt.toISOString(),
@@ -53,7 +53,7 @@ export class ChaptersController {
   async list(@CurrentUser() actor: AuthenticatedUser, @Query() query: ListChaptersQueryDto) {
     const rows = await this.listUC.execute({
       tenantId: actor.tenantId,
-      topicId: query.topicId,
+      subjectId: query.subjectId,
     });
     return { data: rows.map(toResponse) };
   }
@@ -73,7 +73,7 @@ export class ChaptersController {
       tenantId: actor.tenantId,
       userId: actor.sub,
       role: actor.role,
-      topicId: dto.topicId,
+      subjectId: dto.subjectId,
       name: dto.name,
       position: dto.position,
     });

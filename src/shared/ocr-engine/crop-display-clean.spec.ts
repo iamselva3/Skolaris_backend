@@ -258,5 +258,122 @@ describe('cleanCropForDisplay (binary, content-faithful watermark suppression)',
       expect(g[20 * W + 14]).toBeLessThan(120); // text kept (unique)
       expect(g[20 * W + 10]).toBeLessThan(120); // divider kept HERE — ink within DIV_ISOLATE → not isolated
     });
+
+    // TRAIL mode: clear a self-protecting MEDIUM-grey trail in empty background, while
+    // keeping it next to ink and at unique-content (flat-bright) locations. The trail
+    // lives OUTSIDE the large mask (Pass 2's domain), so pass an all-0 mask so the
+    // main pass skips it and Pass 2 is what acts.
+    describe('TRAIL mode (OCR_DISPLAY_BG_TRAIL) — clear empty-bg trail, never content', () => {
+      const W = 30;
+      const H = 30;
+      const noMask = (): WatermarkMask => ({ width: W, height: H, data: new Uint8Array(W * H) });
+      afterEach(() => delete process.env.OCR_DISPLAY_BG_TRAIL);
+
+      it('DEFAULT (off): a medium-grey persistent trail pixel self-protects → KEPT', async () => {
+        const crop = await makeImg(W, H, (x, y) => (x === 15 && y === 15 ? 130 : 255));
+        const flat = field2(W, H, () => 135); // persistent grey
+        const g = await gray(await run(crop, flat, W, H, noMask()));
+        expect(g[15 * W + 15]).toBe(130);
+      });
+
+      it('ON: the same empty-background medium trail pixel is CLEARED', async () => {
+        process.env.OCR_DISPLAY_BG_TRAIL = 'true';
+        const crop = await makeImg(W, H, (x, y) => (x === 15 && y === 15 ? 130 : 255));
+        const flat = field2(W, H, () => 135);
+        const g = await gray(await run(crop, flat, W, H, noMask()));
+        expect(g[15 * W + 15]).toBe(255);
+      });
+
+      it('ON: a medium pixel at a UNIQUE (flat-bright) location is KEPT (diagram-safe)', async () => {
+        process.env.OCR_DISPLAY_BG_TRAIL = 'true';
+        const crop = await makeImg(W, H, (x, y) => (x === 15 && y === 15 ? 130 : 255));
+        // flat bright exactly at the pixel → unique content of any intensity → protected.
+        const flat = field2(W, H, (x, y) => (x === 15 && y === 15 ? 255 : 135));
+        const g = await gray(await run(crop, flat, W, H, noMask()));
+        expect(g[15 * W + 15]).toBe(130);
+      });
+
+      it('ON: a medium trail pixel NEXT TO dark ink is KEPT (content seeds the halo)', async () => {
+        process.env.OCR_DISPLAY_BG_TRAIL = 'true';
+        // dark ink at (12,15); medium trail at (15,15) — 3px away, inside BG_HALO=8.
+        const crop = await makeImg(W, H, (x, y) =>
+          y === 15 && x === 12 ? 60 : y === 15 && x === 15 ? 130 : 255,
+        );
+        const flat = field2(W, H, () => 135);
+        const g = await gray(await run(crop, flat, W, H, noMask()));
+        expect(g[15 * W + 15]).toBe(130); // shielded by the ink halo → kept
+      });
+    });
+  });
+
+  // OCR_DISPLAY_WM_PERSISTENT_CORE: drop the flat-BLIND dark guards (C)/(F) inside
+  // the mask so a DARK watermark core is removed, while the flat-AWARE guards (D)/(E)
+  // keep all real content. persistentCoreEnabled() is read at call time, so the env
+  // can be toggled per-test without a module reset.
+  describe('aggressive flat-aware dark-core removal (OCR_DISPLAY_WM_PERSISTENT_CORE)', () => {
+    const mask1 = (w: number): WatermarkMask => ({
+      width: w,
+      height: 1,
+      data: Uint8Array.from(Array(w).fill(255)),
+    });
+    const cleanCore = (crop: Buffer, fd: number[]) =>
+      cleanCropForDisplay(crop, {
+        flat: flat(fd),
+        mask: mask1(fd.length),
+        region: { x0: 0, y0: 0, x1: fd.length, y1: 1 },
+        pageWidth: fd.length,
+        pageHeight: 1,
+      });
+
+    // Isolate the main mask pass: a 1-row all-dark crop is a degenerate "full-height
+    // isolated column" for Pass 3, so disable the background/divider post-passes here.
+    beforeEach(() => {
+      process.env.OCR_DISPLAY_BG_CLEANUP = 'false';
+      process.env.OCR_DISPLAY_DIVIDER_CLEANUP = 'false';
+    });
+    afterEach(() => {
+      delete process.env.OCR_DISPLAY_WM_PERSISTENT_CORE;
+      delete process.env.OCR_DISPLAY_BG_CLEANUP;
+      delete process.env.OCR_DISPLAY_DIVIDER_CLEANUP;
+    });
+
+    it('DEFAULT (off): a dark persistent watermark core is KEPT (absolute dark guard)', async () => {
+      // crop 60 == flat 60 (persistent dark, inside mask). Off → (C)/(F) protect it.
+      const out = await rawOf(await cleanCore(await grayRow([60, 60]), [60, 60]));
+      expect(out[0]).toBe(60);
+    });
+
+    it('ON: removes a dark persistent watermark core to white', async () => {
+      process.env.OCR_DISPLAY_WM_PERSISTENT_CORE = 'true';
+      const out = await rawOf(await cleanCore(await grayRow([60, 60]), [60, 60]));
+      expect(out[0]).toBe(255); // dark watermark core removed
+    });
+
+    it('ON: still KEEPS unique dark content (flat bright → (E))', async () => {
+      process.env.OCR_DISPLAY_WM_PERSISTENT_CORE = 'true';
+      const out = await rawOf(await cleanCore(await grayRow([60, 60]), [255, 255]));
+      expect(out[0]).toBe(60); // dark, but unique to this page → kept
+    });
+
+    it('ON: still KEEPS content drawn OVER the watermark (darker than bg → (D))', async () => {
+      process.env.OCR_DISPLAY_WM_PERSISTENT_CORE = 'true';
+      // crop 40 is darker than persistent bg 80 by > KEEP_MARGIN → unique ink on top.
+      const out = await rawOf(await cleanCore(await grayRow([40, 40]), [80, 80]));
+      expect(out[0]).toBe(40);
+    });
+
+    it('ON: the mask still gates — a dark core OUTSIDE the mask is KEPT', async () => {
+      process.env.OCR_DISPLAY_WM_PERSISTENT_CORE = 'true';
+      const out = await rawOf(
+        await cleanCropForDisplay(await grayRow([60, 60]), {
+          flat: flat([60, 60]),
+          mask: { width: 2, height: 1, data: Uint8Array.from([0, 0]) },
+          region: { x0: 0, y0: 0, x1: 2, y1: 1 },
+          pageWidth: 2,
+          pageHeight: 1,
+        }),
+      );
+      expect(out[0]).toBe(60); // outside the large blob → never touched
+    });
   });
 });

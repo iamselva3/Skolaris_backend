@@ -42,28 +42,12 @@ export interface ITaxonomyRepository {
     subjectIds: string[];
   }): Promise<void>;
 
-  /* topics */
-  listTopics(tenantId: string, subjectId?: string): Promise<TopicModel[]>;
-  getTopic(tenantId: string, id: string): Promise<TopicModel | null>;
-  createTopic(input: {
-    tenantId: string;
-    subjectId: string;
-    name: string;
-    position?: number;
-  }): Promise<TopicModel>;
-  updateTopic(
-    tenantId: string,
-    id: string,
-    patch: { name?: string; position?: number },
-  ): Promise<TopicModel>;
-  deleteTopic(tenantId: string, id: string): Promise<void>;
-
-  /* chapters */
-  listChapters(tenantId: string, topicId?: string): Promise<ChapterModel[]>;
+  /* chapters (mid-level, child of Subject) */
+  listChapters(tenantId: string, subjectId?: string): Promise<ChapterModel[]>;
   getChapter(tenantId: string, id: string): Promise<ChapterModel | null>;
   createChapter(input: {
     tenantId: string;
-    topicId: string;
+    subjectId: string;
     name: string;
     position?: number;
   }): Promise<ChapterModel>;
@@ -73,4 +57,20 @@ export interface ITaxonomyRepository {
     patch: { name?: string; position?: number },
   ): Promise<ChapterModel>;
   deleteChapter(tenantId: string, id: string): Promise<void>;
+
+  /* topics (leaf, child of Chapter) */
+  listTopics(tenantId: string, chapterId?: string): Promise<TopicModel[]>;
+  getTopic(tenantId: string, id: string): Promise<TopicModel | null>;
+  createTopic(input: {
+    tenantId: string;
+    chapterId: string;
+    name: string;
+    position?: number;
+  }): Promise<TopicModel>;
+  updateTopic(
+    tenantId: string,
+    id: string,
+    patch: { name?: string; position?: number },
+  ): Promise<TopicModel>;
+  deleteTopic(tenantId: string, id: string): Promise<void>;
 }

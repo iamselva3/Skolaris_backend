@@ -43,6 +43,7 @@ export class PrismaQuestionRepository implements IQuestionRepository {
           chapterId: input.chapterId ?? null,
           subject: input.subject ?? null,
           topic: input.topic ?? null,
+          chapter: input.chapter ?? null,
           difficulty: (input.difficulty ?? Difficulty.MEDIUM) as PrismaDifficulty,
         },
       });
@@ -69,7 +70,9 @@ export class PrismaQuestionRepository implements IQuestionRepository {
   async findById(tenantId: string, id: string): Promise<QuestionWithOptions | null> {
     const row = await this.prisma.question.findFirst({
       where: { id, tenantId },
-      include: { options: { orderBy: { position: 'asc' } } },
+      include: {
+        options: { orderBy: { position: 'asc' } },
+      },
     });
     if (!row) return null;
     return {
@@ -102,7 +105,9 @@ export class PrismaQuestionRepository implements IQuestionRepository {
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.question.findMany({
         where,
-        include: { options: { orderBy: { position: 'asc' } } },
+        include: {
+          options: { orderBy: { position: 'asc' } },
+        },
         take: filter.limit,
         skip: filter.offset,
         orderBy: { createdAt: 'desc' },
@@ -139,6 +144,7 @@ export class PrismaQuestionRepository implements IQuestionRepository {
           ...(input.chapterId !== undefined ? { chapterId: input.chapterId } : {}),
           ...(input.subject !== undefined ? { subject: input.subject } : {}),
           ...(input.topic !== undefined ? { topic: input.topic } : {}),
+          ...(input.chapter !== undefined ? { chapter: input.chapter } : {}),
           ...(input.difficulty !== undefined
             ? { difficulty: input.difficulty as PrismaDifficulty }
             : {}),
@@ -161,7 +167,9 @@ export class PrismaQuestionRepository implements IQuestionRepository {
       }
       const refreshed = await tx.question.findUniqueOrThrow({
         where: { id },
-        include: { options: { orderBy: { position: 'asc' } } },
+        include: {
+          options: { orderBy: { position: 'asc' } },
+        },
       });
       return {
         question: this.toQuestion(refreshed),
@@ -204,6 +212,7 @@ export class PrismaQuestionRepository implements IQuestionRepository {
       r.isActive,
       r.createdAt,
       r.updatedAt,
+      r.chapter,
     );
   }
 

@@ -29,6 +29,7 @@ export class QuestionModel {
     public readonly isActive: boolean,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
+    public readonly chapter?: string | null,
   ) {}
 }
 

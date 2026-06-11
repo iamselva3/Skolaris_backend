@@ -48,27 +48,10 @@ export class ListSubjectsQueryDto {
   @IsOptional() @IsString() isActive?: string; // '1' | '0'
 }
 
-/* ─────────────────────────── Topics ─────────────────────────── */
-
-export class CreateTopicDto {
-  @IsUUID() subjectId!: string;
-  @IsString() @MinLength(1) @MaxLength(120) name!: string;
-  @IsOptional() @IsInt() @Min(0) @Type(() => Number) position?: number;
-}
-
-export class UpdateTopicDto {
-  @IsOptional() @IsString() @MinLength(1) @MaxLength(120) name?: string;
-  @IsOptional() @IsInt() @Min(0) @Type(() => Number) position?: number;
-}
-
-export class ListTopicsQueryDto {
-  @IsOptional() @IsUUID() subjectId?: string;
-}
-
-/* ─────────────────────────── Chapters ─────────────────────────── */
+/* ───────────────── Chapters (mid-level, child of Subject) ───────────────── */
 
 export class CreateChapterDto {
-  @IsUUID() topicId!: string;
+  @IsUUID() subjectId!: string;
   @IsString() @MinLength(1) @MaxLength(160) name!: string;
   @IsOptional() @IsInt() @Min(0) @Type(() => Number) position?: number;
 }
@@ -79,5 +62,22 @@ export class UpdateChapterDto {
 }
 
 export class ListChaptersQueryDto {
-  @IsOptional() @IsUUID() topicId?: string;
+  @IsOptional() @IsUUID() subjectId?: string;
+}
+
+/* ───────────────── Topics (leaf, child of Chapter) ───────────────── */
+
+export class CreateTopicDto {
+  @IsUUID() chapterId!: string;
+  @IsString() @MinLength(1) @MaxLength(120) name!: string;
+  @IsOptional() @IsInt() @Min(0) @Type(() => Number) position?: number;
+}
+
+export class UpdateTopicDto {
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(120) name?: string;
+  @IsOptional() @IsInt() @Min(0) @Type(() => Number) position?: number;
+}
+
+export class ListTopicsQueryDto {
+  @IsOptional() @IsUUID() chapterId?: string;
 }

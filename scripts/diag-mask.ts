@@ -85,7 +85,8 @@ const main = async (): Promise<void> => {
   console.log(`\n==== FLAT FIELD ${flat.width}x${flat.height} · page ${pageIdx} ${pageW}x${pageH} ====`);
   console.log(
     `thresholds: greyFloor=${an.greyFloor} brightCeil=${an.brightCeil} dilate=${an.dilate} ` +
-      `minSpan=${an.minSpan}px minArea=${an.minArea}px`,
+      `close=${an.close} minSpan=${an.minSpan}px minArea=${an.minArea}px · ` +
+      `persistentCore=${process.env.OCR_DISPLAY_WM_PERSISTENT_CORE === 'true' ? 'ON' : 'off'}`,
   );
   const candCount = an.candidate.reduce((a, v) => a + v, 0);
   const maskCount = an.mask.reduce((a, v) => a + v, 0);

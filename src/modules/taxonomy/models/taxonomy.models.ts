@@ -23,7 +23,8 @@ export class SubjectModel {
   ) {}
 }
 
-export class TopicModel {
+// Chapter is the mid-level (child of Subject); Topic is the leaf (child of Chapter).
+export class ChapterModel {
   constructor(
     public readonly id: string,
     public readonly tenantId: string,
@@ -35,11 +36,11 @@ export class TopicModel {
   ) {}
 }
 
-export class ChapterModel {
+export class TopicModel {
   constructor(
     public readonly id: string,
     public readonly tenantId: string,
-    public readonly topicId: string,
+    public readonly chapterId: string,
     public readonly name: string,
     public readonly position: number,
     public readonly createdAt: Date,

@@ -20,6 +20,7 @@ export interface QuestionResponse {
   chapterId: string | null;
   subject: string | null;
   topic: string | null;
+  chapter?: string | null;
   difficulty: string;
   isActive: boolean;
   options: QuestionOptionResponse[];
@@ -43,6 +44,7 @@ export const toQuestionResponse = ({
   chapterId: question.chapterId,
   subject: question.subject,
   topic: question.topic,
+  chapter: question.chapter,
   difficulty: question.difficulty,
   isActive: question.isActive,
   options: options.map((o) => ({

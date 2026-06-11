@@ -117,13 +117,30 @@ export interface WatermarkMask {
  *  at/above the ceiling = white on some page = content-capable (protect). */
 const WM_MASK_GREY_FLOOR = Number(process.env.OCR_DISPLAY_WM_MASK_GREY_FLOOR ?? 110);
 const WM_MASK_BRIGHT_CEIL = Number(process.env.OCR_DISPLAY_WM_MASK_BRIGHT_CEIL ?? 238);
-/** Dilation (flat-grid px) that merges the strokes of one watermark into a blob. */
+/** Dilation (flat-grid px) that merges the strokes of one watermark into a blob.
+ *  THIS is the lever for the fragmented DIAGONAL banner: it runs BEFORE component
+ *  labelling, so a larger radius bridges the whitespace gaps between the separated
+ *  "AAKASH …" glyphs and lets them label as ONE large component (instead of many
+ *  small ones that each fail the size test ⇒ "only part of the watermark masked").
+ *  Raise it (e.g. 6–8) — checking with scripts/diag-mask.ts — when the banner
+ *  fragments; a close (WM_MASK_CLOSE) CANNOT bridge them, it only fills holes. */
 const WM_MASK_DILATE = Math.max(0, Math.round(Number(process.env.OCR_DISPLAY_WM_MASK_DILATE ?? 4)));
 /** A component is "large" if its bbox spans this fraction of the page's longer
  *  side OR its area is this fraction of the page — either alone qualifies, so a
  *  long thin diagonal banner AND a blocky central stamp both pass. */
 const WM_MASK_MIN_SPAN_FRAC = Number(process.env.OCR_DISPLAY_WM_MASK_MIN_SPAN ?? 0.18);
 const WM_MASK_MIN_AREA_FRAC = Number(process.env.OCR_DISPLAY_WM_MASK_MIN_AREA ?? 0.015);
+/** Morphological CLOSE radius (flat-grid px) applied to the FINAL large-watermark
+ *  mask (after component labelling). A close (dilate-by-r then erode-by-r) SEALS the
+ *  dark-core HOLES inside an accepted watermark footprint — a thick stroke's core is
+ *  darker than GREY_FLOOR ⇒ not a candidate ⇒ a hole punched through the mask, which
+ *  otherwise keeps the watermark core alive in the display pass. It fills holes/gaps
+ *  up to 2·r WITHOUT growing the outer boundary and WITHOUT resurrecting rejected
+ *  small components. DEFAULT 0 = exact prior mask (no-op). Raise (≈ half the widest
+ *  dark-core, typically 4–8) when scripts/diag-mask.ts shows stroke-centre holes in
+ *  diag-LARGE.png; it does NOT bridge a fragmented diagonal banner — that is
+ *  WM_MASK_DILATE's job. */
+const WM_MASK_CLOSE = Math.max(0, Math.round(Number(process.env.OCR_DISPLAY_WM_MASK_CLOSE ?? 0)));
 
 /** Binary dilation by Chebyshev radius `r` (separable H then V running-OR). */
 const dilateFlatMask = (mask: Uint8Array, w: number, h: number, r: number): Uint8Array => {
@@ -147,6 +164,38 @@ const dilateFlatMask = (mask: Uint8Array, w: number, h: number, r: number): Uint
       for (let dy = -r; dy <= r && !v; dy += 1) {
         const yy = y + dy;
         if (yy >= 0 && yy < h && tmp[yy * w + x]) v = 1;
+      }
+      out[y * w + x] = v;
+    }
+  return out;
+};
+
+/** Binary erosion by Chebyshev radius `r` (separable H then V running-AND) — the
+ *  counterpart to dilateFlatMask. Out-of-bounds neighbours count as SET so the
+ *  page border is not eroded away; thus `erode(dilate(m, r), r)` is a morphological
+ *  CLOSE that fills holes/gaps up to 2r while leaving the outer boundary where the
+ *  dilation+erosion cancel. */
+const erodeFlatMask = (mask: Uint8Array, w: number, h: number, r: number): Uint8Array => {
+  if (r <= 0) return mask;
+  const tmp = new Uint8Array(w * h);
+  for (let y = 0; y < h; y += 1) {
+    const row = y * w;
+    for (let x = 0; x < w; x += 1) {
+      let v = 1;
+      for (let dx = -r; dx <= r && v; dx += 1) {
+        const xx = x + dx;
+        if (xx >= 0 && xx < w && !mask[row + xx]) v = 0;
+      }
+      tmp[row + x] = v;
+    }
+  }
+  const out = new Uint8Array(w * h);
+  for (let x = 0; x < w; x += 1)
+    for (let y = 0; y < h; y += 1) {
+      let v = 1;
+      for (let dy = -r; dy <= r && v; dy += 1) {
+        const yy = y + dy;
+        if (yy >= 0 && yy < h && !tmp[yy * w + x]) v = 0;
       }
       out[y * w + x] = v;
     }
@@ -186,6 +235,7 @@ export interface WatermarkAnalysis {
   greyFloor: number;
   brightCeil: number;
   dilate: number;
+  close: number;
 }
 
 /**
@@ -299,8 +349,20 @@ export const analyzeWatermarkMask = (flat: FlatField | null): WatermarkAnalysis 
     });
   }
 
-  const mask = new Uint8Array(w * h);
-  for (let p = 0; p < mask.length; p += 1) if (keep[labels[p]]) mask[p] = 1;
+  const labelled = new Uint8Array(w * h);
+  for (let p = 0; p < labelled.length; p += 1) if (keep[labels[p]]) labelled[p] = 1;
+  // CLOSE the FINAL mask to seal the dark-core HOLES inside accepted watermark
+  // footprints — a thick stroke's core is darker than GREY_FLOOR ⇒ not a candidate
+  // ⇒ a hole punched through the middle of the mask, which then keeps the watermark
+  // core alive in the display pass. Closing fills holes (and small gaps) up to 2·r
+  // WITHOUT growing the outer boundary and WITHOUT resurrecting rejected small
+  // components (they are not in `labelled`). DEFAULT 0 = no-op. (Merging fragmented
+  // diagonal glyphs into ONE large component is a separate concern handled before
+  // labelling by WM_MASK_DILATE — a close cannot bridge rejected fragments.)
+  const mask =
+    WM_MASK_CLOSE > 0
+      ? erodeFlatMask(dilateFlatMask(labelled, w, h, WM_MASK_CLOSE), w, h, WM_MASK_CLOSE)
+      : labelled;
   return {
     width: w,
     height: h,
@@ -313,6 +375,7 @@ export const analyzeWatermarkMask = (flat: FlatField | null): WatermarkAnalysis 
     greyFloor: WM_MASK_GREY_FLOOR,
     brightCeil: WM_MASK_BRIGHT_CEIL,
     dilate: WM_MASK_DILATE,
+    close: WM_MASK_CLOSE,
   };
 };
 

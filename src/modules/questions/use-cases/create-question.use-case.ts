@@ -44,11 +44,14 @@ export class CreateQuestionUseCase {
       chapterId: input.chapterId,
     });
 
-    // When FKs are supplied, derive subject/topic strings from the resolved
-    // names so analytics rollups (TopicReport) stay aligned with the taxonomy.
-    // Free-text subject/topic on the body is only used when no FK is supplied.
+    // When FKs are supplied, derive subject/topic/chapter strings from the
+    // resolved names so analytics rollups stay aligned with the taxonomy.
+    // TopicReport keys on the leaf `topic`; `chapter` is denormalized for future
+    // chapter-level reporting. Free-text subject/topic on the body is only used
+    // when no FK is supplied.
     const subjectStr = resolved.subject?.name ?? input.subject ?? null;
     const topicStr = resolved.topic?.name ?? input.topic ?? null;
+    const chapterStr = resolved.chapter?.name ?? null;
 
     return this.questions.create({
       tenantId: input.tenantId,
@@ -62,6 +65,7 @@ export class CreateQuestionUseCase {
       chapterId: input.chapterId ?? null,
       subject: subjectStr,
       topic: topicStr,
+      chapter: chapterStr,
       difficulty: input.difficulty,
       options: input.options?.map((o, i) => ({ ...o, position: i })),
     });
