@@ -261,6 +261,14 @@ async function main(): Promise<void> {
     });
   }
 
+  // --- Communication history / audit log ---------------------------------
+  // Example broadcasts so the communication-history view has realistic rows.
+  // Idempotent: only seeded when the table is empty for this tenant.
+  const existingComms = await prisma.communication.count({ where: { tenantId: tenant.id } });
+  if (existingComms === 0) {
+    await seedCommunications({ tenantId: tenant.id, sender: teacher });
+  }
+
   // --- Coaching-centre taxonomy: Program → Subject → Chapter → Topic ------
 
   await seedTaxonomy({ tenantId: tenant.id, teacherId: teacher.id });
@@ -269,6 +277,136 @@ async function main(): Promise<void> {
   console.log(
     `Seeded tenant "${tenant.slug}": admin + teacher + 2 students, 1 classroom, 1 upload (READY_FOR_REVIEW + 3 drafts), 1 Q-bank question, 1 published Phase 3 exam (6 questions), 4 programs (Foundation/NEET/IIT-JEE/JEE Advanced) with subjects + starter chapters/topics; teacher assigned to NEET Physics + NEET Chemistry.`,
   );
+}
+
+/**
+ * Seed example communication-history rows (institution-sent broadcasts). These
+ * are the audit-log entries the admin "communication center" lists — distinct
+ * from the per-recipient notification feed. Dates are relative to a fixed
+ * reference so the rows are deterministic across re-seeds.
+ */
+async function seedCommunications(input: {
+  tenantId: string;
+  sender: { id: string; name: string };
+}): Promise<void> {
+  const { tenantId, sender } = input;
+  const day = (offsetDays: number, hour: number, minute: number): Date => {
+    const base = new Date('2026-06-11T00:00:00.000Z');
+    base.setUTCDate(base.getUTCDate() - offsetDays);
+    base.setUTCHours(hour, minute, 0, 0);
+    return base;
+  };
+
+  const rows: Prisma.CommunicationCreateManyInput[] = [
+    {
+      tenantId,
+      title: 'Mid-Term Exam Schedule Published',
+      body: 'The mid-term examination timetable is now available. Exams begin 18 Jun 2026. Please review your subject schedule on the student portal.',
+      type: 'EXAM_ALERT',
+      channel: 'EMAIL',
+      status: 'SENT',
+      audience: 'All Students',
+      recipientCount: 450,
+      deliveredCount: 450,
+      failedCount: 0,
+      sentById: sender.id,
+      sentByName: sender.name,
+      sentAt: day(0, 4, 30), // 11 Jun 2026 10:00 IST
+    },
+    {
+      tenantId,
+      title: 'Grade Report Available',
+      body: 'Term 1 grade reports have been published. Students and parents can download the consolidated report card from the Reports section.',
+      type: 'REPORT_PUBLISHED',
+      channel: 'SMS',
+      status: 'SENT',
+      audience: 'Class 10 Students',
+      recipientCount: 320,
+      deliveredCount: 318,
+      failedCount: 2,
+      sentById: sender.id,
+      sentByName: sender.name,
+      sentAt: day(1, 11, 0), // 10 Jun 2026 16:30 IST
+    },
+    {
+      tenantId,
+      title: 'Attendance Below Threshold',
+      body: 'This is an automated alert: your ward’s attendance has fallen below the required 75%. Please contact the class teacher.',
+      type: 'ATTENDANCE_ALERT',
+      channel: 'EMAIL',
+      status: 'SENT',
+      audience: 'Flagged Parents',
+      recipientCount: 75,
+      deliveredCount: 75,
+      failedCount: 0,
+      sentById: sender.id,
+      sentByName: sender.name,
+      sentAt: day(2, 3, 45), // 09 Jun 2026 09:15 IST
+    },
+    {
+      tenantId,
+      title: 'Quarterly Fee Reminder',
+      body: 'A gentle reminder that the Q2 tuition fee is due by 20 Jun 2026. Pay online via the Fees section to avoid a late charge.',
+      type: 'FEE_REMINDER',
+      channel: 'WHATSAPP',
+      status: 'PARTIAL',
+      audience: 'All Parents',
+      recipientCount: 600,
+      deliveredCount: 540,
+      failedCount: 60,
+      sentById: sender.id,
+      sentByName: sender.name,
+      sentAt: day(3, 9, 0), // 08 Jun 2026 14:30 IST
+    },
+    {
+      tenantId,
+      title: 'Annual Day Circular',
+      body: 'Our Annual Day will be held on 28 Jun 2026 at the main auditorium. Please find the programme and guest-entry details attached.',
+      type: 'CIRCULAR',
+      channel: 'EMAIL',
+      status: 'SENT',
+      audience: 'Students, Parents & Staff',
+      recipientCount: 1280,
+      deliveredCount: 1276,
+      failedCount: 4,
+      sentById: sender.id,
+      sentByName: sender.name,
+      sentAt: day(5, 5, 30), // 06 Jun 2026 11:00 IST
+    },
+    {
+      tenantId,
+      title: 'Holiday Announcement — Local Election',
+      body: 'The institution will remain closed on 14 Jun 2026 on account of local elections. Online classes stand cancelled for the day.',
+      type: 'ANNOUNCEMENT',
+      channel: 'PUSH',
+      status: 'FAILED',
+      audience: 'All Students',
+      recipientCount: 450,
+      deliveredCount: 0,
+      failedCount: 450,
+      sentById: sender.id,
+      sentByName: sender.name,
+      sentAt: day(6, 12, 15), // 05 Jun 2026 17:45 IST
+    },
+    {
+      tenantId,
+      title: 'Parent–Teacher Meeting Invitation',
+      body: 'You are invited to the term PTM on 21 Jun 2026. Slot booking opens 16 Jun. This message is scheduled to go out closer to the date.',
+      type: 'ANNOUNCEMENT',
+      channel: 'SMS',
+      status: 'SCHEDULED',
+      audience: 'All Parents',
+      recipientCount: 600,
+      deliveredCount: 0,
+      failedCount: 0,
+      sentById: sender.id,
+      sentByName: sender.name,
+      scheduledAt: day(-5, 4, 0), // 16 Jun 2026 09:30 IST (future)
+      sentAt: null,
+    },
+  ];
+
+  await prisma.communication.createMany({ data: rows });
 }
 
 /**

@@ -72,4 +72,7 @@ export interface IAnalyticsRepository {
   }>;
 
   getWeakTopics(tenantId: string, studentId: string): Promise<TopicReportModel[]>;
+
+  // All topic reports for a student (weak and strong) — powers subject rollup.
+  getTopicReports(tenantId: string, studentId: string): Promise<TopicReportModel[]>;
 }

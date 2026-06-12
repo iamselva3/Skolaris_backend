@@ -269,11 +269,19 @@ describe('cleanCropForDisplay (binary, content-faithful watermark suppression)',
       const noMask = (): WatermarkMask => ({ width: W, height: H, data: new Uint8Array(W * H) });
       afterEach(() => delete process.env.OCR_DISPLAY_BG_TRAIL);
 
-      it('DEFAULT (off): a medium-grey persistent trail pixel self-protects → KEPT', async () => {
+      it('DISABLED (env=false): a medium-grey persistent trail pixel self-protects → KEPT', async () => {
+        process.env.OCR_DISPLAY_BG_TRAIL = 'false'; // default is ON; this is the disable path
         const crop = await makeImg(W, H, (x, y) => (x === 15 && y === 15 ? 130 : 255));
         const flat = field2(W, H, () => 135); // persistent grey
         const g = await gray(await run(crop, flat, W, H, noMask()));
         expect(g[15 * W + 15]).toBe(130);
+      });
+
+      it('DEFAULT (now ON): the empty-background medium trail pixel is CLEARED (no env set)', async () => {
+        const crop = await makeImg(W, H, (x, y) => (x === 15 && y === 15 ? 130 : 255));
+        const flat = field2(W, H, () => 135);
+        const g = await gray(await run(crop, flat, W, H, noMask()));
+        expect(g[15 * W + 15]).toBe(255);
       });
 
       it('ON: the same empty-background medium trail pixel is CLEARED', async () => {
@@ -337,13 +345,19 @@ describe('cleanCropForDisplay (binary, content-faithful watermark suppression)',
       delete process.env.OCR_DISPLAY_DIVIDER_CLEANUP;
     });
 
-    it('DEFAULT (off): a dark persistent watermark core is KEPT (absolute dark guard)', async () => {
-      // crop 60 == flat 60 (persistent dark, inside mask). Off → (C)/(F) protect it.
+    it('DISABLED (env=false): a dark persistent watermark core is KEPT (absolute dark guard)', async () => {
+      process.env.OCR_DISPLAY_WM_PERSISTENT_CORE = 'false'; // default is ON; this is the disable path
+      // crop 60 == flat 60 (persistent dark, inside mask). Disabled → (C)/(F) protect it.
       const out = await rawOf(await cleanCore(await grayRow([60, 60]), [60, 60]));
       expect(out[0]).toBe(60);
     });
 
-    it('ON: removes a dark persistent watermark core to white', async () => {
+    it('DEFAULT (now ON): removes a dark persistent watermark core to white (no env set)', async () => {
+      const out = await rawOf(await cleanCore(await grayRow([60, 60]), [60, 60]));
+      expect(out[0]).toBe(255); // dark watermark core removed
+    });
+
+    it('ON (explicit): removes a dark persistent watermark core to white', async () => {
       process.env.OCR_DISPLAY_WM_PERSISTENT_CORE = 'true';
       const out = await rawOf(await cleanCore(await grayRow([60, 60]), [60, 60]));
       expect(out[0]).toBe(255); // dark watermark core removed

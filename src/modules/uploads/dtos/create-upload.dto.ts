@@ -18,8 +18,9 @@ const ALLOWED_MIME = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'
  *  - 'uploads'         (default) generic / legacy
  *  - 'question-images' teacher-uploaded or snipped question images
  *  - 'ocr-papers'      papers fed to the OCR pipeline
+ *  - 'answer-keys'     answer key images or pdfs
  */
-export const UPLOAD_CATEGORIES = ['uploads', 'question-images', 'ocr-papers'] as const;
+export const UPLOAD_CATEGORIES = ['uploads', 'question-images', 'ocr-papers', 'answer-keys'] as const;
 export type UploadCategory = (typeof UPLOAD_CATEGORIES)[number];
 
 export class CreateUploadDto {

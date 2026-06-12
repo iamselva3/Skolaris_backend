@@ -35,6 +35,7 @@ import { ListOcrDraftsUseCase } from './use-cases/list-ocr-drafts.use-case';
 import { UpdateOcrDraftUseCase } from './use-cases/update-ocr-draft.use-case';
 import { RevertOcrDraftUseCase } from './use-cases/revert-ocr-draft.use-case';
 import { ANSWER_KEY_OCR, EngineAnswerKeyOcr } from './ports/answer-key-ocr.port';
+import { AnswerKeyOcrService } from './services/answer-key-ocr';
 
 @Module({
   imports: [
@@ -69,8 +70,16 @@ import { ANSWER_KEY_OCR, EngineAnswerKeyOcr } from './ports/answer-key-ocr.port'
     InsertOcrDraftUseCase,
     ReorderOcrDraftUseCase,
     RevertOcrDraftUseCase,
+    // Answer-key OCR is ISOLATED from the question pipeline. Default = the
+    // dedicated AnswerKeyOcrService; set ANSWER_KEY_OCR_LEGACY=1 to roll back to
+    // the engine-based path (EngineAnswerKeyOcr) without a code change.
+    AnswerKeyOcrService,
     EngineAnswerKeyOcr,
-    { provide: ANSWER_KEY_OCR, useExisting: EngineAnswerKeyOcr },
+    {
+      provide: ANSWER_KEY_OCR,
+      useExisting:
+        process.env.ANSWER_KEY_OCR_LEGACY === '1' ? EngineAnswerKeyOcr : AnswerKeyOcrService,
+    },
   ],
   exports: [HmacAuthGuard, OCR_DRAFT_REPOSITORY, HandleOcrCallbackUseCase, RoutingMetricsService],
 })

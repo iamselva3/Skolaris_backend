@@ -66,6 +66,7 @@ export class CreateOcrBatchUseCase {
       throw new BadRequestException('A batch cannot contain the same upload twice');
     }
 
+    const fetchedUploads = [];
     // Pre-validate every file BEFORE any side effect, so an invalid id rejects
     // the whole request cleanly (nothing created/tagged yet). These mirror the
     // checks CompleteUploadUseCase enforces per file.
@@ -80,7 +81,12 @@ export class CreateOcrBatchUseCase {
           `Upload ${id} is in status ${upload.status}; only PENDING_UPLOAD uploads can be batched`,
         );
       }
+      fetchedUploads.push(upload);
     }
+
+    // Chronological sort: force the parts into oldest-first order (the natural
+    // timeline they were created) regardless of UI selection/array order.
+    fetchedUploads.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
     const batch = await this.batches.create({
       tenantId: actor.tenantId,
@@ -90,8 +96,8 @@ export class CreateOcrBatchUseCase {
     this.logger.log(`batch ${batch.id} created with ${uploadIds.length} file(s)`);
 
     const files: CreateOcrBatchResultFile[] = [];
-    for (let order = 0; order < uploadIds.length; order++) {
-      const uploadId = uploadIds[order];
+    for (let order = 0; order < fetchedUploads.length; order++) {
+      const uploadId = fetchedUploads[order].id;
       // Tag first so the file shows in the batch even if its dispatch fails.
       await this.uploads.assignBatch(actor.tenantId, uploadId, batch.id, order);
       try {

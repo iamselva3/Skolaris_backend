@@ -54,8 +54,19 @@ export class PrismaUploadRepository implements IUploadRepository {
   ): Promise<{ data: UploadModel[]; total: number }> {
     // Batch members are represented in the queue by a single collapsed batch row
     // (GET /ocr/batches), so exclude them here — the queue lists standalone
-    // (non-batch) uploads only.
-    const where: Prisma.UploadWhereInput = { tenantId, batchId: null };
+    // (non-batch) uploads only. Also exclude inline question images and answer keys.
+    const where: Prisma.UploadWhereInput = {
+      tenantId,
+      batchId: null,
+      NOT: {
+        OR: [
+          { storageKey: { contains: '/question-images/' } },
+          { storageKey: { contains: '/answer-keys/' } },
+          { originalName: { contains: 'answer key', mode: 'insensitive' } },
+          { originalName: { contains: 'answer_key', mode: 'insensitive' } },
+        ],
+      },
+    };
     if (filters.status) where.status = filters.status as PrismaUploadStatus;
     if (filters.uploadedBy) where.uploadedBy = filters.uploadedBy;
     const [rows, total] = await this.prisma.$transaction([

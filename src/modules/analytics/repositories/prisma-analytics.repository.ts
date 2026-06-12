@@ -239,6 +239,14 @@ export class PrismaAnalyticsRepository implements IAnalyticsRepository {
     return rows.map((r) => this.toTopicReport(r));
   }
 
+  async getTopicReports(tenantId: string, studentId: string): Promise<TopicReportModel[]> {
+    const rows = await this.prisma.topicReport.findMany({
+      where: { tenantId, studentId },
+      orderBy: [{ subject: 'asc' }, { scorePercent: 'asc' }],
+    });
+    return rows.map((r) => this.toTopicReport(r));
+  }
+
   // --- mappers ---
   private toQuestionStat(r: PrismaQuestionStat): QuestionStatModel {
     return new QuestionStatModel(

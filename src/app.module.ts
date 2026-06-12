@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { BranchesModule } from './modules/branches/branches.module';
 import { ClassroomsModule } from './modules/classrooms/classrooms.module';
+import { CommunicationsModule } from './modules/communications/communications.module';
 import { TaxonomyModule } from './modules/taxonomy/taxonomy.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ExamsModule } from './modules/exams/exams.module';
@@ -68,6 +69,7 @@ import { WorkersModule } from './shared/workers/workers.module';
     StudentsModule,
     ClassroomsModule,
     NotificationsModule,
+    CommunicationsModule,
     QuestionsModule,
     UploadsModule,
     OcrModule,

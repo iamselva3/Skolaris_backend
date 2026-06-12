@@ -25,7 +25,7 @@ export interface CreateUploadInput {
 }
 
 /** Folders that may appear in a storage key. Guards path interpolation. */
-const SAFE_CATEGORIES = new Set(['uploads', 'question-images', 'ocr-papers']);
+const SAFE_CATEGORIES = new Set(['uploads', 'question-images', 'ocr-papers', 'answer-keys']);
 
 export interface CreateUploadResult {
   upload: UploadModel;

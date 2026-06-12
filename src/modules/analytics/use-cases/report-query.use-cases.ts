@@ -34,6 +34,47 @@ export class GetWeakTopicsForStudentUseCase {
   }
 }
 
+export interface SubjectPerformanceRow {
+  subject: string;
+  scorePercent: number;
+  attemptsCount: number;
+  correctCount: number;
+  topicsCount: number;
+  weakCount: number;
+}
+
+@Injectable()
+export class GetSubjectPerformanceUseCase {
+  constructor(@Inject(ANALYTICS_REPOSITORY) private readonly repo: IAnalyticsRepository) {}
+  async execute(input: { tenantId: string; studentId: string }): Promise<SubjectPerformanceRow[]> {
+    const topics = await this.repo.getTopicReports(input.tenantId, input.studentId);
+    const bySubject = new Map<string, SubjectPerformanceRow>();
+    for (const t of topics) {
+      const row = bySubject.get(t.subject) ?? {
+        subject: t.subject,
+        scorePercent: 0,
+        attemptsCount: 0,
+        correctCount: 0,
+        topicsCount: 0,
+        weakCount: 0,
+      };
+      row.attemptsCount += t.attemptsCount;
+      row.correctCount += t.correctCount;
+      row.topicsCount += 1;
+      if (t.isWeak) row.weakCount += 1;
+      bySubject.set(t.subject, row);
+    }
+    // Subject accuracy = correct/attempts across all its topics (attempt-weighted),
+    // so a subject with many easy attempts isn't masked by averaging topic percents.
+    return Array.from(bySubject.values())
+      .map((r) => ({
+        ...r,
+        scorePercent: r.attemptsCount > 0 ? (r.correctCount / r.attemptsCount) * 100 : 0,
+      }))
+      .sort((a, b) => a.scorePercent - b.scorePercent);
+  }
+}
+
 @Injectable()
 export class GetQuestionStatsUseCase {
   constructor(@Inject(ANALYTICS_REPOSITORY) private readonly repo: IAnalyticsRepository) {}

@@ -80,29 +80,32 @@ const KEEP_MARGIN = Number(process.env.OCR_DISPLAY_WM_KEEP_MARGIN ?? 28);
 const WHITE_FLOOR = Number(process.env.OCR_DISPLAY_WM_WHITE_FLOOR ?? 120);
 
 /**
- * AGGRESSIVE, FLAT-AWARE dark-core removal (OPT-IN; default OFF — the verified
- * output is unchanged unless this is set to 'true'). It answers the "dark watermark
- * strokes survive" / "watermark still visible after the mask pass" problem.
+ * FLAT-AWARE dark-core removal. DEFAULT ON — set OCR_DISPLAY_WM_PERSISTENT_CORE=false
+ * to disable. It removes the dark watermark logo / diagonal text that survives the
+ * mask pass. Only ever ACTIVE inside the large-watermark mask (see the `&& !!mreg`
+ * gate at the call site): with no cross-page mask there is no consensus, so the
+ * conservative absolute dark guards are kept.
  *
  * The dark-core guards (C) CORE_DARK and (F) WHITE_FLOOR are ABSOLUTE — they keep
  * ANY dark pixel, so a solid/dark watermark stroke (which is just as dark as ink)
  * is always protected. But the flat field already knows which dark pixels are
  * watermark: a pixel that is dark on THIS page AND whose flat field is ALSO dark
  * there is dark on EVERY page ⇒ persistent ⇒ the watermark itself; a dark pixel
- * whose flat is bright is unique ⇒ content. When this flag is on, inside the large
- * mask the (C)/(F) absolute guards are dropped and a dark pixel is whitened ONLY
- * when the flat confirms the darkness is persistent:
+ * whose flat is bright is unique ⇒ content. Inside the large mask the (C)/(F)
+ * absolute guards are dropped and a dark pixel is whitened ONLY when the flat
+ * confirms the darkness is persistent:
  *    • (E) still protects unique-content locations  (flat bright ⇒ kept), and
  *    • (D) still protects content drawn OVER the watermark (darker than the
  *          persistent background by KEEP_MARGIN ⇒ kept).
  * So it removes watermark cores WITHOUT the content loss a flat-blind threshold
  * would cause (a diagram stroke unique to the page has a bright flat and survives
  * via (E); a formula crossing the banner is darker-than-bg and survives via (D)).
- * It depends entirely on flat-field accuracy, so it is gated to the large mask and
- * OFF by default — validate with scripts/diag-mask.ts / diag-display.ts on the real
- * PDF before enabling on a new layout. */
+ * VALIDATED on the real RE NEET PST paper: +81,984 watermark px removed, 0 content
+ * pixels affected (flat-bright/darker-than-bg/outside-mask all 0), OCR output
+ * byte-identical (180/180, coverage 99%, 0 per-draft field diffs). See
+ * docs/WATERMARK_DISPLAY_CLEANUP.md. */
 export const persistentCoreEnabled = (): boolean =>
-  process.env.OCR_DISPLAY_WM_PERSISTENT_CORE === 'true';
+  process.env.OCR_DISPLAY_WM_PERSISTENT_CORE !== 'false';
 
 // ---------------------------------------------------------------------------
 // CONSERVATIVE BACKGROUND POST-PASSES (additive; run AFTER the mask pass above).
@@ -122,10 +125,10 @@ const BG_INK_DARK = Number(process.env.OCR_DISPLAY_BG_INK_DARK ?? 150);
 const BG_HALO = Math.max(0, Math.round(Number(process.env.OCR_DISPLAY_BG_HALO ?? 8)));
 
 /**
- * TRAIL mode (OPT-IN; default OFF — Pass 2 is byte-identical until set to 'true').
- * Targets the faint trail that survives Pass 2 in EMPTY background. It survives
- * because a MEDIUM-grey trail pixel (luma in [BG_HARD_INK, BG_INK_DARK)) is itself
- * counted as ink above and then shields an 8px halo of the fainter trail around it.
+ * TRAIL mode. DEFAULT ON — set OCR_DISPLAY_BG_TRAIL=false to disable. Targets the
+ * faint trail that survives Pass 2 in EMPTY background. It survives because a
+ * MEDIUM-grey trail pixel (luma in [BG_HARD_INK, BG_INK_DARK)) is itself counted as
+ * ink above and then shields an 8px halo of the fainter trail around it.
  *
  * With this on, a medium-grey pixel counts as ink ONLY when the cross-page flat
  * field says it is content: it is genuinely DARK (< BG_HARD_INK ⇒ real ink), OR it
@@ -138,9 +141,11 @@ const BG_HALO = Math.max(0, Math.round(Number(process.env.OCR_DISPLAY_BG_HALO ??
  *   • genuinely dark ink (< BG_HARD_INK) still seeds the halo;
  *   • watermark TOUCHING content is kept because the CONTENT seeds the halo around it.
  * Only persistent medium-grey in genuinely empty space (no dark ink and no unique
- * content within BG_HALO) loses protection. Validate on the Q108 page before enabling. */
+ * content within BG_HALO) loses protection. VALIDATED on the real RE NEET PST paper:
+ * 9,972 background px removed, 0 content pixels affected. See
+ * docs/WATERMARK_DISPLAY_CLEANUP.md. */
 export const backgroundTrailEnabled = (): boolean =>
-  process.env.OCR_DISPLAY_BG_TRAIL === 'true';
+  process.env.OCR_DISPLAY_BG_TRAIL !== 'false';
 /** Below this luma a pixel is real ink regardless of the flat field (TRAIL mode). */
 const BG_HARD_INK = Number(process.env.OCR_DISPLAY_BG_HARD_INK ?? 110);
 
@@ -277,10 +282,12 @@ export const cleanCropForDisplay = async (
       ? await flatForRegion(mask, region, pageWidth, pageHeight, width, height)
       : null;
 
-    // When ON, drop the flat-BLIND dark guards (C)/(F) inside the mask so dark
-    // watermark cores can be removed; the flat-AWARE guards (D)/(E) below still
-    // protect all real content. Default OFF ⇒ guards apply ⇒ output unchanged.
-    const persistentCore = persistentCoreEnabled();
+    // Drop the flat-BLIND dark guards (C)/(F) inside the mask so dark watermark
+    // cores can be removed; the flat-AWARE guards (D)/(E) below still protect all
+    // real content. GATED to `mreg` (a real large-watermark mask): without cross-page
+    // consensus there is no large-watermark mask, so the conservative absolute dark
+    // guards stay — persistentCore never acts on a maskless crop.
+    const persistentCore = persistentCoreEnabled() && mreg != null;
     for (let i = 0, p = 0; p < n; p += 1, i += channels) {
       // (A) the large-watermark mask gates EVERYTHING — outside it, keep verbatim.
       if (mreg && mreg[p] < 128) continue;

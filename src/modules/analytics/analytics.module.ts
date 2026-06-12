@@ -11,6 +11,7 @@ import {
   GetExamSummaryUseCase,
   GetQuestionStatsUseCase,
   GetStudentSummaryUseCase,
+  GetSubjectPerformanceUseCase,
   GetWeakTopicsForStudentUseCase,
 } from './use-cases/report-query.use-cases';
 
@@ -24,6 +25,7 @@ import {
     GetExamSummaryUseCase,
     GetExamQuestionStatsUseCase,
     GetStudentSummaryUseCase,
+    GetSubjectPerformanceUseCase,
     GetWeakTopicsForStudentUseCase,
     GetQuestionStatsUseCase,
   ],

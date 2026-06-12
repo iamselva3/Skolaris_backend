@@ -46,7 +46,10 @@ describe('ImportAnswerKeyUseCase', () => {
       findById: jest.fn().mockResolvedValue({ id: 'job1' }),
     } as unknown as jest.Mocked<IOcrJobRepository>;
     storage = { getObject: jest.fn() } as unknown as jest.Mocked<IObjectStorage>;
-    ocr = { extractText: jest.fn() };
+    ocr = {
+      extractText: jest.fn(),
+      extractAnswerKey: jest.fn(),
+    } as unknown as jest.Mocked<IAnswerKeyOcr>;
     useCase = new ImportAnswerKeyUseCase(drafts, ocrJobs, storage, ocr);
   });
 
@@ -67,15 +70,42 @@ describe('ImportAnswerKeyUseCase', () => {
     expect(storage.getObject).not.toHaveBeenCalled();
   });
 
-  it('OCRs the uploaded answer key when only a storageKey is given', async () => {
+  it('OCRs the uploaded answer key (isolated service) when only a storageKey is given', async () => {
     storage.getObject.mockResolvedValue({ body: Buffer.from('x'), contentType: 'image/png' });
-    ocr.extractText.mockResolvedValue('1-B');
+    ocr.extractAnswerKey.mockResolvedValue({
+      text: '1-B',
+      pageTexts: ['1-B'],
+      pagesUsed: [1],
+      pagesIgnored: [],
+    });
     drafts.list.mockResolvedValue({ data: [makeDraft('d1', '1. Q one')], total: 1 });
 
     const r = await useCase.execute({ tenantId: 't1', ocrJobId: 'job1', storageKey: 'keys/a.png' });
 
-    expect(ocr.extractText).toHaveBeenCalled();
+    expect(ocr.extractAnswerKey).toHaveBeenCalled();
     expect(r.matched).toBe(1);
+    expect(r.report.pagesUsed).toEqual([1]);
+  });
+
+  it('preview returns a report WITHOUT writing, including zero/invalid/missing', async () => {
+    drafts.list.mockResolvedValue({
+      data: [makeDraft('d1', '1. Q one'), makeDraft('d2', '3) Q three')],
+      total: 2,
+    });
+
+    const { report, willMatch, draftCount } = await useCase.preview({
+      tenantId: 't1',
+      ocrJobId: 'job1',
+      text: '0-A 1-B 3-Z 4-C',
+    });
+
+    expect(report.zeroOrNegative).toEqual([0]); // Q0 rejected
+    expect(report.entries.map((e) => e.questionNumber)).toEqual([1, 4]); // 3-Z invalid, 0 rejected
+    expect(report.invalid).toEqual([{ questionNumber: 3, raw: 'Z', reason: 'Invalid answer value' }]);
+    expect(report.missingNumbers).toEqual([2, 3]); // gaps within 1..4
+    expect(willMatch).toBe(1); // only Q1 maps to a draft
+    expect(draftCount).toBe(2);
+    expect(drafts.setSuggestedAnswers).not.toHaveBeenCalled();
   });
 
   it('reports unmatched key numbers and unmatched drafts', async () => {

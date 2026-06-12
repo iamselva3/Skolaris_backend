@@ -38,7 +38,9 @@ import { AssignTaxonomyResult, AssignTaxonomyUseCase } from '../use-cases/assign
 import {
   ImportAnswerKeyResult,
   ImportAnswerKeyUseCase,
+  PreviewAnswerKeyResult,
 } from '../use-cases/import-answer-key.use-case';
+import type { ParseReport } from '../services/answer-key';
 import { InsertOcrDraftUseCase } from '../use-cases/insert-ocr-draft.use-case';
 import { ReorderOcrDraftUseCase } from '../use-cases/reorder-ocr-draft.use-case';
 import { GetOcrJobUseCase } from '../use-cases/get-ocr-job.use-case';
@@ -189,6 +191,39 @@ export class OcrController {
     @Body() dto: ImportAnswerKeyDto,
   ): Promise<{ data: ImportAnswerKeyResult }> {
     const data = await this.importAnswerKeyUseCase.execute({
+      tenantId: actor.tenantId,
+      ocrJobId: id,
+      text: dto.text,
+      storageKey: dto.storageKey,
+    });
+    return { data };
+  }
+
+  /**
+   * Stateless answer-key PARSE — validate raw key text with the one canonical
+   * grammar, no job context. Used by the multi-file batch translation so all
+   * paths share a single source of truth.
+   */
+  @Roles(Role.SUPER_ADMIN, Role.TEACHER)
+  @Post('answer-key/parse')
+  parseAnswerKey(@Body() dto: ImportAnswerKeyDto): { data: ParseReport } {
+    return { data: this.importAnswerKeyUseCase.parse(dto.text ?? '') };
+  }
+
+  /**
+   * Answer-key PREVIEW (dry-run) — parse + validate + (for PDF/image) OCR with
+   * answer-key page selection, and return the full ParseReport WITHOUT applying.
+   * The UI shows totals / missing / duplicates / invalid / pages used & ignored
+   * and the parsed list; the teacher confirms before calling the apply endpoint.
+   */
+  @Roles(Role.SUPER_ADMIN, Role.TEACHER)
+  @Post('jobs/:id/answer-key/preview')
+  async previewAnswerKey(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ImportAnswerKeyDto,
+  ): Promise<{ data: PreviewAnswerKeyResult }> {
+    const data = await this.importAnswerKeyUseCase.preview({
       tenantId: actor.tenantId,
       ocrJobId: id,
       text: dto.text,

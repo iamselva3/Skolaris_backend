@@ -10,6 +10,7 @@ export interface MyExamItem {
   examId: string;
   examTitle: string;
   durationSeconds: number;
+  totalMarks: number;
   opensAt: string | null;
   closesAt: string | null;
   status: string;
@@ -30,7 +31,14 @@ export class ListMyExamsUseCase {
     const examIds = Array.from(new Set(rows.map((r) => r.examId)));
     const exams = await this.prisma.exam.findMany({
       where: { id: { in: examIds }, tenantId: input.tenantId },
-      select: { id: true, title: true, durationSeconds: true, opensAt: true, closesAt: true },
+      select: {
+        id: true,
+        title: true,
+        durationSeconds: true,
+        totalMarks: true,
+        opensAt: true,
+        closesAt: true,
+      },
     });
     const examMap = new Map(exams.map((e) => [e.id, e]));
     return rows.map((a) => {
@@ -40,6 +48,7 @@ export class ListMyExamsUseCase {
         examId: a.examId,
         examTitle: e?.title ?? '(missing)',
         durationSeconds: e?.durationSeconds ?? 0,
+        totalMarks: e?.totalMarks ? Number(e.totalMarks) : 0,
         opensAt: e?.opensAt?.toISOString() ?? null,
         closesAt: e?.closesAt?.toISOString() ?? null,
         status: a.status,

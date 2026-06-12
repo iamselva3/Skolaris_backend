@@ -67,7 +67,7 @@ export class CompleteUploadUseCase {
     // Tesseract is wasteful and a malformed one can crash the worker. The FE
     // only needs the object to exist + the storageKey it already holds, so
     // marking UPLOADED (terminal, no OCR) is sufficient.
-    if (upload.storageKey.includes('/question-images/')) {
+    if (upload.storageKey.includes('/question-images/') || upload.storageKey.includes('/answer-keys/')) {
       const done = await this.uploads.updateStatus(upload.tenantId, upload.id, 'UPLOADED');
       this.logger.log(
         `[done] question-image upload ${upload.id} marked UPLOADED — OCR skipped ${t.mark()} (${t.totalLabel()})`,

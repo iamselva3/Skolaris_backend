@@ -17,6 +17,7 @@ describe('RecomputeTopicReportsForStudentUseCase', () => {
       getExamQuestionStats: jest.fn(),
       getStudentSummary: jest.fn(),
       getWeakTopics: jest.fn(),
+      getTopicReports: jest.fn(),
     };
     useCase = new RecomputeTopicReportsForStudentUseCase(repo);
   });
