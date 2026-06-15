@@ -5,7 +5,6 @@ import {
   IsString,
   IsUUID,
   Matches,
-  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -38,7 +37,6 @@ export class CreateUploadDto {
   @IsOptional()
   @IsInt()
   @Min(0)
-  @Max(25 * 1024 * 1024)
   sizeBytes?: number;
 
   @IsOptional() @IsUUID() programId?: string;
