@@ -5,6 +5,8 @@ import { GradeAttemptUseCase } from '../../attempts/use-cases/grade-attempt.use-
 import { IViolationRepository } from '../repositories/violation.repository';
 import { RecordViolationsUseCase } from './record-violations.use-case';
 
+const tenantFindUnique = jest.fn().mockResolvedValue({ examViolationLimit: 6 });
+
 const fakePrisma = {
   $transaction: async <T>(cb: () => Promise<T>) => cb(),
   exam: {
@@ -15,6 +17,9 @@ const fakePrisma = {
         flagAtViolationCount: 5,
       },
     }),
+  },
+  tenant: {
+    findUnique: tenantFindUnique,
   },
 } as unknown as import('../../../shared/database/prisma.service').PrismaService;
 
@@ -45,6 +50,7 @@ describe('RecordViolationsUseCase', () => {
   let useCase: RecordViolationsUseCase;
 
   beforeEach(() => {
+    tenantFindUnique.mockResolvedValue({ examViolationLimit: 6 });
     violations = {
       bulkCreate: jest.fn().mockResolvedValue(1),
       countByAttempt: jest.fn(),
@@ -91,10 +97,9 @@ describe('RecordViolationsUseCase', () => {
     expect(r.flagged).toBe(false);
   });
 
-  it('flags the attempt at flagAtViolationCount', async () => {
+  it('does NOT auto-submit or flag below the 6th violation', async () => {
     attempts.findById.mockResolvedValue(attempt({ violationCount: 4 }));
     attempts.incrementViolationCount.mockResolvedValue(attempt({ violationCount: 5 }));
-    violations.countByAttemptAndType.mockResolvedValue(0);
 
     const r = await useCase.execute({
       tenantId: 't-1',
@@ -102,20 +107,22 @@ describe('RecordViolationsUseCase', () => {
       attemptId: 'a-1',
       events: [{ type: 'WINDOW_BLUR', clientTimestamp: new Date() }],
     });
-    expect(r.flagged).toBe(true);
-    expect(attempts.setStatus).toHaveBeenCalledWith('t-1', 'a-1', 'FLAGGED');
+    expect(r.autoSubmitted).toBe(false);
+    expect(r.flagged).toBe(false);
+    expect(r.totalViolations).toBe(5);
+    expect(attempts.submit).not.toHaveBeenCalled();
+    expect(attempts.setStatus).not.toHaveBeenCalled();
   });
 
-  it('auto-submits + grades at totalViolationThreshold', async () => {
-    attempts.findById.mockResolvedValue(attempt({ violationCount: 9 }));
-    attempts.incrementViolationCount.mockResolvedValue(attempt({ violationCount: 10 }));
-    violations.countByAttemptAndType.mockResolvedValue(0);
+  it('auto-submits + grades on the 6th total violation', async () => {
+    attempts.findById.mockResolvedValue(attempt({ violationCount: 5 }));
+    attempts.incrementViolationCount.mockResolvedValue(attempt({ violationCount: 6 }));
 
     const r = await useCase.execute({
       tenantId: 't-1',
       studentId: 's-1',
       attemptId: 'a-1',
-      events: [{ type: 'COPY_ATTEMPT', clientTimestamp: new Date() }],
+      events: [{ type: 'TAB_SWITCH', clientTimestamp: new Date() }],
     });
     expect(r.autoSubmitted).toBe(true);
     expect(attempts.submit).toHaveBeenCalledWith({
@@ -126,10 +133,10 @@ describe('RecordViolationsUseCase', () => {
     expect(grader.execute).toHaveBeenCalled();
   });
 
-  it('auto-submits at tabSwitchThreshold even when total is lower', async () => {
+  it('honours a custom tenant violation limit (auto-submits at the configured count)', async () => {
+    tenantFindUnique.mockResolvedValue({ examViolationLimit: 3 });
     attempts.findById.mockResolvedValue(attempt({ violationCount: 2 }));
     attempts.incrementViolationCount.mockResolvedValue(attempt({ violationCount: 3 }));
-    violations.countByAttemptAndType.mockResolvedValue(3);
 
     const r = await useCase.execute({
       tenantId: 't-1',
@@ -138,6 +145,8 @@ describe('RecordViolationsUseCase', () => {
       events: [{ type: 'TAB_SWITCH', clientTimestamp: new Date() }],
     });
     expect(r.autoSubmitted).toBe(true);
+    expect(attempts.submit).toHaveBeenCalled();
+    expect(grader.execute).toHaveBeenCalled();
   });
 
   it('forbids non-owner', async () => {

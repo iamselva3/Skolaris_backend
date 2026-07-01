@@ -6,6 +6,7 @@ export interface UpdateTenantInput {
   id: string;
   name?: string;
   status?: TenantStatus;
+  examViolationLimit?: number;
 }
 
 @Injectable()
@@ -17,6 +18,10 @@ export class UpdateTenantUseCase {
     if (!existing) {
       throw new NotFoundException('Tenant not found');
     }
-    return this.tenants.update(input.id, { name: input.name, status: input.status });
+    return this.tenants.update(input.id, {
+      name: input.name,
+      status: input.status,
+      examViolationLimit: input.examViolationLimit,
+    });
   }
 }

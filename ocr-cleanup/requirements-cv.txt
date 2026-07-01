@@ -1,0 +1,17 @@
+# Document-engine CV stack — cv2 (headless) + numpy + fitz (PyMuPDF) + PIL ONLY.
+# Verified by an AST import scan of app/ (no skimage/scipy/torch/paddle at import time):
+# scikit-image (which drags in scipy ~130MB, networkx, imageio, tifffile ≈ 172MB of dead
+# weight) is intentionally NOT listed — re-add ONLY if you actually `import skimage`.
+#
+# REQUIRED whenever the structure engine runs (analyze_document / build_document), NOT just
+# the optional /cleanup pass: this stack powers the content-safe DOCUMENT-LEVEL chrome cleanup
+# (repeated header/footer/page-number/border via repeated_chrome + chrome_pixels + page-frame
+# detection), figure/diagram detection, pixel column refinement, badge reading, and crop render.
+# Watermark removal was REMOVED from the OCR workflow (uploader cleans heavy watermarks before
+# upload) — but that frees NO package here, because every item above is still needed for the
+# chrome cleanup and crop rendering that remain. The heavy OCR backends (PaddleOCR/TrOCR/torch,
+# RapidOCR) are lazy-imported and live in requirements-ocr.txt, never loaded on the digital path.
+PyMuPDF==1.24.10
+opencv-python-headless==4.10.0.84
+numpy==2.1.1
+Pillow==10.4.0

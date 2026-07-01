@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   IsEmail,
   IsEnum,
@@ -8,8 +9,10 @@ import {
   MaxLength,
   MinLength,
   Matches,
+  ValidateNested,
 } from 'class-validator';
 import { Role } from '../../../shared/common/enums/role.enum';
+import { ClassroomAssignmentDto } from '../../classrooms/dtos/classroom-assignment.dto';
 
 export class CreateUserDto {
   @IsEmail()
@@ -36,4 +39,11 @@ export class CreateUserDto {
   @IsOptional()
   @Matches(/^\d{10}$/, { message: 'Phone must be exactly 10 digits' })
   phone?: string;
+
+  // Optional one-step classroom assignment (TEACHER only). The teacher is attached
+  // to the matching classroom, which is created on the fly if it doesn't exist yet.
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ClassroomAssignmentDto)
+  classroom?: ClassroomAssignmentDto;
 }

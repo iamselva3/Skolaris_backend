@@ -11,6 +11,8 @@ export interface CreateUploadInput {
   storageKey: string;
   programId?: string | null;
   subjectId?: string | null;
+  /** Explicit branch override — used when a Super Admin uploads under a specific branch. */
+  branchId?: string | null;
 }
 
 export interface IUploadRepository {
@@ -18,7 +20,13 @@ export interface IUploadRepository {
   findById(tenantId: string, id: string): Promise<UploadModel | null>;
   list(
     tenantId: string,
-    filters: { status?: UploadStatus; uploadedBy?: string; limit: number; offset: number },
+    filters: {
+      status?: UploadStatus;
+      uploadedBy?: string;
+      branchId?: string;
+      limit: number;
+      offset: number;
+    },
   ): Promise<{ data: UploadModel[]; total: number }>;
   updateStatus(
     tenantId: string,

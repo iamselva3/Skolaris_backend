@@ -14,7 +14,7 @@ import {
 import { Difficulty, QuestionType } from '../../questions/models/question-type.enum';
 
 export class ApproveDraftOptionDto {
-  @IsString() @MinLength(1) @MaxLength(1000) label!: string;
+  @IsString() @MaxLength(1000) label!: string;
   @IsBoolean() isCorrect!: boolean;
 }
 

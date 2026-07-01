@@ -1,0 +1,7 @@
+# Lean base — identity pass-through proves the Node<->Python wiring with NO CV
+# stack. The real protect-mask engine deps live in requirements-cv.txt (installed
+# only with --build-arg INSTALL_CV=1).
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+httpx==0.27.2
+pydantic==2.9.2

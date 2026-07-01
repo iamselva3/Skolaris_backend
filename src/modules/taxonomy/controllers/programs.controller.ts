@@ -30,6 +30,8 @@ const toResponse = (p: ProgramModel) => ({
   code: p.code,
   name: p.name,
   isActive: p.isActive,
+  defaultMarks: p.defaultMarks,
+  defaultNegativeMarks: p.defaultNegativeMarks,
   createdAt: p.createdAt.toISOString(),
   updatedAt: p.updatedAt.toISOString(),
 });
@@ -66,6 +68,8 @@ export class ProgramsController {
       tenantId: actor.tenantId,
       code: dto.code,
       name: dto.name,
+      defaultMarks: dto.defaultMarks,
+      defaultNegativeMarks: dto.defaultNegativeMarks,
     });
     return { data: toResponse(p) };
   }

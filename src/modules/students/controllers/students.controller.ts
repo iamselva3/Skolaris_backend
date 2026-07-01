@@ -56,6 +56,7 @@ export class StudentsController {
       classLabel: dto.classLabel,
       rollNo: dto.rollNo,
       parentContact: dto.parentContact,
+      classroom: dto.classroom,
     });
     return { data: toStudentResponse(created) };
   }
@@ -69,6 +70,7 @@ export class StudentsController {
     const r = await this.listStudentsUseCase.execute({
       tenantId: actor.tenantId,
       branchId: query.branchId,
+      year: query.year,
       batch: query.batch,
       section: query.section,
       subject: query.subject,

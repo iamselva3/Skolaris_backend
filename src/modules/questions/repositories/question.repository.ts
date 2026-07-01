@@ -45,6 +45,7 @@ export interface ListQuestionsFilter {
   difficulty?: Difficulty;
   type?: QuestionType;
   q?: string;
+  branchId?: string;
   isActive?: boolean;
   limit: number;
   offset: number;

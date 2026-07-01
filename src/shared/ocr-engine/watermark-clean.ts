@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { pick, type DocumentProfile } from './document-profile';
 
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, n));
 const byte = (x: number): number => (x <= 0 ? 0 : x >= 255 ? 255 : x | 0);
@@ -112,35 +113,11 @@ export interface WatermarkMask {
   data: Uint8Array;
 }
 
-/** Flat luma in [GREY_FLOOR, BRIGHT_CEIL) ⇒ persistent grey ⇒ watermark candidate.
- *  Below the floor = persistent DARK (likely a repeated rule/border — leave it);
- *  at/above the ceiling = white on some page = content-capable (protect). */
-const WM_MASK_GREY_FLOOR = Number(process.env.OCR_DISPLAY_WM_MASK_GREY_FLOOR ?? 110);
-const WM_MASK_BRIGHT_CEIL = Number(process.env.OCR_DISPLAY_WM_MASK_BRIGHT_CEIL ?? 238);
-/** Dilation (flat-grid px) that merges the strokes of one watermark into a blob.
- *  THIS is the lever for the fragmented DIAGONAL banner: it runs BEFORE component
- *  labelling, so a larger radius bridges the whitespace gaps between the separated
- *  "AAKASH …" glyphs and lets them label as ONE large component (instead of many
- *  small ones that each fail the size test ⇒ "only part of the watermark masked").
- *  Raise it (e.g. 6–8) — checking with scripts/diag-mask.ts — when the banner
- *  fragments; a close (WM_MASK_CLOSE) CANNOT bridge them, it only fills holes. */
-const WM_MASK_DILATE = Math.max(0, Math.round(Number(process.env.OCR_DISPLAY_WM_MASK_DILATE ?? 4)));
-/** A component is "large" if its bbox spans this fraction of the page's longer
- *  side OR its area is this fraction of the page — either alone qualifies, so a
- *  long thin diagonal banner AND a blocky central stamp both pass. */
-const WM_MASK_MIN_SPAN_FRAC = Number(process.env.OCR_DISPLAY_WM_MASK_MIN_SPAN ?? 0.18);
-const WM_MASK_MIN_AREA_FRAC = Number(process.env.OCR_DISPLAY_WM_MASK_MIN_AREA ?? 0.015);
-/** Morphological CLOSE radius (flat-grid px) applied to the FINAL large-watermark
- *  mask (after component labelling). A close (dilate-by-r then erode-by-r) SEALS the
- *  dark-core HOLES inside an accepted watermark footprint — a thick stroke's core is
- *  darker than GREY_FLOOR ⇒ not a candidate ⇒ a hole punched through the mask, which
- *  otherwise keeps the watermark core alive in the display pass. It fills holes/gaps
- *  up to 2·r WITHOUT growing the outer boundary and WITHOUT resurrecting rejected
- *  small components. DEFAULT 0 = exact prior mask (no-op). Raise (≈ half the widest
- *  dark-core, typically 4–8) when scripts/diag-mask.ts shows stroke-centre holes in
- *  diag-LARGE.png; it does NOT bridge a fragmented diagonal banner — that is
- *  WM_MASK_DILATE's job. */
-const WM_MASK_CLOSE = Math.max(0, Math.round(Number(process.env.OCR_DISPLAY_WM_MASK_CLOSE ?? 0)));
+// DOCUMENT-DRIVEN: the watermark-mask luma bounds + dilation are no longer static. They are
+// derived per-document from the flat-field histogram + glyph geometry inside analyzeWatermarkMask
+// (see DocumentProfile.wmGreyFloor / wmBrightCeil / lineHeight). The OCR_DISPLAY_WM_MASK_* env vars
+// remain as OVERRIDES ONLY (emergency kill switch / forced value) via pick(). The legacy literals
+// (110 / 238 / 4 / 0.18 / 0.015 / 0) survive solely as the fallback when no profile is available.
 
 /** Binary dilation by Chebyshev radius `r` (separable H then V running-OR). */
 const dilateFlatMask = (mask: Uint8Array, w: number, h: number, r: number): Uint8Array => {
@@ -243,9 +220,24 @@ export interface WatermarkAnalysis {
  * the small flat grid (no I/O). Returns null without a flat field (single image /
  * <3 pages) — without cross-page consensus nothing may be removed.
  */
-export const analyzeWatermarkMask = (flat: FlatField | null): WatermarkAnalysis | null => {
+export const analyzeWatermarkMask = (
+  flat: FlatField | null,
+  profile?: DocumentProfile,
+): WatermarkAnalysis | null => {
   if (!flat) return null;
   const { width: w, height: h, data: f } = flat;
+  // DOCUMENT-DRIVEN bounds (env overrides > document-derived > legacy fallback). The flat-grid
+  // dilation scales with the document's glyph size mapped onto the flat grid, never a fixed px.
+  const WM_MASK_GREY_FLOOR = pick('OCR_DISPLAY_WM_MASK_GREY_FLOOR', profile?.wmGreyFloor, 110);
+  const WM_MASK_BRIGHT_CEIL = pick('OCR_DISPLAY_WM_MASK_BRIGHT_CEIL', profile?.wmBrightCeil, 238);
+  const flatScale = profile && profile.pageHeight > 0 ? h / profile.pageHeight : 1;
+  const WM_MASK_DILATE = Math.max(
+    0,
+    Math.round(pick('OCR_DISPLAY_WM_MASK_DILATE', profile ? profile.lineHeight * 0.2 * flatScale : undefined, 4)),
+  );
+  const WM_MASK_MIN_SPAN_FRAC = pick('OCR_DISPLAY_WM_MASK_MIN_SPAN', undefined, 0.18);
+  const WM_MASK_MIN_AREA_FRAC = pick('OCR_DISPLAY_WM_MASK_MIN_AREA', undefined, 0.015);
+  const WM_MASK_CLOSE = Math.max(0, Math.round(pick('OCR_DISPLAY_WM_MASK_CLOSE', undefined, 0)));
   const cand = new Uint8Array(w * h);
   for (let i = 0; i < f.length; i += 1)
     if (f[i] >= WM_MASK_GREY_FLOOR && f[i] < WM_MASK_BRIGHT_CEIL) cand[i] = 1;
@@ -384,8 +376,11 @@ export const analyzeWatermarkMask = (flat: FlatField | null): WatermarkAnalysis 
  * `analyzeWatermarkMask` (see it for the algorithm). Returns null when there is
  * no flat field — without cross-page consensus nothing may be removed.
  */
-export const buildWatermarkMask = (flat: FlatField | null): WatermarkMask | null => {
-  const a = analyzeWatermarkMask(flat);
+export const buildWatermarkMask = (
+  flat: FlatField | null,
+  profile?: DocumentProfile,
+): WatermarkMask | null => {
+  const a = analyzeWatermarkMask(flat, profile);
   if (!a) return null;
   // Emit 0/255 (analysis mask is 0/1) so the display gate's `< 128` test — applied
   // after a bilinear resample — correctly reads inside vs outside the mask.

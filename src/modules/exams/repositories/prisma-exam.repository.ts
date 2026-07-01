@@ -37,7 +37,20 @@ export class PrismaExamRepository implements IExamRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateExamInput): Promise<ExamModel> {
-    const antiCheat = { ...DEFAULT_ANTI_CHEAT_CONFIG, ...(input.antiCheatConfig ?? {}) };
+    // Default the per-exam violation threshold to the tenant-wide super-admin
+    // setting, so a newly created exam mirrors the currently configured limit
+    // (falling back to the historical default). An explicit caller-supplied
+    // threshold still wins. Runtime enforcement also reads the tenant limit, so
+    // the stored value stays consistent with what actually auto-submits.
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: input.tenantId },
+      select: { examViolationLimit: true },
+    });
+    const antiCheat = {
+      ...DEFAULT_ANTI_CHEAT_CONFIG,
+      totalViolationThreshold: tenant?.examViolationLimit ?? DEFAULT_ANTI_CHEAT_CONFIG.totalViolationThreshold,
+      ...(input.antiCheatConfig ?? {}),
+    };
     // Branch scoping: an exam belongs to the branch of its creator (same rule
     // as the backfill migration). Tenant-level admins (null branch) create
     // tenant-wide exams.
@@ -54,6 +67,8 @@ export class PrismaExamRepository implements IExamRepository {
         description: input.description ?? null,
         durationSeconds: input.durationSeconds,
         defaultNegativeMarks: input.defaultNegativeMarks ?? 0,
+        examMarksPerQuestion: input.examMarksPerQuestion ?? null,
+        examNegativeMarks: input.examNegativeMarks ?? null,
         randomizeQuestions: input.randomizeQuestions ?? false,
         randomizeOptions: input.randomizeOptions ?? false,
         kind: (input.kind ?? 'TEST') as PrismaExamKind,
@@ -86,11 +101,12 @@ export class PrismaExamRepository implements IExamRepository {
         sections: { orderBy: { position: 'asc' } },
         questions: { orderBy: { position: 'asc' } },
         assignments: true,
+        sourcePaper: { select: { title: true } },
       },
     });
     if (!row) return null;
     return {
-      exam: this.toModel(row),
+      exam: this.toModel(row, row.sourcePaper?.title ?? null),
       sections: row.sections.map((s) => this.toSection(s)),
       questions: row.questions.map((q) => this.toExamQuestion(q)),
       assignments: row.assignments.map((a) => this.toAssignment(a)),
@@ -108,11 +124,23 @@ export class PrismaExamRepository implements IExamRepository {
     if (filter.createdBy) where.createdBy = filter.createdBy;
     if (filter.programId) where.programId = filter.programId;
     if (filter.subjectId) where.subjectId = filter.subjectId;
+    if (filter.branchId) where.branchId = filter.branchId;
     if (filter.q && filter.q.length > 0) {
       where.OR = [
         { title: { contains: filter.q, mode: 'insensitive' } },
         { description: { contains: filter.q, mode: 'insensitive' } },
       ];
+    }
+    // Discipline → Batch → Section filter. An exam has no direct Classroom FK, so
+    // route through ExamAssignment.classroom (discipline = subject, batch = name,
+    // section). Tests assigned only to individual students (no classroom) are
+    // intentionally excluded when any of these are set. Mirrors buildPaperWhere.
+    if (filter.discipline || filter.batch || filter.section) {
+      const classroomFilter: Prisma.ClassroomWhereInput = {};
+      if (filter.discipline) classroomFilter.subject = filter.discipline;
+      if (filter.batch) classroomFilter.name = filter.batch;
+      if (filter.section) classroomFilter.section = filter.section;
+      where.assignments = { some: { classroom: { is: classroomFilter } } };
     }
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.exam.findMany({
@@ -120,10 +148,20 @@ export class PrismaExamRepository implements IExamRepository {
         take: filter.limit,
         skip: filter.offset,
         orderBy: { createdAt: 'desc' },
+        include: {
+          sourcePaper: { select: { title: true } },
+          program: { select: { name: true } },
+          subject: { select: { name: true } },
+        },
       }),
       this.prisma.exam.count({ where }),
     ]);
-    return { data: rows.map((r) => this.toModel(r)), total };
+    return {
+      data: rows.map((r) =>
+        this.toModel(r, r.sourcePaper?.title ?? null, r.program?.name ?? null, r.subject?.name ?? null),
+      ),
+      total,
+    };
   }
 
   async update(tenantId: string, id: string, input: UpdateExamInput): Promise<ExamModel> {
@@ -135,6 +173,10 @@ export class PrismaExamRepository implements IExamRepository {
     if (input.durationSeconds !== undefined) data.durationSeconds = input.durationSeconds;
     if (input.defaultNegativeMarks !== undefined)
       data.defaultNegativeMarks = input.defaultNegativeMarks;
+    if (input.examMarksPerQuestion !== undefined)
+      data.examMarksPerQuestion = input.examMarksPerQuestion;
+    if (input.examNegativeMarks !== undefined)
+      data.examNegativeMarks = input.examNegativeMarks;
     if (input.randomizeQuestions !== undefined) data.randomizeQuestions = input.randomizeQuestions;
     if (input.randomizeOptions !== undefined) data.randomizeOptions = input.randomizeOptions;
     if (input.opensAt !== undefined) data.opensAt = input.opensAt;
@@ -176,11 +218,26 @@ export class PrismaExamRepository implements IExamRepository {
   }
 
   async recomputeTotalMarks(tenantId: string, id: string): Promise<Decimal> {
-    const sum = await this.prisma.examQuestion.aggregate({
-      where: { tenantId, examId: id },
-      _sum: { marks: true },
+    // Total marks must mirror the effective scoring resolver: when the exam has an
+    // exam-level marks override, every question is worth examMarksPerQuestion, so
+    // total = examMarksPerQuestion * questionCount. Otherwise sum the per-question
+    // marks. Keeping this consistent is what makes analytics' scorePercent
+    // (score / totalMarks) correct without any separate calculation.
+    const exam = await this.prisma.exam.findUnique({
+      where: { id },
+      select: { examMarksPerQuestion: true },
     });
-    const total = sum._sum.marks ?? new Decimal(0);
+    let total: Decimal;
+    if (exam?.examMarksPerQuestion != null) {
+      const count = await this.prisma.examQuestion.count({ where: { tenantId, examId: id } });
+      total = exam.examMarksPerQuestion.mul(count);
+    } else {
+      const sum = await this.prisma.examQuestion.aggregate({
+        where: { tenantId, examId: id },
+        _sum: { marks: true },
+      });
+      total = sum._sum.marks ?? new Decimal(0);
+    }
     await this.prisma.exam.update({ where: { id }, data: { totalMarks: total } });
     return total;
   }
@@ -574,7 +631,12 @@ export class PrismaExamRepository implements IExamRepository {
   }
 
   // ----- mappers --------------------------------------------------------
-  private toModel(r: PrismaExam): ExamModel {
+  private toModel(
+    r: PrismaExam,
+    sourcePaperTitle: string | null = null,
+    programName: string | null = null,
+    subjectName: string | null = null,
+  ): ExamModel {
     return new ExamModel(
       r.id,
       r.tenantId,
@@ -597,6 +659,12 @@ export class PrismaExamRepository implements IExamRepository {
       r.createdAt,
       r.updatedAt,
       r.kind as ExamKind,
+      r.examMarksPerQuestion,
+      r.examNegativeMarks,
+      r.sourcePaperId,
+      sourcePaperTitle,
+      programName,
+      subjectName,
     );
   }
 

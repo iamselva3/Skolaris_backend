@@ -14,8 +14,8 @@ import {
 @Injectable()
 export class GetReportsOverviewUseCase {
   constructor(@Inject(REPORTS_REPOSITORY) private readonly repo: IReportsRepository) {}
-  execute(input: { tenantId: string; createdBy?: string }) {
-    return this.repo.getOverview(input.tenantId, input.createdBy);
+  execute(input: { tenantId: string; createdBy?: string; branchId?: string }) {
+    return this.repo.getOverview(input.tenantId, input.createdBy, input.branchId);
   }
 }
 
@@ -48,7 +48,7 @@ export class GetExamReportDetailUseCase {
       questionStats.map((q) => q.questionId),
     );
 
-    const questions = questionStats.map((q) => {
+    const questions = questionStats.map((q, i) => {
       const m = meta.get(q.questionId);
       return {
         examQuestionId: q.examQuestionId,
@@ -58,16 +58,29 @@ export class GetExamReportDetailUseCase {
         difficulty: m?.difficulty ?? null,
         subject: m?.subject ?? null,
         topic: m?.topic ?? null,
+        imageUrl: m?.imageUrl ?? null,
         totalAnswered: q.totalAnswered,
         correctCount: q.correctCount,
         correctPercent:
           q.totalAnswered === 0 ? 0 : Math.round((q.correctCount / q.totalAnswered) * 1000) / 10,
         avgTimeSeconds: Math.round(q.avgTimeSeconds * 10) / 10,
         flag: q.flag,
+        // Sort key only (stripped before return): natural reading order.
+        _createdAt: m?.createdAt?.getTime() ?? i,
       };
     });
 
-    return { header, summary, questions };
+    // OCR-imported exams can store examQuestion.position reversed relative to the
+    // paper's reading order, so the analytics order (by position) shows the last
+    // question first. Re-order by question creation time (snip order, top→bottom)
+    // so the report lists questions the way they appear on the paper.
+    questions.sort((a, b) => a._createdAt - b._createdAt);
+
+    return {
+      header,
+      summary,
+      questions: questions.map(({ _createdAt, ...rest }) => rest),
+    };
   }
 }
 

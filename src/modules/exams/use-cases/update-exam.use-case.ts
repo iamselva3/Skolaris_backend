@@ -23,6 +23,8 @@ export interface UpdateExamInput {
   description?: string | null;
   durationSeconds?: number;
   defaultNegativeMarks?: number;
+  examMarksPerQuestion?: number | null;
+  examNegativeMarks?: number | null;
   randomizeQuestions?: boolean;
   randomizeOptions?: boolean;
   opensAt?: string | null;
@@ -59,6 +61,12 @@ export class UpdateExamUseCase {
     if (input.defaultNegativeMarks !== undefined)
       (this.assertEditable(isEditable, 'defaultNegativeMarks'),
         (update.defaultNegativeMarks = input.defaultNegativeMarks));
+    if (input.examMarksPerQuestion !== undefined)
+      (this.assertEditable(isEditable, 'examMarksPerQuestion'),
+        (update.examMarksPerQuestion = input.examMarksPerQuestion));
+    if (input.examNegativeMarks !== undefined)
+      (this.assertEditable(isEditable, 'examNegativeMarks'),
+        (update.examNegativeMarks = input.examNegativeMarks));
     if (input.randomizeQuestions !== undefined)
       (this.assertEditable(isEditable, 'randomizeQuestions'),
         (update.randomizeQuestions = input.randomizeQuestions));
@@ -96,7 +104,16 @@ export class UpdateExamUseCase {
     if (Object.keys(update).length === 0) {
       throw new BadRequestException('No fields to update');
     }
-    return this.exams.update(input.actor.tenantId, input.id, update);
+    const updated = await this.exams.update(input.actor.tenantId, input.id, update);
+
+    // Changing the exam-level marks override (set or cleared) changes every
+    // question's effective marks, so totalMarks must be recomputed to keep
+    // analytics' score/percentage consistent (single source of truth).
+    if (input.examMarksPerQuestion !== undefined) {
+      await this.exams.recomputeTotalMarks(input.actor.tenantId, input.id);
+      return (await this.exams.findById(input.actor.tenantId, input.id)) ?? updated;
+    }
+    return updated;
   }
 
   private assertEditable(isEditable: boolean, field: string): void {

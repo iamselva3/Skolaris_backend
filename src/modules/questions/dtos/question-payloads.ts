@@ -109,7 +109,7 @@ export class VisualPayloadDto {
 /* ---- DTO option (used when type is choice-based) ----------------------------- */
 
 export class QuestionOptionDto {
-  @IsString() @MinLength(1) @MaxLength(1000) label!: string;
+  @IsString() @MaxLength(1000) label!: string;
   @IsBoolean() isCorrect!: boolean;
 }
 

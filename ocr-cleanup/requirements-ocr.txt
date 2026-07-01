@@ -1,0 +1,26 @@
+# Scanned-OCR worker requirements — the dedicated 1 GB tier ONLY.
+#
+# Installs the SCANNED re-OCR engine on top of the CV stack (requirements-cv.txt). NO Dockerfile
+# installs this file by default; install it ONLY in the dedicated scanned-OCR worker image:
+#   ./.venv/Scripts/python.exe -m pip install -r requirements-ocr.txt
+
+# RapidOCR (ONNX) — the SCANNED re-OCR engine for the structure pipeline. When a document is classified
+# SCANNED (the Node `looksScanned` evidence gate sends ocrMode='scanned'), `app/structure_engine/rapid_reocr.py`
+# re-OCRs the page renders with this and REPLACES the platform (Tesseract) tokens before ownership analysis
+# (10→20 questions on the reference scan). REQUIRED for the scanned path. Light: onnxruntime + bundled
+# models (~16MB), no torch. Measured peak ~620MB during inference (page-by-page, bounded) → 1 GB worker.
+rapidocr_onnxruntime==1.4.4
+
+# ── REMOVED 2026-06-30 — verified dead, kept permanently OUT (the ~1–2 GB driver stack) ──────────────
+# PaddleOCR/PaddlePaddle (printed-region OCR) and Transformers/Torch (TrOCR handwriting) backed the
+# DISABLED /process-document + /ocr-document routes via app/ocr_engine/{paddle,trocr}_adapter.py.
+# Proven disconnected from production before removal:
+#   • not installed (importlib find_spec → absent) yet the full engine runs;
+#   • imported ONLY lazily, inside those adapter functions (never at module/startup load);
+#   • the production /analyze-document structure path imports only ocr_engine.rapid_adapter (RapidOCR),
+#     never the paddle/trocr adapters;
+#   • full regression byte-IDENTICAL before & after: 105/105 unit tests, and
+#     AD2601 187/176, AIOTS 172/171, 25REP 125/107, RENEET 179/179, PHYCHE 50/50, Biology 85/85,
+#     Biology_Cell 90/90, scanned-ref 20/20.
+# DO NOT re-add (these are the footprint/RAM regression — torch alone ~1 GB):
+#   paddleocr==2.8.1   paddlepaddle==2.6.1   transformers==4.44.2   torch==2.4.1

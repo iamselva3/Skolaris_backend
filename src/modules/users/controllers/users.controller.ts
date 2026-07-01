@@ -55,6 +55,7 @@ export class UsersController {
       role: dto.role,
       branchId: dto.branchId,
       phone: dto.phone,
+      classroom: dto.classroom,
     });
     return { data: toUserResponse(user) };
   }

@@ -14,6 +14,10 @@ export class ListExamsUseCase {
     programId?: string;
     subjectId?: string;
     q?: string;
+    branchId?: string;
+    discipline?: string;
+    batch?: string;
+    section?: string;
     limit: number;
     offset: number;
   }): Promise<PaginatedResponse<ExamModel>> {

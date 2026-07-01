@@ -22,6 +22,8 @@ export interface CreateUploadInput {
   subjectId?: string | null;
   /** Storage folder category (see UPLOAD_CATEGORIES). Defaults to 'uploads'. */
   category?: string | null;
+  /** Explicit branch override — used when a Super Admin uploads under a specific branch. */
+  branchId?: string | null;
 }
 
 /** Folders that may appear in a storage key. Guards path interpolation. */
@@ -95,6 +97,7 @@ export class CreateUploadUseCase {
       storageKey,
       programId: input.programId ?? null,
       subjectId: input.subjectId ?? null,
+      branchId: input.branchId ?? null,
     });
     this.logger.log(
       `[4/4] upload row created id=${upload.id} ${t.mark()} — handed back to client (${t.totalLabel()})`,

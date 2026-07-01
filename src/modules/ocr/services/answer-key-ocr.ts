@@ -16,6 +16,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import sharp from 'sharp';
 import type { PSM as Psm } from 'tesseract.js'; // type-only — no runtime load
 import { countAnswerPairs } from './answer-key';
+import { isPdfBytes } from '../../../shared/ocr-engine/ocr-engine';
 
 /* ───────────────────────────────────────── Page classification (pure) */
 
@@ -158,7 +159,9 @@ export class AnswerKeyOcrService {
 
   /** Rasterise (PDF) or normalise (image), OCR each page, keep answer-key pages. */
   async extractAnswerKey(bytes: Buffer, contentType: string): Promise<AnswerKeyOcrResult> {
-    const pageBuffers = isPdf(contentType)
+    // Robust PDF detection (magic %PDF- bytes OR content-type) — a PDF must be rasterised
+    // page-by-page, never handed to sharp/Tesseract raw (content-types lie: octet-stream).
+    const pageBuffers = isPdfBytes(bytes) || isPdf(contentType)
       ? await this.rasterizePdf(bytes)
       : [await this.normalizeImage(bytes)];
 
@@ -170,6 +173,8 @@ export class AnswerKeyOcrService {
     const { createWorker, PSM } = await import('tesseract.js');
     const worker = await createWorker('eng');
     const recognize = async (buf: Buffer, psm: Psm): Promise<string> => {
+      // HARD GUARD — never hand a PDF to Tesseract (it cannot read PDFs); rasterise first.
+      if (isPdfBytes(buf)) throw new Error('answer-key OCR: PDF buffer reached Tesseract.recognize() — rasterise pages first');
       await worker.setParameters({ tessedit_pageseg_mode: psm });
       const { data } = await worker.recognize(buf);
       return data.text ?? '';

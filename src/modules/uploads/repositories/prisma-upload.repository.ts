@@ -9,18 +9,23 @@ export class PrismaUploadRepository implements IUploadRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateUploadInput): Promise<UploadModel> {
-    // Branch scoping: an upload belongs to the branch of its uploader (same
-    // rule as the backfill migration). Tenant-level admins (null branch)
-    // create tenant-wide uploads.
-    const uploader = await this.prisma.user.findUnique({
-      where: { id: input.uploadedBy },
-      select: { branchId: true },
-    });
+    // Branch scoping: explicit branchId (e.g. Super Admin picking a branch) wins;
+    // otherwise fall back to the uploader's stored branch (teachers always have one).
+    let resolvedBranchId: string | null;
+    if (input.branchId !== undefined) {
+      resolvedBranchId = input.branchId;
+    } else {
+      const uploader = await this.prisma.user.findUnique({
+        where: { id: input.uploadedBy },
+        select: { branchId: true },
+      });
+      resolvedBranchId = uploader?.branchId ?? null;
+    }
     const row = await this.prisma.upload.create({
       data: {
         tenantId: input.tenantId,
         uploadedBy: input.uploadedBy,
-        branchId: uploader?.branchId ?? null,
+        branchId: resolvedBranchId,
         originalName: input.originalName,
         mimeType: input.mimeType,
         sizeBytes: input.sizeBytes !== null ? BigInt(input.sizeBytes) : null,
@@ -50,7 +55,13 @@ export class PrismaUploadRepository implements IUploadRepository {
 
   async list(
     tenantId: string,
-    filters: { status?: UploadStatus; uploadedBy?: string; limit: number; offset: number },
+    filters: {
+      status?: UploadStatus;
+      uploadedBy?: string;
+      branchId?: string;
+      limit: number;
+      offset: number;
+    },
   ): Promise<{ data: UploadModel[]; total: number }> {
     // Batch members are represented in the queue by a single collapsed batch row
     // (GET /ocr/batches), so exclude them here — the queue lists standalone
@@ -69,6 +80,7 @@ export class PrismaUploadRepository implements IUploadRepository {
     };
     if (filters.status) where.status = filters.status as PrismaUploadStatus;
     if (filters.uploadedBy) where.uploadedBy = filters.uploadedBy;
+    if (filters.branchId) where.branchId = filters.branchId;
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.upload.findMany({
         where,

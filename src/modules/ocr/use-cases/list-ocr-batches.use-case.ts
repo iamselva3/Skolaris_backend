@@ -18,7 +18,8 @@ export class ListOcrBatchesUseCase {
     tenantId: string;
     limit: number;
     offset: number;
+    branchId?: string;
   }): Promise<{ data: OcrBatchListItem[]; total: number }> {
-    return this.batches.listByTenant(input.tenantId, input.limit, input.offset);
+    return this.batches.listByTenant(input.tenantId, input.limit, input.offset, input.branchId);
   }
 }

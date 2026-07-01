@@ -8,6 +8,10 @@ import {
 import * as argon2 from 'argon2';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
+import {
+  AssignMemberToClassroomUseCase,
+  ClassroomAssignment,
+} from '../../classrooms/use-cases/assign-member-to-classroom.use-case';
 import { UserModel } from '../models/user.model';
 import { IUserRepository, USER_REPOSITORY } from '../repositories/user.repository';
 
@@ -19,11 +23,16 @@ export interface CreateUserInput {
   role: Role;
   branchId?: string;
   phone?: string;
+  /** Optional one-step classroom assignment (applied only for TEACHER users). */
+  classroom?: ClassroomAssignment;
 }
 
 @Injectable()
 export class CreateUserUseCase {
-  constructor(@Inject(USER_REPOSITORY) private readonly users: IUserRepository) {}
+  constructor(
+    @Inject(USER_REPOSITORY) private readonly users: IUserRepository,
+    private readonly assignToClassroom: AssignMemberToClassroomUseCase,
+  ) {}
 
   async execute(input: CreateUserInput): Promise<UserModel> {
     this.assertCanCreate(input);
@@ -34,7 +43,7 @@ export class CreateUserUseCase {
     }
 
     const passwordHash = await argon2.hash(input.password, { type: argon2.argon2id });
-    return this.users.create({
+    const created = await this.users.create({
       tenantId: input.actor.tenantId,
       branchId: input.branchId ?? null,
       email: input.email,
@@ -43,6 +52,19 @@ export class CreateUserUseCase {
       role: input.role,
       phone: input.phone,
     });
+
+    // One-step classroom assignment for teachers: find-or-create the classroom and
+    // attach the new teacher. Reuses the Classroom service (single source of truth).
+    if (input.classroom && input.role === Role.TEACHER && input.branchId) {
+      await this.assignToClassroom.execute({
+        actor: input.actor,
+        branchId: input.branchId,
+        assignment: input.classroom,
+        teacherId: created.id,
+      });
+    }
+
+    return created;
   }
 
   private assertCanCreate(input: CreateUserInput): void {

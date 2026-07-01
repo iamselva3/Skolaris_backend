@@ -34,10 +34,17 @@ export class PrismaOcrBatchRepository implements IOcrBatchRepository {
     tenantId: string,
     limit: number,
     offset: number,
+    branchId?: string,
   ): Promise<{ data: OcrBatchListItem[]; total: number }> {
+    // OcrBatch has no branch column; a batch belongs to a branch when its member
+    // uploads do. Scope via the uploads relation (Super Admin branch picker).
+    const where = {
+      tenantId,
+      ...(branchId ? { uploads: { some: { branchId } } } : {}),
+    };
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.ocrBatch.findMany({
-        where: { tenantId },
+        where,
         orderBy: { createdAt: 'desc' },
         skip: offset,
         take: limit,
@@ -52,7 +59,7 @@ export class PrismaOcrBatchRepository implements IOcrBatchRepository {
           },
         },
       }),
-      this.prisma.ocrBatch.count({ where: { tenantId } }),
+      this.prisma.ocrBatch.count({ where }),
     ]);
 
     const data: OcrBatchListItem[] = rows.map((b) => {

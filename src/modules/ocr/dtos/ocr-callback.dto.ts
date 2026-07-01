@@ -33,7 +33,10 @@ export class OcrCallbackDraftFigureDto {
 
 export class OcrCallbackDraftDto {
   @IsInt() @Min(0) position!: number;
-  @IsString() @MinLength(1) @MaxLength(10000) text!: string;
+  // VISUAL (image-first) questions are the source of truth via their crop — their `text` is real OCR
+  // metadata or EMPTY (never a fabricated "Question N" placeholder). So empty is allowed; min-length 1
+  // is NOT enforced (that constraint is exactly what forced the placeholder).
+  @IsString() @MaxLength(10000) text!: string;
 
   @IsOptional()
   @IsEnum(QuestionType)
@@ -81,6 +84,15 @@ export class OcrCallbackDto {
   @IsUUID()
   ocrJobId!: string;
 
+  /**
+   * Delivery-pipeline version stamped into the RESULT checkpoint. Lets the runner IGNORE (not replay) a
+   * checkpoint written by an older pipeline, so a deploy that changes crop/count behaviour re-runs the
+   * job through the current path instead of serving the stale result. Not part of the external callback.
+   */
+  @IsOptional()
+  @IsInt()
+  _deliveryVersion?: number;
+
   @IsOptional()
   @IsString()
   @MaxLength(40)
@@ -108,4 +120,12 @@ export class OcrCallbackDto {
   @IsOptional()
   @IsArray()
   pageMetadata?: Array<Record<string, unknown>>;
+
+  /**
+   * Python AUTHORITY proof — persisted on OcrJob.rawOutput.authority and served at
+   * GET /ocr/jobs/:id/authority. Present only in build mode; opaque to the callback.
+   */
+  @IsOptional()
+  @IsObject()
+  authority?: Record<string, unknown>;
 }

@@ -1,4 +1,4 @@
-# --- build ---
+# --- build (JS) ---
 FROM node:20-alpine AS build
 WORKDIR /app
 
@@ -14,13 +14,18 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-# --- runtime ---
-FROM node:20-alpine AS runtime
+# --- runtime: Node (primary, public) + internal Python Cleanup Engine sidecar ---
+# Debian slim (glibc) so the OpenCV / PyMuPDF / scikit-image wheels install — the
+# musl/alpine base cannot run the CV stack. ONE image, ONE container: Node is the
+# public app; Python runs privately on loopback INSIDE the same container.
+FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Runtime needs the OpenSSL shared library the Prisma engine links against.
-RUN apk add --no-cache openssl
+# OpenSSL for the Prisma engine + a Python runtime for the internal cleanup engine.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      openssl python3 python3-venv \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm ci --omit=dev
@@ -30,5 +35,24 @@ COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 
+# Internal Python Cleanup Engine (private). Lean deps ALWAYS (the identity engine,
+# proving the in-container wiring). The CV protect-mask stack installs only behind
+# --build-arg INSTALL_CLEANUP_CV=1 — enable that ONLY after validating cleanup
+# against real papers in this runtime.
+ARG INSTALL_CLEANUP_CV=0
+COPY ocr-cleanup ./ocr-cleanup
+RUN python3 -m venv /opt/cleanup-venv \
+    && /opt/cleanup-venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/cleanup-venv/bin/pip install --no-cache-dir -r ocr-cleanup/requirements.txt \
+    && if [ "$INSTALL_CLEANUP_CV" = "1" ]; then \
+         apt-get update && apt-get install -y --no-install-recommends \
+           libglib2.0-0 libgl1 libsm6 libxext6 libxrender1 && \
+         rm -rf /var/lib/apt/lists/* && \
+         /opt/cleanup-venv/bin/pip install --no-cache-dir -r ocr-cleanup/requirements-cv.txt; \
+       fi
+
+COPY scripts/start.sh ./scripts/start.sh
+RUN chmod +x ./scripts/start.sh
+
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["./scripts/start.sh"]

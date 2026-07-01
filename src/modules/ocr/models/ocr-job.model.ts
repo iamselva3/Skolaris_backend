@@ -16,5 +16,10 @@ export class OcrJobModel {
     public readonly updatedAt: Date,
     /** Phase 2 — live progress JSON ({ stage, processed, total, currentPage }). */
     public readonly progress: unknown = null,
+    /** Resumable OCR (P0) — durable lifecycle state. */
+    public readonly status: string | null = null,
+    public readonly totalPages: number | null = null,
+    public readonly lastCompletedPage: number = 0,
+    public readonly attemptCount: number = 0,
   ) {}
 }

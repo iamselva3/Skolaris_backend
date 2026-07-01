@@ -14,6 +14,8 @@ export interface QuestionPaperResponse {
   subjects: string[];
   createdBy: string;
   archivedAt: string | null;
+  publishedAt: string | null;
+  parentPaperId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -50,6 +52,8 @@ export const toPaperResponse = (r: PaperRow): QuestionPaperResponse => ({
   subjects: r.subjects,
   createdBy: r.createdBy,
   archivedAt: r.archivedAt?.toISOString() ?? null,
+  publishedAt: r.publishedAt?.toISOString() ?? null,
+  parentPaperId: r.parentPaperId,
   createdAt: r.createdAt.toISOString(),
   updatedAt: r.updatedAt.toISOString(),
 });

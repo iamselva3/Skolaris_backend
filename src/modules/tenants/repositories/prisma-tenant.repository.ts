@@ -58,6 +58,9 @@ export class PrismaTenantRepository implements ITenantRepository {
       data: {
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
+        ...(input.examViolationLimit !== undefined
+          ? { examViolationLimit: input.examViolationLimit }
+          : {}),
       },
     });
     return this.toTenant(row);
@@ -71,6 +74,7 @@ export class PrismaTenantRepository implements ITenantRepository {
       r.status as TenantStatus,
       r.createdAt,
       r.updatedAt,
+      r.examViolationLimit,
     );
   }
 

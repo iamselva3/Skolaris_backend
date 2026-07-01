@@ -5,6 +5,8 @@ export class ProgramModel {
     public readonly code: string,
     public readonly name: string,
     public readonly isActive: boolean,
+    public readonly defaultMarks: number,
+    public readonly defaultNegativeMarks: number,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}

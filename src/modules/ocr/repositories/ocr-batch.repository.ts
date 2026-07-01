@@ -35,5 +35,6 @@ export interface IOcrBatchRepository {
     tenantId: string,
     limit: number,
     offset: number,
+    branchId?: string,
   ): Promise<{ data: OcrBatchListItem[]; total: number }>;
 }

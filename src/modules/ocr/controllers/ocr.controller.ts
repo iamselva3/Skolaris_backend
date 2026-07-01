@@ -98,6 +98,22 @@ export class OcrController {
     return { data: toOcrJobResponse(r.job, r.draftCounts) };
   }
 
+  /**
+   * AUTHORITY proof — the Python-vs-TS detachment evidence for a job, read from the persisted
+   * OcrJob.rawOutput.authority (written by the delivery seam in build mode). No files, no env: the
+   * Playwright authority suite consumes THIS endpoint. `null` when the job ran in legacy/analyze mode.
+   */
+  @Roles(Role.SUPER_ADMIN, Role.TEACHER)
+  @Get('jobs/:id/authority')
+  async getJobAuthority(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<{ data: Record<string, unknown> | null }> {
+    const r = await this.getOcrJobUseCase.execute({ tenantId: actor.tenantId, id });
+    const raw = r.job.rawOutput as { authority?: Record<string, unknown> } | null;
+    return { data: raw?.authority ?? null };
+  }
+
   @Roles(Role.SUPER_ADMIN, Role.TEACHER)
   @Get('jobs/:id/drafts')
   async listDrafts(

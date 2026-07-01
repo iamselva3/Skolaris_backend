@@ -1,0 +1,1 @@
+SELECT column_name FROM information_schema.columns WHERE table_name='question_papers' AND column_name IN ('published_at','parent_paper_id');

@@ -7,3 +7,14 @@ coverage
 .DS_Store
 .idea
 .vscode
+
+.venv
+venv/
+__pycache__
+__pycache__/
+.env.production
+.venv/
+venv/
+__pycache__/
+
+.env.example1

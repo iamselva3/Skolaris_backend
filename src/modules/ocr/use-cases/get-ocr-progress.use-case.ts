@@ -51,10 +51,21 @@ export class GetOcrProgressUseCase {
     const processed = typeof progress?.processed === 'number' ? (progress.processed as number) : 0;
     const total = typeof progress?.total === 'number' ? (progress.total as number) : 0;
 
+    // STAGED, HONEST percentage. OCR (the long per-page phase) fills only up to OCR_CEIL — NOT 99% —
+    // so the bar keeps visibly moving through the post-OCR work that runs AFTER the last page:
+    // Python analysis + crop rendering (EXTRACTING) and draft persistence (GENERATING_DRAFTS). The old
+    // formula mapped OCR pages straight to 0–99%, so as soon as the last page finished it sat at 99%
+    // for the (multi-second-to-minute) analysis/render phase — looking "done" while real work remained.
+    // Each later stage has its own floor so the user always sees forward motion, never a stuck 99%.
+    const OCR_CEIL = 80;
     let percent = 0;
     if (upload.status === 'READY_FOR_REVIEW' || stage === 'COMPLETED') percent = 100;
     else if (upload.status === 'FAILED' || stage === 'FAILED') percent = 100;
-    else if (total > 0) percent = Math.min(99, Math.round((processed / total) * 100));
+    else if (stage === 'GENERATING_DRAFTS') percent = 95;
+    else if (stage === 'EXTRACTING') percent = 88;
+    else if (stage === 'OCR_PROCESSING' && total > 0)
+      percent = Math.max(5, Math.min(OCR_CEIL, Math.round((processed / total) * OCR_CEIL)));
+    else if (stage === 'QUEUED') percent = 3;
     else if (upload.status === 'UPLOADED' || upload.status === 'PROCESSING') percent = 5;
 
     const draftCounts = job ? await this.ocrJobs.countDraftsByStatus(input.tenantId, job.id) : null;

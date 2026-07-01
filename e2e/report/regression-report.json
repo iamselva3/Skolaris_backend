@@ -1,0 +1,41 @@
+[
+  {
+    "paper": "Biology_Cell",
+    "expectedQuestions": 90,
+    "logicalQuestions": 92,
+    "ownershipCount": null,
+    "completeQuestions": null,
+    "cropCount": 92,
+    "deliveredCount": 92,
+    "missingQuestions": [],
+    "recoveredQuestions": null,
+    "duplicates": [
+      5
+    ],
+    "questionZero": 0,
+    "impossibleSequences": 2,
+    "crossPageIssues": null,
+    "crossColumnIssues": null,
+    "diagramIssues": null,
+    "graphIssues": null,
+    "tableIssues": null,
+    "equationIssues": null,
+    "chemicalStructureIssues": null,
+    "headerFooterIssues": null,
+    "cropBoundaryIssues": 3,
+    "missingOptions": 3,
+    "detachedOptions": 0,
+    "unorderedCrops": 2,
+    "deterministicPass": true,
+    "stage1NNC": null,
+    "stage2NNC": null,
+    "pass": false,
+    "failReasons": [
+      "deliveredCount 92 ≠ expected 90",
+      "3 invalid crops",
+      "duplicates [5]",
+      "2 impossible/backwards sequence",
+      "3 questions below modal option count (4) — C/D clipped"
+    ]
+  }
+]

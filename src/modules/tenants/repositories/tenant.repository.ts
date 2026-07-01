@@ -16,6 +16,7 @@ export interface CreateTenantWithAdminInput {
 export interface UpdateTenantInput {
   name?: string;
   status?: TenantStatus;
+  examViolationLimit?: number;
 }
 
 export interface ITenantRepository {

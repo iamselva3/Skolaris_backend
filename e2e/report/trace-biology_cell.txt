@@ -1,0 +1,7 @@
+
+----- STAGE TRACE: Biology_Cell -----
+COUNT LOST: delivered 92 vs expected 90.
+  missing numbers: []
+  duplicates: [5]  questionZero: 0  impossible: 2
+  Python authority: NULL (hybrid analyze mode — wire upload report into authority endpoint for full ownership trace)
+CROP/OPTION: invalidCrops=3 clippedOptions=3 detached=0

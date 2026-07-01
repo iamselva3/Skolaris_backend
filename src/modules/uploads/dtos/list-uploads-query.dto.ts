@@ -19,4 +19,9 @@ export class ListUploadsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
   uploadedBy?: string;
+
+  /** Scope to a branch (Super Admin branch picker). Omit = all branches. */
+  @IsOptional()
+  @IsUUID()
+  branchId?: string;
 }

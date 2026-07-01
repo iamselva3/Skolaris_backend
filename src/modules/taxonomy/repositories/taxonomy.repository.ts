@@ -13,11 +13,17 @@ export interface ITaxonomyRepository {
   listPrograms(tenantId: string): Promise<ProgramModel[]>;
   getProgram(tenantId: string, id: string): Promise<ProgramModel | null>;
   getProgramByCode(tenantId: string, code: string): Promise<ProgramModel | null>;
-  createProgram(input: { tenantId: string; code: string; name: string }): Promise<ProgramModel>;
+  createProgram(input: {
+    tenantId: string;
+    code: string;
+    name: string;
+    defaultMarks?: number;
+    defaultNegativeMarks?: number;
+  }): Promise<ProgramModel>;
   updateProgram(
     tenantId: string,
     id: string,
-    patch: { name?: string; isActive?: boolean },
+    patch: { name?: string; isActive?: boolean; defaultMarks?: number; defaultNegativeMarks?: number },
   ): Promise<ProgramModel>;
 
   /* subjects */

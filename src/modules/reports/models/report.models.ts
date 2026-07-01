@@ -48,6 +48,13 @@ export interface QuestionMeta {
   difficulty: string;
   subject: string | null;
   topic: string | null;
+  // First inline image in the question content (e.g. a VISUAL question's
+  // snapshot). null for plain text questions. Lets reports show the actual
+  // question instead of "— no text —".
+  imageUrl: string | null;
+  // Question creation time — used to order exam-detail rows in natural reading
+  // (snip) order, since OCR-imported exams can carry reversed examQuestion.position.
+  createdAt: Date;
 }
 
 export interface StudentReportRow {
@@ -99,10 +106,14 @@ export interface QuestionReportRow {
   correctPercent: number;
   avgTimeSeconds: number;
   flag: QuestionFlag;
+  // First inline image (VISUAL questions). null for plain text questions.
+  imageUrl: string | null;
 }
 
 export interface ClassReportRow {
   classroomId: string;
+  // discipline = Classroom.subject, batch = Classroom.name, section = Classroom.section.
+  discipline: string | null;
   name: string;
   year: string | null;
   section: string | null;

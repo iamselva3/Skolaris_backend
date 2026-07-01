@@ -4,6 +4,7 @@ import {
   IUploadRepository,
   UPLOAD_REPOSITORY,
 } from '../../modules/uploads/repositories/upload.repository';
+import { isOcrResumableEnabled } from '../workers/ocr-job-runner.service';
 
 /**
  * Recovers uploads stuck in PROCESSING for longer than the cutoff (default 5 min)
@@ -23,6 +24,11 @@ export class StuckUploadsCron {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async run(): Promise<void> {
+    // Resumable OCR (P0): when enabled, OcrRecoveryService owns liveness — it
+    // PAUSES + resumes stuck jobs instead of failing the upload (which would
+    // discard checkpointed pages). Yield to it so a slow/restarted job is never
+    // prematurely FAILED.
+    if (isOcrResumableEnabled()) return;
     const cutoff = new Date(Date.now() - this.cutoffMs);
     const minutes = Math.round(this.cutoffMs / 60_000);
     const failed = await this.uploads.failStuckProcessing(

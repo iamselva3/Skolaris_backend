@@ -91,7 +91,13 @@ services:
       - "8001:8001"
 
   api:
-    build: .
+    # The internal Python Cleanup Engine runs INSIDE this same container (see
+    # Dockerfile + scripts/start.sh) — no separate service, one deployment. Build
+    # with INSTALL_CLEANUP_CV=1 to bake in the CV protect-mask stack once validated.
+    build:
+      context: .
+      args:
+        INSTALL_CLEANUP_CV: ${INSTALL_CLEANUP_CV:-0}
     container_name: skolaris-api
     restart: unless-stopped
     depends_on:
@@ -123,6 +129,19 @@ services:
       # the service directly — no consumer needed). URL used only in http mode.
       HW_OCR_DISPATCH: ${HW_OCR_DISPATCH:-queue}
       HANDWRITING_OCR_URL: ${HANDWRITING_OCR_URL:-http://ocr-handwriting:8001}
+      # Internal Python Cleanup Engine (runs IN this container, loopback only).
+      # Default OFF until the CV protect-mask engine is validated against real
+      # papers in-runtime; set true (and CLEANUP_ENGINE=cv + build INSTALL_CLEANUP_CV=1)
+      # to route SCANNED PDFs + IMAGE uploads through it. URL is 127.0.0.1 — Python is
+      # NEVER public. Cleanup runs inside the async OCR job, never on the upload path.
+      CLEANUP_ENGINE_ENABLED: ${CLEANUP_ENGINE_ENABLED:-false}
+      CLEANUP_ENGINE_URL: ${CLEANUP_ENGINE_URL:-http://127.0.0.1:8002}
+      CLEANUP_ENGINE: ${CLEANUP_ENGINE:-identity}
+      CLEANUP_PORT: 8002
+      # Gap-driven question-number recovery (handwritten / faint margin numbers). Default ON so missing
+      # numbers are rare; recovery-only (runs ONLY on a sequence gap, 3-way gated), zero cost on clean
+      # papers, no-ops without RapidOCR. Per-seal badge OCR (STRUCTURE_BADGE_OCR, ~47s) stays OFF.
+      STRUCTURE_NUMBER_OCR: ${STRUCTURE_NUMBER_OCR:-1}
       # Storage: S3/R2-only. Dev uses MinIO (always-on below) as an R2 stand-in.
       # For real Cloudflare R2 set S3_ENDPOINT=https://<acct>.r2.cloudflarestorage.com
       # + the R2 token in AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY.
@@ -144,7 +163,8 @@ services:
       NOTIFICATIONS_QUEUE_NAME: notifications.dispatch
     ports:
       - "3000:3000"
-    command: sh -c "npx prisma migrate deploy && node dist/main.js"
+    # No command override: the image CMD (scripts/start.sh) runs prisma migrate +
+    # node AND launches the internal Python cleanup engine on loopback.
 
   # Local S3-compatible storage (MinIO) — the default dev stand-in for Cloudflare
   # R2 (SKOLARIS is S3/R2-only). Always-on, so plain `docker compose up` gives the

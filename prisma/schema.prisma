@@ -147,6 +147,10 @@ model Tenant {
   name      String
   slug      String       @unique
   status    TenantStatus @default(ACTIVE)
+  // Tenant-wide default for the maximum number of anti-cheat violations an exam
+  // attempt may accrue before it is auto-submitted. Super-admin configurable;
+  // defaults to 6 (the historical hard-coded MAX_EXAM_VIOLATIONS).
+  examViolationLimit Int  @default(6) @map("exam_violation_limit")
   createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -291,10 +295,13 @@ model Classroom {
   teachers        ClassroomTeacher[]
   examAssignments ExamAssignment[]
 
-  // A classroom is identified by name + academic year + section within a branch,
-  // so the same class/year can have multiple sections (A, B, C, …). Only an exact
-  // name+year+section duplicate is rejected.
-  @@unique([tenantId, branchId, name, year, section])
+  // A classroom is identified by discipline (subject) + batch (name) + academic
+  // year + section within a branch. Discipline is part of the identity so the same
+  // batch/section name can exist under different disciplines (e.g. a "Morning Batch
+  // / A" under both NEET and JEE). Only an exact subject+name+year+section duplicate
+  // is rejected — this is what guarantees no duplicate classrooms in the
+  // create-student/create-teacher auto-assignment flow.
+  @@unique([tenantId, branchId, subject, name, year, section])
   @@index([tenantId, branchId])
   @@map("classrooms")
 }
@@ -407,15 +414,46 @@ model OcrJob {
   layoutMetadata     Json?     @map("layout_metadata")
   // Live progress for the parent OCR job — { processed: int, total: int, currentPage?: int }.
   progress           Json?     @map("progress")
+  // Resumable OCR (P0) — durable job lifecycle so a crash/restart/timeout NEVER
+  // restarts from page 1. status ∈ QUEUED | PROCESSING | PAUSED | RESUMING |
+  // COMPLETED | FAILED. lastCompletedPage = highest page whose OCR artifact is
+  // checkpointed (see OcrPageCheckpoint). attemptCount caps auto-resume retries.
+  status             String?   @default("QUEUED") @map("status")
+  totalPages         Int?      @map("total_pages")
+  lastCompletedPage  Int       @default(0) @map("last_completed_page")
+  attemptCount       Int       @default(0) @map("attempt_count")
   createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  upload Upload     @relation(fields: [uploadId], references: [id], onDelete: Cascade)
-  drafts OcrDraft[]
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  upload          Upload              @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  drafts          OcrDraft[]
+  pageCheckpoints OcrPageCheckpoint[]
 
   @@index([tenantId, uploadId])
+  @@index([status])
   @@map("ocr_jobs")
+}
+
+// Resumable OCR (P0) — one row per successfully-OCR'd page. Persisted AFTER every
+// page so a backend crash/restart/timeout resumes from lastCompletedPage+1 instead
+// of page 1. `artifact` holds the deterministic per-page OCR output
+// ({ text, confidence, wordConfidences, wordBoxes }); replaying it is byte-identical
+// to re-OCRing the page, so resumed jobs produce identical drafts. Rows are cleared
+// when the job reaches COMPLETED. Cascade-deleted with the parent OcrJob.
+model OcrPageCheckpoint {
+  id         String   @id @default(uuid()) @db.Uuid
+  ocrJobId   String   @map("ocr_job_id") @db.Uuid
+  pageNumber Int      @map("page_number")
+  artifact   Json     @map("artifact")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  ocrJob OcrJob @relation(fields: [ocrJobId], references: [id], onDelete: Cascade)
+
+  @@unique([ocrJobId, pageNumber])
+  @@index([ocrJobId])
+  @@map("ocr_page_checkpoints")
 }
 
 model OcrDraft {
@@ -643,6 +681,14 @@ model Exam {
   durationSeconds        Int        @map("duration_seconds")
   totalMarks             Decimal    @default(0) @map("total_marks") @db.Decimal(8, 2)
   defaultNegativeMarks   Decimal    @default(0) @map("default_negative_marks") @db.Decimal(5, 2)
+  // Exam-level marks override (all-or-nothing). When examMarksPerQuestion is set
+  // (non-null), the effective scoring resolver uses these exam-wide values for
+  // EVERY question (positive = examMarksPerQuestion, negative = examNegativeMarks ?? 0),
+  // ignoring per-question ExamQuestion.marks/negativeMarks. When null, scoring
+  // falls back to the individual question values. Single source of truth:
+  // src/modules/exams/scoring/effective-marks.ts.
+  examMarksPerQuestion   Decimal?   @map("exam_marks_per_question") @db.Decimal(5, 2)
+  examNegativeMarks      Decimal?   @map("exam_negative_marks") @db.Decimal(5, 2)
   randomizeQuestions     Boolean    @default(false) @map("randomize_questions")
   randomizeOptions       Boolean    @default(false) @map("randomize_options")
   kind                   ExamKind   @default(TEST)
@@ -758,6 +804,14 @@ model QuestionPaper {
   totalMarks           Decimal             @default(0) @map("total_marks") @db.Decimal(8, 2)
   status               QuestionPaperStatus @default(DRAFT)
   archivedAt           DateTime?           @map("archived_at") @db.Timestamptz(6)
+  // Set once when the paper is first published; NEVER cleared or overwritten —
+  // published papers are immutable snapshots, so this is the permanent record of
+  // when this version went live.
+  publishedAt          DateTime?           @map("published_at") @db.Timestamptz(6)
+  // Provenance for revisions: a working copy created by editing a PUBLISHED paper
+  // points back at the original it was revised from. Plain scalar (no relation) —
+  // the original may be deleted independently without cascading the revision.
+  parentPaperId        String?             @map("parent_paper_id") @db.Uuid
   createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -768,6 +822,7 @@ model QuestionPaper {
   @@index([tenantId, branchId])
   @@index([tenantId, status])
   @@index([tenantId, createdBy])
+  @@index([parentPaperId])
   @@map("question_papers")
 }
 
@@ -899,6 +954,11 @@ model Program {
   code      String   // 'FOUNDATION' | 'NEET' | 'IIT_JEE' | 'JEE_ADVANCED' (extensible per tenant)
   name      String
   isActive  Boolean  @default(true) @map("is_active")
+  // Per-program default marking applied to newly created questions (super-admin
+  // configurable on the "Manage Marks" page). Fractional values allowed
+  // (e.g. 0.5 marks, 0.25 negative). Historical hard-coded defaults: 4 / 1.
+  defaultMarks         Float    @default(4) @map("default_marks")
+  defaultNegativeMarks Float    @default(1) @map("default_negative_marks")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 

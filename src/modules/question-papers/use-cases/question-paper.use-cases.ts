@@ -1,4 +1,10 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { TaxonomyResolverService } from '../../taxonomy/services/taxonomy-resolver.service';
@@ -21,6 +27,21 @@ const assertCanManage = (paper: PaperRow, actor: AuthenticatedUser): void => {
   }
 };
 
+/**
+ * Published papers are immutable snapshots — content edits (title, questions,
+ * reorder, generate) are rejected. To change a published paper, a revision
+ * working copy is created instead (see ReviseQuestionPaperUseCase).
+ */
+const assertEditable = (paper: PaperRow): void => {
+  if (paper.status === 'PUBLISHED') {
+    throw new ConflictException(
+      'This question paper is published and locked. Create a revision to make changes.',
+    );
+  }
+};
+
+const DUPLICATE_TITLE_MESSAGE = 'This question paper name already exists.';
+
 @Injectable()
 export class CreateQuestionPaperUseCase {
   constructor(
@@ -41,11 +62,15 @@ export class CreateQuestionPaperUseCase {
       programId: input.programId,
       subjectId: input.subjectId,
     });
+    const title = input.title.trim();
+    if (await this.papers.existsByTitle(input.actor.tenantId, title)) {
+      throw new ConflictException(DUPLICATE_TITLE_MESSAGE);
+    }
     return this.papers.create({
       tenantId: input.actor.tenantId,
       branchId: input.actor.branchId ?? null,
       createdBy: input.actor.sub,
-      title: input.title,
+      title,
       description: input.description ?? null,
       programId: input.programId ?? null,
       subjectId: input.subjectId ?? null,
@@ -116,8 +141,29 @@ export class UpdateQuestionPaperUseCase {
   ) {}
 
   async execute(actor: AuthenticatedUser, id: string, patch: UpdatePaperInput): Promise<PaperRow> {
-    await this.loadOwned(actor, id);
-    return this.papers.update(actor.tenantId, id, patch);
+    const current = await this.loadOwned(actor, id);
+
+    // Publishing a DRAFT is allowed (and only then do we stamp publishedAt, once).
+    // Any OTHER mutation of an already-published paper is rejected — it is an
+    // immutable snapshot. Edits must go through a revision working copy.
+    const isPublishing = patch.status === 'PUBLISHED' && current.status !== 'PUBLISHED';
+    if (!isPublishing) assertEditable(current);
+
+    const next: UpdatePaperInput = { ...patch };
+
+    if (patch.title !== undefined) {
+      next.title = patch.title.trim();
+      if (await this.papers.existsByTitle(actor.tenantId, next.title, id)) {
+        throw new ConflictException(DUPLICATE_TITLE_MESSAGE);
+      }
+    }
+
+    // Stamp the permanent publish timestamp exactly once, on first publish.
+    if (isPublishing && current.publishedAt == null) {
+      next.publishedAt = new Date();
+    }
+
+    return this.papers.update(actor.tenantId, id, next);
   }
 
   private async loadOwned(actor: AuthenticatedUser, id: string): Promise<PaperRow> {
@@ -166,8 +212,12 @@ export class ArchiveQuestionPaperUseCase {
     const paper = await this.papers.findById(actor.tenantId, id);
     if (!paper) throw new NotFoundException('Question paper not found');
     assertCanManage(paper, actor);
+    // Unarchiving must NOT turn a previously-published paper into an editable
+    // draft (that would breach immutability). A paper that was ever published
+    // (publishedAt set) restores to PUBLISHED; everything else restores to DRAFT.
+    const restored = paper.publishedAt ? 'PUBLISHED' : 'DRAFT';
     return this.papers.update(actor.tenantId, id, {
-      status: archived ? 'ARCHIVED' : 'DRAFT',
+      status: archived ? 'ARCHIVED' : restored,
       archivedAt: archived ? new Date() : null,
     });
   }
@@ -209,5 +259,24 @@ export class ManagePaperQuestionsUseCase {
     const paper = await this.papers.findById(actor.tenantId, id);
     if (!paper) throw new NotFoundException('Question paper not found');
     assertCanManage(paper, actor);
+    assertEditable(paper); // published papers are immutable — no add/remove/reorder/generate
+  }
+}
+
+@Injectable()
+export class ReviseQuestionPaperUseCase {
+  constructor(
+    @Inject(QUESTION_PAPER_REPOSITORY) private readonly papers: IQuestionPaperRepository,
+  ) {}
+
+  /**
+   * Create an editable DRAFT working copy of a published paper. The original is
+   * never modified; publishing the copy later creates a new version.
+   */
+  async execute(actor: AuthenticatedUser, id: string): Promise<PaperRow> {
+    const source = await this.papers.findById(actor.tenantId, id);
+    if (!source) throw new NotFoundException('Question paper not found');
+    assertCanManage(source, actor);
+    return this.papers.createWorkingCopy(actor.tenantId, id, actor.sub, actor.branchId ?? null);
   }
 }

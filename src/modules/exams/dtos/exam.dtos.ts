@@ -42,6 +42,11 @@ export class CreateExamDto {
 
   @IsOptional() @IsNumber() @Min(0) @Max(100) defaultNegativeMarks?: number;
 
+  // Exam-level marks override (all-or-nothing). Setting examMarksPerQuestion makes
+  // EVERY question score these exam-wide values; omit for per-question marks.
+  @IsOptional() @IsNumber() @Min(0) @Max(100) examMarksPerQuestion?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(100) examNegativeMarks?: number;
+
   @IsOptional() @IsBoolean() randomizeQuestions?: boolean;
   @IsOptional() @IsBoolean() randomizeOptions?: boolean;
 
@@ -64,6 +69,9 @@ export class UpdateExamDto {
   @IsOptional() @IsString() @MaxLength(2000) description?: string | null;
   @IsOptional() @IsInt() @Min(60) @Max(60 * 60 * 8) durationSeconds?: number;
   @IsOptional() @IsNumber() @Min(0) @Max(100) defaultNegativeMarks?: number;
+  // Pass null to clear the exam-level override and revert to per-question marks.
+  @IsOptional() @IsNumber() @Min(0) @Max(100) examMarksPerQuestion?: number | null;
+  @IsOptional() @IsNumber() @Min(0) @Max(100) examNegativeMarks?: number | null;
   @IsOptional() @IsBoolean() randomizeQuestions?: boolean;
   @IsOptional() @IsBoolean() randomizeOptions?: boolean;
   @IsOptional() @IsDateString() opensAt?: string | null;
@@ -84,6 +92,13 @@ export class ListExamsQueryDto extends PaginationQueryDto {
   @IsOptional() @IsUUID() programId?: string;
   @IsOptional() @IsUUID() subjectId?: string;
   @IsOptional() @IsString() @MaxLength(80) q?: string;
+  /** Scope to a branch (Super Admin branch picker). Omit = all branches. */
+  @IsOptional() @IsUUID() branchId?: string;
+  // Classroom-hierarchy filter (via assignments): discipline = Classroom.subject,
+  // batch = Classroom.name, section = Classroom.section. Empty = "All".
+  @IsOptional() @IsString() @MaxLength(120) discipline?: string;
+  @IsOptional() @IsString() @MaxLength(120) batch?: string;
+  @IsOptional() @IsString() @MaxLength(120) section?: string;
 }
 
 export class CreateSectionDto {

@@ -21,6 +21,10 @@ import { QuestionPapersModule } from './modules/question-papers/question-papers.
 import { ReportsModule } from './modules/reports/reports.module';
 import { StudentsModule } from './modules/students/students.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
+import { OcrPreprocessModule } from './modules/ocr-preprocess/ocr-preprocess.module';
+import { DocumentProfilerModule } from './modules/document-profiler/document-profiler.module';
+import { DocumentEnhancementModule } from './modules/document-enhancement/document-enhancement.module';
+import { OcrAnalysisModule } from './modules/ocr-analysis/ocr-analysis.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { UsersModule } from './modules/users/users.module';
 import { ViolationsModule } from './modules/violations/violations.module';
@@ -72,6 +76,10 @@ import { WorkersModule } from './shared/workers/workers.module';
     CommunicationsModule,
     QuestionsModule,
     UploadsModule,
+    OcrPreprocessModule,
+    DocumentProfilerModule,
+    DocumentEnhancementModule,
+    OcrAnalysisModule,
     OcrModule,
     DashboardModule,
     // Phase 3

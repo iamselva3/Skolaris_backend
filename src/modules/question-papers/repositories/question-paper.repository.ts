@@ -23,6 +23,7 @@ export interface UpdatePaperInput {
   defaultNegativeMarks?: number;
   status?: QuestionPaperStatus;
   archivedAt?: Date | null;
+  publishedAt?: Date | null;
 }
 
 export interface PaperQuestionInput {
@@ -67,6 +68,8 @@ export interface PaperRow {
   totalMarks: number;
   status: QuestionPaperStatus;
   archivedAt: Date | null;
+  publishedAt: Date | null;
+  parentPaperId: string | null;
   createdAt: Date;
   updatedAt: Date;
   questionCount: number;
@@ -114,6 +117,19 @@ export interface IQuestionPaperRepository {
     newCreatedBy: string,
     branchId: string | null,
   ): Promise<PaperRow>;
+  /**
+   * Create an editable DRAFT working copy of a paper for revision. Copies all
+   * questions, links back via parentPaperId, and gives it a unique versioned
+   * title. The source is never touched.
+   */
+  createWorkingCopy(
+    tenantId: string,
+    sourceId: string,
+    newCreatedBy: string,
+    branchId: string | null,
+  ): Promise<PaperRow>;
+  /** Case-insensitive, trimmed title uniqueness check (per tenant), optionally excluding one paper. */
+  existsByTitle(tenantId: string, title: string, excludeId?: string): Promise<boolean>;
   /** Bulk add (skips questions already on the paper); appends at the end; recomputes totalMarks. */
   addQuestions(tenantId: string, paperId: string, items: PaperQuestionInput[]): Promise<PaperRow>;
   removeQuestion(tenantId: string, paperId: string, questionId: string): Promise<PaperRow>;

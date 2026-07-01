@@ -58,6 +58,7 @@ export class UploadsController {
       programId: dto.programId,
       subjectId: dto.subjectId,
       category: dto.category ?? null,
+      branchId: dto.branchId ?? null,
     });
     return {
       data: {
@@ -91,6 +92,7 @@ export class UploadsController {
       tenantId: actor.tenantId,
       status: query.status,
       uploadedBy: query.uploadedBy,
+      branchId: query.branchId,
       limit: query.limit ?? 50,
       offset: query.offset ?? 0,
     });

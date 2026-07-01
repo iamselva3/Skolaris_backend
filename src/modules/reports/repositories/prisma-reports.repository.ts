@@ -25,15 +25,44 @@ export class PrismaReportsRepository implements IReportsRepository {
   // ---------------------------------------------------------------------------
   // Overview (launcher KPIs)
   // ---------------------------------------------------------------------------
-  async getOverview(tenantId: string, createdBy?: string): Promise<ReportsOverview> {
-    const examWhere: Prisma.ExamWhereInput = { tenantId, ...(createdBy ? { createdBy } : {}) };
+  async getOverview(
+    tenantId: string,
+    createdBy?: string,
+    branchId?: string,
+  ): Promise<ReportsOverview> {
+    // Branch is applied to EVERY widget. Models without a direct branch column are
+    // scoped through a relation: attempts→exam.branchId, questionStat→question.branchId,
+    // topicReport→student.branchId. `undefined` branchId keeps the tenant-wide view.
+    const examFilter: Prisma.ExamWhereInput = {
+      ...(createdBy ? { createdBy } : {}),
+      ...(branchId ? { branchId } : {}),
+    };
+    const questionFilter: Prisma.QuestionWhereInput = {
+      ...(createdBy ? { createdBy } : {}),
+      ...(branchId ? { branchId } : {}),
+    };
+    const studentBranch: Prisma.StudentRelationFilter['is'] = branchId ? { branchId } : undefined;
+
+    const examWhere: Prisma.ExamWhereInput = { tenantId, ...examFilter };
     const attemptWhere: Prisma.ExamAttemptWhereInput = {
       tenantId,
-      ...(createdBy ? { exam: { createdBy } } : {}),
+      ...(Object.keys(examFilter).length ? { exam: examFilter } : {}),
     };
     const questionStatWhere: Prisma.QuestionStatWhereInput = {
       tenantId,
-      ...(createdBy ? { question: { createdBy } } : {}),
+      ...(Object.keys(questionFilter).length ? { question: questionFilter } : {}),
+    };
+    const studentWhere: Prisma.StudentWhereInput = {
+      tenantId,
+      ...(branchId ? { branchId } : {}),
+    };
+    const topicWhere: Prisma.TopicReportWhereInput = {
+      tenantId,
+      ...(studentBranch ? { student: studentBranch } : {}),
+    };
+    const classroomWhere: Prisma.ClassroomWhereInput = {
+      tenantId,
+      ...(branchId ? { branchId } : {}),
     };
 
     const [
@@ -54,12 +83,12 @@ export class PrismaReportsRepository implements IReportsRepository {
         where: { ...attemptWhere, status: { in: GRADED_STATUSES } },
         select: { score: true, exam: { select: { totalMarks: true } } },
       }),
-      this.prisma.student.count({ where: { tenantId } }),
-      this.prisma.topicReport.count({ where: { tenantId, isWeak: true } }),
+      this.prisma.student.count({ where: studentWhere }),
+      this.prisma.topicReport.count({ where: { ...topicWhere, isWeak: true } }),
       this.prisma.questionStat.count({ where: questionStatWhere }),
-      this.prisma.classroom.count({ where: { tenantId } }),
+      this.prisma.classroom.count({ where: classroomWhere }),
       this.prisma.topicReport.aggregate({
-        where: { tenantId },
+        where: topicWhere,
         _sum: { correctCount: true, attemptsCount: true },
       }),
     ]);
@@ -97,7 +126,7 @@ export class PrismaReportsRepository implements IReportsRepository {
       ...(createdBy ? { createdBy } : {}),
       ...(f.programId ? { programId: f.programId } : {}),
       ...(f.subjectId ? { subjectId: f.subjectId } : {}),
-      ...(f.branchId ? { creator: { branchId: f.branchId } } : {}),
+      ...(f.branchId ? { branchId: f.branchId } : {}),
       ...(f.q ? { title: { contains: f.q, mode: 'insensitive' } } : {}),
       ...this.dateRange('createdAt', f),
     };
@@ -204,7 +233,15 @@ export class PrismaReportsRepository implements IReportsRepository {
     if (questionIds.length === 0) return map;
     const rows = await this.prisma.question.findMany({
       where: { tenantId, id: { in: questionIds } },
-      select: { id: true, type: true, difficulty: true, subject: true, topic: true, payload: true },
+      select: {
+        id: true,
+        type: true,
+        difficulty: true,
+        subject: true,
+        topic: true,
+        payload: true,
+        createdAt: true,
+      },
     });
     for (const r of rows) {
       map.set(r.id, {
@@ -214,6 +251,8 @@ export class PrismaReportsRepository implements IReportsRepository {
         difficulty: r.difficulty,
         subject: r.subject,
         topic: r.topic,
+        imageUrl: imageFromPayload(r.payload),
+        createdAt: r.createdAt,
       });
     }
     return map;
@@ -229,6 +268,20 @@ export class PrismaReportsRepository implements IReportsRepository {
       ...(f.classroomId ? { classrooms: { some: { classroomId: f.classroomId } } } : {}),
       ...(f.q ? { user: { name: { contains: f.q, mode: 'insensitive' } } } : {}),
     };
+
+    if (f.unallocated && String(f.unallocated) === 'true') {
+      where.classrooms = { none: {} };
+    } else if (f.batch || f.section || f.subject) {
+      where.classrooms = {
+        some: {
+          classroom: {
+            ...(f.batch ? { name: { in: f.batch.split(',') } } : {}),
+            ...(f.section ? { section: { in: f.section.split(',') } } : {}),
+            ...(f.subject ? { subject: { in: f.subject.split(',') } } : {}),
+          },
+        },
+      };
+    }
 
     const [students, total] = await Promise.all([
       this.prisma.student.findMany({
@@ -444,7 +497,7 @@ export class PrismaReportsRepository implements IReportsRepository {
       ...(f.subjectId ? { subjectId: f.subjectId } : {}),
       ...(f.topicId ? { topicId: f.topicId } : {}),
       ...(f.chapterId ? { chapterId: f.chapterId } : {}),
-      ...(f.branchId ? { creator: { branchId: f.branchId } } : {}),
+      ...(f.branchId ? { branchId: f.branchId } : {}),
       ...(f.q
         ? {
             OR: [
@@ -493,6 +546,7 @@ export class PrismaReportsRepository implements IReportsRepository {
         correctPercent,
         avgTimeSeconds: round1(Number(st.avgTimeSeconds)),
         flag: flagFor(totalAttempts, st.correctAttempts),
+        imageUrl: imageFromPayload(q.payload),
       };
     });
 
@@ -503,20 +557,26 @@ export class PrismaReportsRepository implements IReportsRepository {
   // Batch / class performance
   // ---------------------------------------------------------------------------
   async listClassReports(tenantId: string, f: ReportFilters): Promise<Paged<ClassReportRow>> {
+    // Hierarchy filters map onto denormalized Classroom strings:
+    // discipline → subject, batch → name, section → section. Empty = "All".
     const where: Prisma.ClassroomWhereInput = {
       tenantId,
       ...(f.branchId ? { branchId: f.branchId } : {}),
+      ...(f.discipline ? { subject: f.discipline } : {}),
+      ...(f.batch ? { name: f.batch } : {}),
+      ...(f.section ? { section: f.section } : {}),
       ...(f.q ? { name: { contains: f.q, mode: 'insensitive' } } : {}),
     };
 
     const [classes, total] = await Promise.all([
       this.prisma.classroom.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ subject: 'asc' }, { name: 'asc' }, { section: 'asc' }],
         skip: f.offset,
         take: f.limit,
         select: {
           id: true,
+          subject: true,
           name: true,
           year: true,
           section: true,
@@ -556,6 +616,7 @@ export class PrismaReportsRepository implements IReportsRepository {
 
         return {
           classroomId: c.id,
+          discipline: c.subject,
           name: c.name,
           year: c.year,
           section: c.section,
@@ -663,4 +724,18 @@ function stemFromPayload(payload: Prisma.JsonValue | null): string {
     .replace(/\s+/g, ' ')
     .trim();
   return clean.length > 140 ? `${clean.slice(0, 140)}…` : clean;
+}
+
+// First inline <img> URL in the question content. VISUAL questions carry their
+// whole prompt as an image inside `contentHtml`, so reports can render the
+// actual question instead of empty text. Returns null for text-only questions.
+function imageFromPayload(payload: Prisma.JsonValue | null): string | null {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const obj = payload as Record<string, unknown>;
+  const html = typeof obj.contentHtml === 'string' ? obj.contentHtml : '';
+  const m = /<img\b[^>]*\bsrc=["']([^"']+)["']/i.exec(html);
+  if (m?.[1]) return m[1];
+  // Some payload variants may store a bare image key/url field.
+  const direct = obj.imageUrl ?? obj.imageKey ?? obj.assetUrl;
+  return typeof direct === 'string' && direct ? direct : null;
 }

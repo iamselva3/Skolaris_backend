@@ -11,9 +11,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
 import { PaginationQueryDto } from '../../../shared/common/dtos/pagination-query.dto';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { CreateTenantDto } from '../dtos/create-tenant.dto';
@@ -56,6 +58,32 @@ export class TenantsController {
       limit: query.limit ?? 50,
       offset: query.offset ?? 0,
     });
+  }
+
+  /**
+   * Current tenant's exam-attempt settings (the violation limit super-admins
+   * configure from the Test Management workspace). Keyed off the JWT tenant, so
+   * a super-admin never needs to know their tenant id. Declared BEFORE the
+   * `:id` routes so `me` is not parsed as a UUID.
+   */
+  @Roles(Role.SUPER_ADMIN)
+  @Get('me/settings')
+  async getMySettings(@CurrentUser() actor: AuthenticatedUser) {
+    const tenant = await this.getTenantUseCase.execute(actor.tenantId);
+    return { data: { examViolationLimit: tenant.examViolationLimit } };
+  }
+
+  @Roles(Role.SUPER_ADMIN)
+  @Patch('me/settings')
+  async updateMySettings(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Body() dto: UpdateTenantDto,
+  ) {
+    const tenant = await this.updateTenantUseCase.execute({
+      id: actor.tenantId,
+      examViolationLimit: dto.examViolationLimit,
+    });
+    return { data: { examViolationLimit: tenant.examViolationLimit } };
   }
 
   @Roles(Role.SUPER_ADMIN)

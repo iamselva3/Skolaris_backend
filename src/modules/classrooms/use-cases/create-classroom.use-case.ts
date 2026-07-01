@@ -3,6 +3,7 @@ import { Role } from '../../../shared/common/enums/role.enum';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
 import { ClassroomModel } from '../models/classroom.model';
 import { CLASSROOM_REPOSITORY, IClassroomRepository } from '../repositories/classroom.repository';
+import { normalizeClassroomIdentity } from './normalize-classroom';
 
 export interface CreateClassroomInput {
   actor: AuthenticatedUser;
@@ -32,29 +33,29 @@ export class CreateClassroomUseCase {
       teacherIds = [input.actor.sub];
     }
 
-    const normalizedName = input.name.trim().toUpperCase();
-    const normalizedSection = input.section ? input.section.trim().toUpperCase() : input.section;
+    const identity = normalizeClassroomIdentity(input);
 
     const existing = await this.classrooms.findByUniqueAttributes(
       input.actor.tenantId,
       input.branchId,
-      normalizedName,
-      input.year,
-      normalizedSection,
+      identity.name,
+      identity.year,
+      identity.section,
+      identity.subject,
     );
     if (existing) {
       throw new ConflictException(
-        'A classroom with this batch name, year, and section already exists.',
+        'A classroom with this discipline, batch name, year, and section already exists.',
       );
     }
 
     return this.classrooms.create({
       tenantId: input.actor.tenantId,
       branchId: input.branchId,
-      name: normalizedName,
-      year: input.year,
-      section: normalizedSection,
-      subject: input.subject,
+      name: identity.name,
+      year: identity.year,
+      section: identity.section,
+      subject: identity.subject,
       createdBy,
       teacherIds,
     });

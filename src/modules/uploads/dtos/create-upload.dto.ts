@@ -41,6 +41,7 @@ export class CreateUploadDto {
 
   @IsOptional() @IsUUID() programId?: string;
   @IsOptional() @IsUUID() subjectId?: string;
+  @IsOptional() @IsUUID() branchId?: string;
 
   @IsOptional()
   @IsIn(UPLOAD_CATEGORIES, {

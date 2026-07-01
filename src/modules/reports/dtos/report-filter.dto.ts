@@ -1,7 +1,9 @@
-import { IsDateString, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsDateString, IsOptional, IsString, IsUUID } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { PaginationQueryDto } from '../../../shared/common/dtos/pagination-query.dto';
 
 export class ReportFilterDto extends PaginationQueryDto {
+
   @IsOptional()
   @IsDateString()
   dateFrom?: string;
@@ -33,6 +35,31 @@ export class ReportFilterDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
   classroomId?: string;
+
+  // Classroom-hierarchy filters (denormalized strings on Classroom):
+  // discipline = Classroom.subject, batch = Classroom.name, section = Classroom.section.
+  @IsOptional()
+  @IsString()
+  discipline?: string;
+
+  @IsOptional()
+  @IsString()
+  batch?: string;
+
+  @IsOptional()
+  @IsString()
+  section?: string;
+
+  // Free-text classroom discipline label (alias kept for callers passing `subject`).
+  @IsOptional()
+  @IsString()
+  subject?: string;
+
+  // When true, scope to rows with no classroom/branch allocation.
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === true || value === 'true')
+  unallocated?: boolean;
 
   @IsOptional()
   @IsString()

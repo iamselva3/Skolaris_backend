@@ -8,6 +8,7 @@ import { OcrCallbackDto } from '../dtos/ocr-callback.dto';
 import { OcrJobModel } from '../models/ocr-job.model';
 import { IOcrDraftRepository, OCR_DRAFT_REPOSITORY } from '../repositories/ocr-draft.repository';
 import { IOcrJobRepository, OCR_JOB_REPOSITORY } from '../repositories/ocr-job.repository';
+import { CallbackCorrectionService } from '../../ocr-analysis/callback-correction';
 
 export interface HandleOcrCallbackResult {
   ocrJob: OcrJobModel;
@@ -25,6 +26,7 @@ export class HandleOcrCallbackUseCase {
     @Inject(UPLOAD_REPOSITORY) private readonly uploads: IUploadRepository,
     private readonly notifications: CreateNotificationUseCase,
     private readonly prisma: PrismaService,
+    private readonly callbackCorrection: CallbackCorrectionService,
   ) {}
 
   async execute(dto: OcrCallbackDto): Promise<HandleOcrCallbackResult> {
@@ -74,7 +76,21 @@ export class HandleOcrCallbackUseCase {
       return { ocrJob: job, draftsWritten: 0, alreadyProcessed: true };
     }
 
-    this.logger.log(`[2/4] writing ${dto.drafts.length} draft(s) for job ${job.id} ${t.mark()}`);
+    // PRODUCTION SEAM (OPTION a) — the validated framework's text-based count corrections
+    // (content-numeral demotion + duplicate-numbering removal) become the source of truth: drop
+    // phantom/duplicate drafts before persistence so the reviewer/client sees the corrected SET.
+    // Geometry corrections (explanation crop-trim, split/cross-page merge) need page words/images
+    // unavailable here and are NOT applied at this seam. Reuses existing detectors; no OCR change.
+    const correction = this.callbackCorrection.correct(dto.drafts);
+    const correctedDrafts = dto.drafts.filter((d) => correction.keptPositions.has(d.position));
+    if (correction.removed.length) {
+      this.logger.log(
+        `[correction] ${dto.drafts.length} → ${correctedDrafts.length} drafts ` +
+          `(removed ${correction.removed.length}: ${correction.removed.map((r) => `${r.kind}@${r.position}`).join(', ')})`,
+      );
+    }
+
+    this.logger.log(`[2/4] writing ${correctedDrafts.length} draft(s) for job ${job.id} ${t.mark()}`);
     // Phase 2 — flip progress stage to GENERATING_DRAFTS so the FE sees
     // "Generating Drafts" instead of "OCR Processing" during the (usually
     // short) callback transaction.
@@ -84,7 +100,7 @@ export class HandleOcrCallbackUseCase {
 
     const draftsWritten = await this.prisma.$transaction(async () => {
       const written = await this.ocrDrafts.bulkCreate(
-        dto.drafts.map((d) => ({
+        correctedDrafts.map((d) => ({
           tenantId: job.tenantId,
           ocrJobId: job.id,
           position: d.position,

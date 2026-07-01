@@ -12,7 +12,7 @@
  * propagates to the caller's existing error handling unchanged; only the
  * (pure) routing evaluation is wrapped to degrade to the Node result.
  */
-import { extractDrafts, type OcrEngineResult } from './ocr-engine';
+import { extractDrafts, type CachedPageOcr, type OcrEngineResult } from './ocr-engine';
 import {
   computeSignal,
   decideRoute,
@@ -97,9 +97,12 @@ export const resolveDrafts = async (
     figureKeyPrefix?: string;
     /** Phase 2 — per-page progress callback for the live OCR review UX. */
     onPageComplete?: (processed: number, total: number) => Promise<void> | void;
+    /** Resumable OCR (P0) — per-page checkpoint seam, forwarded to extractDrafts. No-op when absent. */
+    loadPageOcr?: (pageNumber: number) => Promise<CachedPageOcr | null> | CachedPageOcr | null;
+    savePageOcr?: (pageNumber: number, totalPages: number, data: CachedPageOcr) => Promise<void> | void;
   },
 ): Promise<ResolveOutcome> => {
-  const { settings, putObject, figureKeyPrefix, onPageComplete } = deps;
+  const { settings, putObject, figureKeyPrefix, onPageComplete, loadPageOcr, savePageOcr } = deps;
 
   // Flag OFF: exact current behaviour. storageKey + figure upload + progress
   // hooks are plumbed through so the Slice 2.2 Paddle dispatcher, Slice 2.3
@@ -114,6 +117,8 @@ export const resolveDrafts = async (
         putObject,
         figureKeyPrefix,
         onPageComplete,
+        loadPageOcr,
+        savePageOcr,
       }),
     };
   }
@@ -126,6 +131,8 @@ export const resolveDrafts = async (
     putObject,
     figureKeyPrefix,
     onPageComplete,
+    loadPageOcr,
+    savePageOcr,
   });
 
   try {

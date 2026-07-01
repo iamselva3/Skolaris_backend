@@ -48,6 +48,50 @@ const QUESTION_WORD_RE = /^Question$/i; // "Question" (its number follows separa
 // OPTION — options are "(1)".."(4)" / "a)" and never a bare ≥10 number.
 const NUM_GLUED_RE = /^(\d{2,3})(?=[A-Za-z])/;
 
+// MARKER-CONFLICT RESOLUTION (authorized engine exception). A leading number can be
+// CONTENT — a chemistry locant/range or a unit/option value — not a question number.
+// Such tokens were being promoted to question markers (PHYCHE "2,3-"/"3,4,4-", Biology_Cell
+// "70S"/"80S", AD "25V"/"85eV"), spawning phantom columns/crops and shattering questions.
+// Demote them with two PATTERN rules (never literal values, never PDF-specific):
+//   A. Locant / range — a number immediately followed by "," or "-" then a digit.
+//   B. Unit / option value — a number fused to a CLOSED 1–3 letter run (70S, 25V, 15g).
+//      A number fused to a real WORD ("150Match", value ≥4 letters) is NOT content and is
+//      intentionally kept, so the legitimate punctuation-less glued marker still works.
+const LOCANT_RE = /^\d{1,3}[,\-]\d/; // "2,3" "3,4,4" "0,4" "3-4"
+const UNIT_VALUE_RE = /^\d{1,3}[A-Za-z]{1,3}(?![A-Za-z])/; // "70S" "25V" "85eV" "15g"
+const isContentNumberToken = (raw: string): boolean => {
+  const t = (raw ?? '').trim();
+  return LOCANT_RE.test(t) || UNIT_VALUE_RE.test(t);
+};
+
+// Adjacent-token extension of the SAME locant rule. OCR often space-splits a locant
+// into two tokens — "2," + "3-" (a number with a trailing comma, then a digit-led
+// separator) — so neither token alone matches LOCANT_RE, but the ADJACENT PAIR is a
+// locant and therefore content, never a question number. A real comma-terminated
+// question number ("44," from a misread "44.") is followed by a WORD, not a digit-led
+// separator, so it is NOT demoted. Still pattern-based: no literal values, no per-paper code.
+const NUM_TRAILING_COMMA_RE = /^\d{1,3},$/; // "2," "0," — split-locant head
+const LOCANT_CONT_RE = /^\d{1,3}[,\-]/; // "3-" "4," "3,4" — locant continuation (digit + separator)
+/** The immediately-adjacent token to the right of `w` on the same text line (≤1.5 line-heights away). */
+const rightAdjacent = (w: OcrWordBox, words: OcrWordBox[], medianH: number): OcrWordBox | null => {
+  const cy = (w.y0 + w.y1) / 2;
+  let best: OcrWordBox | null = null;
+  for (const o of words) {
+    if (o === w || o.x0 < w.x1 || Math.abs((o.y0 + o.y1) / 2 - cy) > medianH * 0.6) continue;
+    if (o.x0 - w.x1 > medianH * 1.5) continue; // ADJACENT only, not a distant word
+    if (!best || o.x0 < best.x0) best = o;
+  }
+  return best;
+};
+/** A space-split locant head: a "N," token whose adjacent right token continues the
+ *  locant. Together with isContentNumberToken this covers BOTH glued ("2,3") and
+ *  OCR-split ("2," + "3-") locants. */
+const isSplitLocantHead = (w: OcrWordBox, words: OcrWordBox[], medianH: number): boolean => {
+  if (!NUM_TRAILING_COMMA_RE.test((w.text ?? '').trim())) return false;
+  const nb = rightAdjacent(w, words, medianH);
+  return !!nb && LOCANT_CONT_RE.test((nb.text ?? '').trim());
+};
+
 // A "question number" above this is implausible for any real exam — it is almost
 // always an OCR mis-read of an IN-TEXT value (a temperature like "273", a year, a
 // measurement) that happened to begin a line. Such a phantom marker spawns a bogus
@@ -105,6 +149,16 @@ export const medianHeight = (words: OcrWordBox[]): number => {
 };
 
 /**
+ * Matches per-page serial watermark codes that OCR may place at the same Y as a
+ * question marker ("C-31", "CC-315", "C31"). Also matches lone 1-3 uppercase
+ * letters ("C", "CC") which are diagnostic fragments OCR produces from diagonal
+ * watermarks that span the full height of the column. These tokens must never
+ * block isLineStart for a question marker that sits just to their right.
+ */
+const PAGE_CODE_RE =
+  /^[A-Za-z]{1,3}[-_]\d{1,5}[A-Za-z]?$|^[A-Za-z]{1,3}\d{2,5}[A-Za-z]?$|^[A-Z]{1,3}$/;
+
+/**
  * True when `marker` actually STARTS a text line — it has clear horizontal space
  * to its left on its own line. This rejects a "5)" sitting mid-sentence, an
  * indented continuation, or a stray number inside option/instruction text.
@@ -119,7 +173,10 @@ const isLineStart = (marker: OcrWordBox, words: OcrWordBox[], medianH: number): 
     if (w === marker) continue;
     const wcy = (w.y0 + w.y1) / 2;
     if (Math.abs(wcy - cy) > yTol) continue; // different text line
-    if (w.x1 <= marker.x0 && marker.x0 - w.x1 < clear) return false; // a word is just left
+    if (w.x1 <= marker.x0 && marker.x0 - w.x1 < clear) {
+      if (PAGE_CODE_RE.test((w.text ?? '').trim())) continue; // watermark — ignore
+      return false; // a word is just left
+    }
   }
   return true;
 };
@@ -138,6 +195,7 @@ const parseLineStartMarkers = (words: OcrWordBox[], medianH: number): PunctMarke
     // ORIGINAL text; numeric matches use the noise-stripped text so a prepended
     // stray char (`"103.Major`) doesn't hide the number.
     if (OPTION_SHAPED_RE.test(w.text)) continue;
+    if (isContentNumberToken(w.text) || isSplitLocantHead(w, words, medianH)) continue; // demote locants / units / option values
     const t = stripLeadNoise(w.text);
     if ((m = NUM_DOT_RE.exec(t))) out.push({ num: +m[1], punct: '.', x0: w.x0, y0: w.y0 });
     else if ((m = NUM_PAREN_RE.exec(t))) out.push({ num: +m[1], punct: ')', x0: w.x0, y0: w.y0 });
@@ -495,6 +553,7 @@ export const splitRegionsByInternalMarkers = (
     for (const wd of rw) {
       if (wd.x0 - r.x0 > medianH * 1.5) continue; // not at the column's left edge
       if (OPTION_SHAPED_RE.test(wd.text)) continue; // never an option
+      if (isContentNumberToken(wd.text) || isSplitLocantHead(wd, rw, medianH)) continue; // demote locants / units (fixes 70S re-split)
       const pm = qPunct === '.' ? NUM_DOT_RE.exec(wd.text) : NUM_PAREN_RE.exec(wd.text);
       const gm = NUM_GLUED_RE.exec(wd.text);
       const num = pm ? +pm[1] : gm && +gm[1] > 8 ? +gm[1] : null;
@@ -598,12 +657,51 @@ export const recoverSequenceGaps = (
       if (!big && !hasQuestionPunct(c.text, qPunct)) continue;
       // Accept the exact next number; for safe (big) numbers tolerate a 1–2 step
       // skip so an unreadable middle number doesn't stall the rest of the column.
-      if (c.n === expected || (big && c.n > expected && c.n <= expected + 2)) {
+      // For 100+ question papers also accept an OCR-truncated number: "1." is a
+      // recognised truncation of "111." (leading digits dropped), so when expected
+      // ≥ 100 we check whether expected's decimal representation starts with c.n's.
+      const isTrunc =
+        expected >= 100 &&
+        !big &&
+        hasQuestionPunct(c.text, qPunct) &&
+        String(expected).startsWith(String(c.n));
+      if (c.n === expected || (big && c.n > expected && c.n <= expected + 2) || isTrunc) {
         splitYs.push(c.y0);
-        expected = c.n + 1;
+        expected = isTrunc ? expected + 1 : c.n + 1;
         lastY = c.y0;
       }
     }
+    // Fallback: option-sequence restart detection.
+    // When OCR completely misses a question number (stage=OCR_MISS), no candidate
+    // passes the numeric checks above. But the region still contains both questions'
+    // option sets. A "(1)" marker that appears a SECOND time well below the first
+    // means a new question's options started — use it to find the split boundary.
+    // Guards: region must be tall (≥6 lines), the two "(1)"s must be far apart
+    // (≥4 lines), and the split must fall in the middle third of the region.
+    if (splitYs.length === 0 && r.y1 - r.y0 >= medianH * 6) {
+      const PAREN_ONE_RE = /^\(1\)$/;
+      const opt1s = rw
+        .filter(
+          (wd) =>
+            PAREN_ONE_RE.test((wd.text ?? '').trim()) && wd.x0 - r.x0 < medianH * 5,
+        )
+        .sort((a, b) => a.y0 - b.y0);
+      if (opt1s.length >= 2 && opt1s[1].y0 - opt1s[0].y0 >= medianH * 4) {
+        const sec = opt1s[1];
+        // Find the last option-shaped token above the second (1); split at midpoint.
+        const prevOpts = rw
+          .filter((wd) => OPTION_SHAPED_RE.test((wd.text ?? '').trim()) && wd.y0 < sec.y0)
+          .sort((a, b) => a.y0 - b.y0);
+        const lastPrev = prevOpts[prevOpts.length - 1];
+        const rawSplit = lastPrev
+          ? Math.round((lastPrev.y1 + sec.y0) / 2)
+          : Math.max(r.y0 + medianH * 2, sec.y0 - Math.round(medianH * 2.5));
+        const lo = r.y0 + Math.round((r.y1 - r.y0) / 4);
+        const hi = r.y1 - Math.round((r.y1 - r.y0) / 4);
+        if (rawSplit >= lo && rawSplit <= hi) splitYs.push(rawSplit);
+      }
+    }
+
     if (splitYs.length === 0) {
       out.push(r);
       continue;
@@ -658,9 +756,9 @@ export const recoverTruncatedNumbers = (
         last = m.num;
       } else strays.push(m);
     }
-    if (strays.length === 0) continue;
     const leftEdge = Math.min(...sorted.map((m) => m.x0));
     const filled = new Set<number>();
+    // Primary pass: strays that DID pass isLineStart (normal truncation recovery).
     for (const s of strays) {
       let above: (Marker & { num: number }) | undefined;
       let below: (Marker & { num: number }) | undefined;
@@ -678,6 +776,29 @@ export const recoverTruncatedNumbers = (
       if (!w) continue;
       w.text = w.text.replace(/^(\D*)(\d{1,3})/, `$1${E}`);
       filled.add(E);
+    }
+    // Secondary pass: left-edge words that FAILED isLineStart (blocked by a diagonal
+    // watermark fragment) and therefore never appear in `strays`. Scan the raw word
+    // list between each single-number gap and rewrite any truncation match found.
+    for (let ki = 0; ki + 1 < kept.length; ki += 1) {
+      const above = kept[ki];
+      const below = kept[ki + 1];
+      if (below.num !== above.num + 2) continue; // not a single-number gap
+      const E = above.num + 1;
+      if (filled.has(E)) continue;
+      const se = String(E);
+      for (const wd of words) {
+        if (wd.y0 <= above.y0 || wd.y0 >= below.y0) continue;
+        if (wd.x0 - leftEdge > medianH * 3) continue; // relaxed threshold for hidden words
+        const t = stripLeadNoise((wd.text ?? '').trim());
+        const pm = qPunct === '.' ? NUM_DOT_RE.exec(t) : NUM_PAREN_RE.exec(t);
+        if (!pm) continue;
+        const sd = String(+pm[1]);
+        if (!(se.startsWith(sd) || se.endsWith(sd))) continue;
+        wd.text = wd.text.replace(/^(\D*)(\d{1,3})/, `$1${E}`);
+        filled.add(E);
+        break;
+      }
     }
   }
 };
@@ -1020,7 +1141,7 @@ export const buildQualityReport = (
 
 /** Stitch two PNG crops vertically (top over bottom) into one PNG — used to
  *  merge a question's tail from the next page into a single screenshot. */
-const stitchVertical = async (top: Buffer, bottom: Buffer): Promise<Buffer> => {
+export const stitchVertical = async (top: Buffer, bottom: Buffer): Promise<Buffer> => {
   const [tm, bm] = await Promise.all([sharp(top).metadata(), sharp(bottom).metadata()]);
   const th = tm.height ?? 0;
   const w = Math.max(tm.width ?? 0, bm.width ?? 0);
@@ -1079,6 +1200,76 @@ export interface SegmentCarry {
  * Each draft carries a segmentation `confidence` (D) and is flagged
  * `needsImageReview` when low. Blank regions are rejected (B).
  */
+/** A leading question-number marker found STRUCTURALLY at a region's top-left (no dependence on the
+ *  detected `questionNumber`, which made removal inconsistent). `frac` = portion of the token width
+ *  to whiten: 1 for a clean standalone marker; <1 for a number GLUED to text (whitens only the
+ *  numeric prefix, never the letters). */
+export interface LeadingMarker { box: OcrWordBox; frac: number; }
+// Trailing punctuation after a marker number — OCR commonly misreads "." as "," / ":" etc.
+const MARK_PUNCT = '[.,)\\]:;]';
+const CLEAN_MARK = new RegExp(`^\\(?\\d{1,3}${MARK_PUNCT}?$`);
+const GLUED_MARK = new RegExp(`^\\(?\\d{1,3}${MARK_PUNCT}`);
+/**
+ * Find the leading question-number marker for a region. PRIMARY: the clean numeric token at the
+ * region's top-left. FALLBACK (markerHint = the engine's own findQuestionMarkers position): when OCR
+ * garbled the top line so no clean token is the lead, locate the actual marker word near that known
+ * position. Keeps removal DETERMINISTIC across OCR noise (comma misreads, fragmented tops) while
+ * staying 0-loss — only a numeric / short token at the marker location is ever returned.
+ */
+export const detectLeadingMarker = (
+  regionWords: OcrWordBox[], markerHint?: { x0: number; y0: number },
+): LeadingMarker | null => {
+  if (regionWords.length === 0) return null;
+  const hs = regionWords.map((w) => w.y1 - w.y0).filter((h) => h > 0).sort((a, b) => a - b);
+  const lineH = hs.length ? hs[Math.floor(hs.length / 2)] : 20;
+  const topY0 = Math.min(...regionWords.map((w) => w.y0));
+  const topLine = regionWords.filter((w) => w.y0 <= topY0 + lineH * 0.6).sort((a, b) => a.x0 - b.x0);
+  const lead = topLine[0];
+  if (lead) {
+    const t = (lead.text ?? '').trim();
+    if (CLEAN_MARK.test(t)) {
+      let box = lead;
+      const nxt = topLine[1]; // a bare "90" followed by a standalone "." / ")" / "," ⇒ include it
+      if (/^\(?\d{1,3}$/.test(t) && nxt && new RegExp(`^${MARK_PUNCT}$`).test((nxt.text ?? '').trim()) && nxt.x0 - lead.x1 < lineH) {
+        box = { ...lead, x1: nxt.x1 };
+      }
+      return { box, frac: 1 };
+    }
+    const g = GLUED_MARK.exec(t); // glued marker "90.Which" / "(90)Which"
+    if (g) return { box: lead, frac: Math.min(0.92, g[0].length / Math.max(1, t.length)) };
+  }
+  // FALLBACK — OCR garbled the marker token / split the top line. Use the engine's detected marker
+  // position to pick the actual marker word (a digit-bearing or short token at that spot) and whiten it.
+  if (markerHint) {
+    const near = regionWords
+      .filter((w) => Math.abs(w.y0 - markerHint.y0) <= lineH && w.x0 - markerHint.x0 >= -lineH && w.x0 - markerHint.x0 <= lineH * 2)
+      .filter((w) => /\d/.test(w.text ?? '') || (w.text ?? '').trim().length <= 3)
+      .sort((a, b) => (Math.abs(a.x0 - markerHint.x0) + Math.abs(a.y0 - markerHint.y0)) - (Math.abs(b.x0 - markerHint.x0) + Math.abs(b.y0 - markerHint.y0)))[0];
+    if (near) return { box: near, frac: 1 };
+  }
+  return null;
+};
+
+/** Whiten a marker box (page coords) on a crop whose origin is (originX, originY). 0-loss: paints
+ *  white over the number/bracket only. Best-effort — returns the crop unchanged on any error. */
+export const whitenRegion = async (
+  crop: Buffer, box: OcrWordBox, frac: number, originX: number, originY: number,
+): Promise<Buffer> => {
+  const fullW = box.x1 - box.x0;
+  const lx = Math.max(0, Math.round(box.x0 - originX - 2));
+  const ly = Math.max(0, Math.round(box.y0 - originY - 2));
+  const lw = Math.max(1, Math.round(frac === 1 ? fullW + 4 : fullW * frac));
+  const lh = Math.max(1, Math.round(box.y1 - box.y0 + 4));
+  try {
+    return await sharp(crop)
+      .composite([{ input: { create: { width: lw, height: lh, channels: 3, background: { r: 255, g: 255, b: 255 } } }, left: lx, top: ly }])
+      .png()
+      .toBuffer();
+  } catch {
+    return crop;
+  }
+};
+
 export const segmentVisualDrafts = async (
   pageImage: Buffer,
   rawWords: OcrWordBox[],
@@ -1154,9 +1345,29 @@ export const segmentVisualDrafts = async (
   // as "270.") back to its sequence-correct value, so the spike can't evict the
   // next question (171) and the draft is numbered 170 — not 270.
   recoverCenturyMisreads(words, pageWidth, medianH, qPunct);
-  // No markers detected (pure diagram page) → one full-page crop, never dropped.
-  const markers = findQuestionMarkers(words, medianH, qPunct);
-  const columns = validateMarkerSequence(detectColumns(markers, pageWidth));
+    
+    // No markers detected (pure diagram page) → one full-page crop, never dropped.
+    const markers = findQuestionMarkers(words, medianH, qPunct);
+    let columns = validateMarkerSequence(detectColumns(markers, pageWidth));
+
+  // If the page looks like a 1-column layout but has a spurious right-side column
+  // (e.g., a fake marker generated by a watermark or page number), destroy it.
+  // We determine this if the text of the first column physically crosses into
+  // the second column's space AND the second column has very few markers.
+  if (columns.length > 1) {
+    const mainCol = columns[0];
+    let maxMainX1 = 0;
+    const padX = Math.round(medianH * 0.4);
+    for (const w of words) {
+      if (w.x0 >= mainCol.left - padX && w.x0 < columns[1].left) {
+        if (w.x1 > maxMainX1) maxMainX1 = w.x1;
+      }
+    }
+    if (maxMainX1 > columns[1].left && columns[1].markers.length <= 3) {
+      columns = [mainCol];
+      mainCol.right = pageWidth;
+    }
+  }
 
   // Pipeline-stage trace — what each stage saw, so a missing question can be
   // pinned to OCR / marker / sequence / region-build (see buildQualityReport).
@@ -1213,6 +1424,7 @@ export const segmentVisualDrafts = async (
   const offset = opts.positionOffset ?? 0;
   const drafts: OcrEngineDraft[] = [];
   let carryOut: SegmentCarry | null = null;
+  let pageHasRealQuestion = false; // P0 — a real question = a region with a stem OR a ≥2-option block
   for (let i = 0; i < regions.length; i += 1) {
     const r = regions[i];
     const width = Math.min(pageWidth - r.x0, r.x1 - r.x0);
@@ -1225,36 +1437,75 @@ export const segmentVisualDrafts = async (
     // Crop the SHOWN image from the raw page when provided (avoids the pre-OCR
     // flat-field division's slight brightening of dark ink); detection is unchanged.
     const cropSource = opts.displaySource ?? pageImage;
-    const crop = await sharp(cropSource)
+    let crop = await sharp(cropSource)
       .extract({ left: r.x0, top: r.y0, width, height })
       .png()
       .toBuffer();
-    // DISPLAY-ONLY watermark cleanup of the crop PIXELS (no effect on any draft
-    // field — questionNumber/options/region were all derived from word boxes
-    // above). Best-effort: returns the original bytes if disabled or on error.
-    const displayCrop = opts.displayFlat
-      ? await (
-          await import('./crop-display-clean')
-        ).cleanCropForDisplay(crop, {
-          flat: opts.displayFlat,
-          mask: opts.displayMask,
-          region: { x0: r.x0, y0: r.y0, x1: r.x0 + width, y1: r.y0 + height },
-          pageWidth,
-          pageHeight,
-        })
-      : crop;
-    const key = `${opts.figureKeyPrefix}/question-p${pageNumber}-${offset + drafts.length}-${randomUUID().slice(0, 8)}.png`;
-    await opts.putObject(key, displayCrop, 'image/png');
 
+    // Classification + top marker — derived from word boxes (detection unchanged). Computed here so
+    // the two display decisions below (number strip + figure protection) can use them.
     const optionCount = countOptionMarkers(regionWords);
+    const regionHasStem = hasStem(regionWords, qPunct);
     const questionClass = classifyBlock(regionWords, qPunct);
-    // The number at the top of this crop — drives coverage/missing reporting and
-    // reliable answer-key mapping. Null when OCR didn't surface a number.
     const topMarker = findQuestionMarkers(regionWords, medianH, qPunct)[0];
+    // A valid question marker is a POSITIVE integer. "0" (a mis-read option-grid label / list bullet
+    // in a second column) is NEVER a real question number, so it must not spawn a "Question 0".
     const questionNumber =
-      topMarker && topMarker.num !== undefined && !Number.isNaN(topMarker.num)
+      topMarker && topMarker.num !== undefined && !Number.isNaN(topMarker.num) && topMarker.num >= 1
         ? topMarker.num
         : null;
+    // P0 page-level question signal: a REAL question is a numbered stem OR an option block. This
+    // excludes a footer/banner (stem-like text but NO question number) and an answer-grid row (a
+    // number but no stem and no options) — so a page made only of those is a no-question page. A LARGE
+    // region (≥12% of the page) is a diagram / figure / big table — a cross-page diagram continuation
+    // page is made of one such region, so keep it; a grid is many SMALL rows, so it is still dropped.
+    if (
+      (regionHasStem && questionNumber !== null) ||
+      optionCount >= 2 ||
+      width * height > pageWidth * pageHeight * (Number(process.env.OCR_FIGURE_PAGE_RATIO) || 0.12)
+    ) pageHasRealQuestion = true;
+
+    // REQ 1 — QUESTION-NUMBER NORMALIZATION (display-only, DETERMINISTIC). Remove the PRINTED paper
+    // number from the crop so the client image reads "Which of the following…", not "123. Which…".
+    // The number stays in metadata (draft.questionNumber + draft.text). The marker is found
+    // STRUCTURALLY — the leading numeric token at the region's TOP-LEFT — independent of whether OCR
+    // surfaced it as `questionNumber` (that dependency was the source of the inconsistency). 0-loss:
+    // only digit/bracket tokens are whitened; a number GLUED to text whitens only the numeric-prefix
+    // width, never the letters. markerBox.y0 also anchors the header-trim (a question never begins
+    // above its own printed number).
+    const leadMarker = detectLeadingMarker(regionWords, topMarker ? { x0: topMarker.x0, y0: topMarker.y0 } : undefined);
+    const markerBox = leadMarker?.box; // also the header-trim anchor (a question never begins above its number)
+    if (process.env.OCR_STRIP_QUESTION_NUMBER !== 'false' && leadMarker) {
+      crop = await whitenRegion(crop, leadMarker.box, leadMarker.frac, r.x0, r.y0);
+    }
+
+    // OWNERSHIP: watermark / persistent-background removal is owned SOLELY by the page-level pass
+    // (4a cleanCropForDisplay inside cleanPageForDisplay). This crop is sliced from that already-
+    // cleaned page, so the previously-duplicated per-crop watermark pass (5b) is DISABLED — a pixel
+    // is cleaned ONCE, at the page level, never twice. The crop is used verbatim from here.
+    const displayCrop = crop;
+    const key = `${opts.figureKeyPrefix}/question-p${pageNumber}-${offset + drafts.length}-${randomUUID().slice(0, 8)}.png`;
+    // DISPLAY-ONLY second stage: trim surrounding blank margins + trailing footer chrome
+    // (separator rule / page number / CC-315 codes / column divider) from the SHOWN crop,
+    // anchored by this region's word boxes so question text / options / diagrams are never clipped.
+    if (process.env.OCR_CROP_TRACE) {
+      // eslint-disable-next-line no-console
+      console.error(`[CROPTRACE] q=${questionNumber ?? '?'} OCR-region x0=${r.x0} y0=${r.y0} x1=${r.x1} y1=${r.y1} ${width}x${height}`);
+    }
+    const shownCrop = await (
+      await import('./crop-display-trim')
+    ).trimDisplayCrop(displayCrop, {
+      words: regionWords,
+      regionX0: r.x0,
+      regionY0: r.y0,
+      markerTopY: markerBox?.y0,
+      traceLabel: questionNumber ?? undefined,
+    });
+    // OWNERSHIP: background illumination/grey is owned by the page-level pass (4b flattenIllumination
+    // inside cleanPageForDisplay). This crop is already sliced from that flattened page, so the
+    // per-crop background lift (5d) is DISABLED — a pixel is lifted ONCE, at the page level. (The
+    // delivery re-crops cut from the RAW page, so they keep their own lift; that source is not flattened.)
+    await opts.putObject(key, shownCrop, 'image/png');
     const isLast = i === regions.length - 1;
     let confidence = regionConfidence(r, regionWords, pageHeight, optionCount, isLast);
     // An unclassifiable block (no recognised answer structure) is a weak crop —
@@ -1263,14 +1514,30 @@ export const segmentVisualDrafts = async (
     // Options without a stem above them = a stem-less crop (the brief's
     // "begins with options, no question" Bad case) that survived merging because
     // its stem is off-page. Never trust it silently — push it into manual review.
-    if (questionClass === 'MCQ' && !hasStem(regionWords, qPunct))
+    if (questionClass === 'MCQ' && !regionHasStem)
       confidence = Math.max(0.1, confidence - 0.3);
+    // P2 — MALFORMED-CROP guard (generic, value-free). A region that is implausibly small
+    // relative to the page's median word height is a degenerate sliver — the "huge magnified
+    // artifact" (a tiny fragment the UI blows up). Detected from geometry only (no literals):
+    // shorter than one text line, narrower than ~2 word-heights, or area below a small multiple
+    // of medianH². It is FLAGGED invalid (→ review), never dropped and never recounted, so N=N is
+    // preserved. Tunable via OCR_MIN_CROP_AREA_RATIO (default 9 = a 3×medianH square).
+    const minAreaRatio = Number(process.env.OCR_MIN_CROP_AREA_RATIO) || 9;
+    const malformedDims =
+      medianH > 0 &&
+      (height < medianH || width < medianH * 2 || width * height < medianH * medianH * minAreaRatio);
     // Final crop validation: a valid draft must carry a question number, a
     // question marker, OR a real stem. A crop with none (only options / a diagram
     // fragment / watermark / footer — the "Draft #40/#74" case) is marked
     // INVALID_CROP: flagged for review and not counted as a real question.
+    // INVALID CROP (P7): a region with NO stem AND NO option block is not a real question — a bare
+    // answer-grid / correction-list row (just a number), a footer/fragment, or a stray marker — even
+    // if it carries a number. Flagged → review, never trusted as a question. (A real question always
+    // has a stem or an option block; cross-page option continuations keep optionCount≥2.) Plus the
+    // degenerate-dimensions guard. Value-free.
     const invalidCrop =
-      columns.length > 0 && questionNumber === null && !hasStem(regionWords, qPunct);
+      (columns.length > 0 && !regionHasStem && optionCount < 2) ||
+      malformedDims;
     if (invalidCrop) confidence = Math.min(confidence, 0.3);
     const draft: OcrEngineDraft = {
       position: offset + drafts.length,
@@ -1295,6 +1562,15 @@ export const segmentVisualDrafts = async (
     if (isLast && r.y1 >= pageHeight - 2 && columns.length > 0) {
       carryOut = { cropBytes: displayCrop, key, draft };
     }
+  }
+
+  // P0 — NO-QUESTION PAGE. A page with ZERO real questions (no region carries a stem OR a ≥2-option
+  // block anywhere) is a correction table / answer key / correction list / appendix — its numbered
+  // rows are NOT questions. Emit NO drafts so the page can never produce fake questions or invalid
+  // crops (and never pollute N=N). Value-free, no coordinates/literals; a genuine question page always
+  // has at least one stem or option block, so it is never dropped. Disable with OCR_SKIP_NO_QUESTION_PAGE=false.
+  if (process.env.OCR_SKIP_NO_QUESTION_PAGE !== 'false' && drafts.length > 0 && !pageHasRealQuestion) {
+    return { drafts: [], carryOut: null, trace };
   }
   return { drafts, carryOut, trace };
 };

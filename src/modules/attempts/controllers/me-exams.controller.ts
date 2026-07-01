@@ -84,6 +84,7 @@ export class MeExamsController {
           timeRemainingSeconds: r.attempt.timeRemainingSeconds,
           startedAt: r.attempt.startedAt?.toISOString() ?? null,
         },
+        violationLimit: r.violationLimit,
         questions: r.questions,
       },
     };

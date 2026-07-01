@@ -1,0 +1,2696 @@
+{
+  "capture": "tenants_c2b13eeb-211c-4ee3-a9a4-a691b879107b_ocr-figures_657d629d-1e06-47aa-9677-11045e313a31_merged.tokens.json",
+  "questionCount": {
+    "logicalQuestionCount": 169,
+    "expectedCount": 176,
+    "ownershipCount": 169,
+    "completeQuestionCount": 80,
+    "cropValidCount": 167,
+    "expectedOptionCount": 4,
+    "recoveredQuestions": [
+      4,
+      6,
+      10,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      32,
+      33,
+      34,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      53,
+      54,
+      55,
+      57,
+      58,
+      68,
+      69,
+      144,
+      145,
+      170,
+      171,
+      172,
+      173,
+      174
+    ],
+    "missingQuestions": [
+      5,
+      7,
+      9,
+      20,
+      21,
+      59,
+      96,
+      105,
+      116,
+      139,
+      143,
+      146,
+      155,
+      161
+    ],
+    "confidence": 0.207,
+    "anomalies": [
+      {
+        "type": "duplicates",
+        "values": [
+          56
+        ]
+      },
+      {
+        "type": "question_zero"
+      },
+      {
+        "type": "impossible_sequence",
+        "count": 11
+      },
+      {
+        "type": "missing_numbers",
+        "values": [
+          5,
+          9,
+          20,
+          21,
+          59,
+          139,
+          143,
+          146
+        ]
+      },
+      {
+        "type": "spurious_markers",
+        "removed": 48
+      },
+      {
+        "type": "recovered_questions",
+        "values": [
+          4,
+          6,
+          10,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          32,
+          33,
+          34,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          53,
+          54,
+          55,
+          57,
+          58,
+          68,
+          69,
+          144,
+          145,
+          170,
+          171,
+          172,
+          173,
+          174
+        ]
+      },
+      {
+        "type": "missing_questions",
+        "values": [
+          5,
+          7,
+          9,
+          20,
+          21,
+          59,
+          96,
+          105,
+          116,
+          139,
+          143,
+          146,
+          155,
+          161
+        ],
+        "explanation": "no marker candidate found at the question margin (OCR did not read the number, or a numberless region) \u2014 routed to review, not skipped"
+      }
+    ],
+    "reconciled": {
+      "accepted": 158,
+      "offMargin": 48,
+      "spurious": 0,
+      "restarts": 0
+    }
+  },
+  "cropGate": "REVIEW",
+  "rows": [
+    {
+      "q": 10,
+      "name": "q010.png",
+      "regions": 1,
+      "saved": true,
+      "w": 620,
+      "h": 580,
+      "pages": [
+        1
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 2,
+      "name": "q002.png",
+      "regions": 1,
+      "saved": true,
+      "w": 620,
+      "h": 319,
+      "pages": [
+        1
+      ],
+      "optionCount": 5,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 3,
+      "name": "q003.png",
+      "regions": 1,
+      "saved": true,
+      "w": 620,
+      "h": 428,
+      "pages": [
+        1
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 4,
+      "name": "q004.png",
+      "regions": 2,
+      "saved": true,
+      "w": 658,
+      "h": 618,
+      "pages": [
+        1
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 6,
+      "name": "q006.png",
+      "regions": 1,
+      "saved": true,
+      "w": 681,
+      "h": 148,
+      "pages": [
+        1
+      ],
+      "optionCount": 0,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "NUMERIC"
+    },
+    {
+      "q": 7,
+      "name": "q007.png",
+      "regions": 1,
+      "saved": true,
+      "w": 607,
+      "h": 340,
+      "pages": [
+        1
+      ],
+      "optionCount": 5,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 8,
+      "name": "q008.png",
+      "regions": 2,
+      "saved": true,
+      "w": 667,
+      "h": 777,
+      "pages": [
+        1,
+        2
+      ],
+      "optionCount": 5,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 11,
+      "name": "q011.png",
+      "regions": 1,
+      "saved": true,
+      "w": 594,
+      "h": 317,
+      "pages": [
+        2
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 12,
+      "name": "q012.png",
+      "regions": 1,
+      "saved": true,
+      "w": 594,
+      "h": 247,
+      "pages": [
+        2
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 13,
+      "name": "q013.png",
+      "regions": 1,
+      "saved": true,
+      "w": 594,
+      "h": 188,
+      "pages": [
+        2
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 14,
+      "name": "q014.png",
+      "regions": 1,
+      "saved": true,
+      "w": 594,
+      "h": 409,
+      "pages": [
+        2
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 15,
+      "name": "q015.png",
+      "regions": 1,
+      "saved": true,
+      "w": 663,
+      "h": 333,
+      "pages": [
+        2
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 16,
+      "name": "q016.png",
+      "regions": 1,
+      "saved": true,
+      "w": 665,
+      "h": 238,
+      "pages": [
+        2
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 17,
+      "name": "q017.png",
+      "regions": 1,
+      "saved": true,
+      "w": 664,
+      "h": 272,
+      "pages": [
+        2
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 18,
+      "name": "q018.png",
+      "regions": 1,
+      "saved": true,
+      "w": 661,
+      "h": 258,
+      "pages": [
+        2
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 19,
+      "name": "q019.png",
+      "regions": 1,
+      "saved": true,
+      "w": 662,
+      "h": 203,
+      "pages": [
+        2
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 22,
+      "name": "q022.png",
+      "regions": 1,
+      "saved": true,
+      "w": 636,
+      "h": 322,
+      "pages": [
+        3
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 23,
+      "name": "q023.png",
+      "regions": 1,
+      "saved": true,
+      "w": 636,
+      "h": 368,
+      "pages": [
+        3
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 24,
+      "name": "q024.png",
+      "regions": 1,
+      "saved": true,
+      "w": 650,
+      "h": 185,
+      "pages": [
+        3
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "VISUAL"
+    },
+    {
+      "q": 25,
+      "name": "q025.png",
+      "regions": 1,
+      "saved": true,
+      "w": 646,
+      "h": 275,
+      "pages": [
+        3
+      ],
+      "optionCount": 7,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 26,
+      "name": "q026.png",
+      "regions": 1,
+      "saved": true,
+      "w": 640,
+      "h": 869,
+      "pages": [
+        3
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 27,
+      "name": "q027.png",
+      "regions": 1,
+      "saved": true,
+      "w": 638,
+      "h": 287,
+      "pages": [
+        3
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 28,
+      "name": "q028.png",
+      "regions": 1,
+      "saved": true,
+      "w": 612,
+      "h": 217,
+      "pages": [
+        4
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 29,
+      "name": "q029.png",
+      "regions": 1,
+      "saved": true,
+      "w": 612,
+      "h": 417,
+      "pages": [
+        4
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 30,
+      "name": "q030.png",
+      "regions": 1,
+      "saved": true,
+      "w": 612,
+      "h": 334,
+      "pages": [
+        4
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "NUMERIC"
+    },
+    {
+      "q": 31,
+      "name": "q031.png",
+      "regions": 1,
+      "saved": true,
+      "w": 612,
+      "h": 156,
+      "pages": [
+        4
+      ],
+      "optionCount": 5,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 32,
+      "name": "q032.png",
+      "regions": 1,
+      "saved": true,
+      "w": 612,
+      "h": 362,
+      "pages": [
+        4
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 33,
+      "name": "q033.png",
+      "regions": 2,
+      "saved": true,
+      "w": 658,
+      "h": 399,
+      "pages": [
+        4
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 34,
+      "name": "q034.png",
+      "regions": 1,
+      "saved": true,
+      "w": 659,
+      "h": 372,
+      "pages": [
+        4
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 35,
+      "name": "q035.png",
+      "regions": 1,
+      "saved": true,
+      "w": 663,
+      "h": 331,
+      "pages": [
+        4
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 36,
+      "name": "q036.png",
+      "regions": 1,
+      "saved": true,
+      "w": 663,
+      "h": 429,
+      "pages": [
+        4
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 37,
+      "name": "q037.png",
+      "regions": 2,
+      "saved": true,
+      "w": 663,
+      "h": 545,
+      "pages": [
+        4,
+        5
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 38,
+      "name": "q038.png",
+      "regions": 1,
+      "saved": true,
+      "w": 625,
+      "h": 247,
+      "pages": [
+        5
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "VISUAL"
+    },
+    {
+      "q": 39,
+      "name": "q039.png",
+      "regions": 1,
+      "saved": true,
+      "w": 626,
+      "h": 308,
+      "pages": [
+        5
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 40,
+      "name": "q040.png",
+      "regions": 1,
+      "saved": true,
+      "w": 625,
+      "h": 530,
+      "pages": [
+        5
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 41,
+      "name": "q041.png",
+      "regions": 1,
+      "saved": true,
+      "w": 625,
+      "h": 175,
+      "pages": [
+        5
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 42,
+      "name": "q042.png",
+      "regions": 1,
+      "saved": true,
+      "w": 650,
+      "h": 287,
+      "pages": [
+        5
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 43,
+      "name": "q043.png",
+      "regions": 1,
+      "saved": true,
+      "w": 650,
+      "h": 344,
+      "pages": [
+        5
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 44,
+      "name": "q044.png",
+      "regions": 1,
+      "saved": true,
+      "w": 651,
+      "h": 361,
+      "pages": [
+        5
+      ],
+      "optionCount": 0,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "VISUAL"
+    },
+    {
+      "q": 45,
+      "name": "q045.png",
+      "regions": 2,
+      "saved": true,
+      "w": 649,
+      "h": 221,
+      "pages": [
+        5,
+        6
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 46,
+      "name": "q046.png",
+      "regions": 1,
+      "saved": true,
+      "w": 622,
+      "h": 159,
+      "pages": [
+        6
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 47,
+      "name": "q047.png",
+      "regions": 1,
+      "saved": true,
+      "w": 622,
+      "h": 216,
+      "pages": [
+        6
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 48,
+      "name": "q048.png",
+      "regions": 1,
+      "saved": true,
+      "w": 622,
+      "h": 400,
+      "pages": [
+        6
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 49,
+      "name": "q049.png",
+      "regions": 1,
+      "saved": true,
+      "w": 622,
+      "h": 274,
+      "pages": [
+        6
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 50,
+      "name": "q050.png",
+      "regions": 1,
+      "saved": true,
+      "w": 622,
+      "h": 181,
+      "pages": [
+        6
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 51,
+      "name": "q051.png",
+      "regions": 1,
+      "saved": true,
+      "w": 622,
+      "h": 195,
+      "pages": [
+        6
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 52,
+      "name": "q052.png",
+      "regions": 2,
+      "saved": true,
+      "w": 658,
+      "h": 258,
+      "pages": [
+        6
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 53,
+      "name": "q053.png",
+      "regions": 1,
+      "saved": true,
+      "w": 653,
+      "h": 200,
+      "pages": [
+        6
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 54,
+      "name": "q054.png",
+      "regions": 1,
+      "saved": true,
+      "w": 653,
+      "h": 194,
+      "pages": [
+        6
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 55,
+      "name": "q055.png",
+      "regions": 1,
+      "saved": true,
+      "w": 658,
+      "h": 324,
+      "pages": [
+        6
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "VISUAL"
+    },
+    {
+      "q": 56,
+      "name": "q056.png",
+      "regions": 1,
+      "saved": true,
+      "w": 587,
+      "h": 361,
+      "pages": [
+        6
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 57,
+      "name": "q057.png",
+      "regions": 1,
+      "saved": true,
+      "w": 650,
+      "h": 235,
+      "pages": [
+        6
+      ],
+      "optionCount": 7,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 58,
+      "name": "q058.png",
+      "regions": 1,
+      "saved": true,
+      "w": 651,
+      "h": 197,
+      "pages": [
+        6
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 56,
+      "name": "q056.png",
+      "regions": 1,
+      "saved": true,
+      "w": 600,
+      "h": 130,
+      "pages": [
+        7
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 60,
+      "name": "q060.png",
+      "regions": 1,
+      "saved": true,
+      "w": 600,
+      "h": 220,
+      "pages": [
+        7
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 61,
+      "name": "q061.png",
+      "regions": 1,
+      "saved": true,
+      "w": 600,
+      "h": 184,
+      "pages": [
+        7
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 62,
+      "name": "q062.png",
+      "regions": 1,
+      "saved": true,
+      "w": 600,
+      "h": 305,
+      "pages": [
+        7
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 63,
+      "name": "q063.png",
+      "regions": 1,
+      "saved": true,
+      "w": 600,
+      "h": 188,
+      "pages": [
+        7
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 64,
+      "name": "q064.png",
+      "regions": 1,
+      "saved": true,
+      "w": 600,
+      "h": 147,
+      "pages": [
+        7
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 65,
+      "name": "q065.png",
+      "regions": 1,
+      "saved": true,
+      "w": 600,
+      "h": 233,
+      "pages": [
+        7
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 66,
+      "name": "q066.png",
+      "regions": 1,
+      "saved": true,
+      "w": 600,
+      "h": 72,
+      "pages": [
+        7
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 67,
+      "name": "q067.png",
+      "regions": 2,
+      "saved": true,
+      "w": 658,
+      "h": 218,
+      "pages": [
+        7
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 68,
+      "name": "q068.png",
+      "regions": 1,
+      "saved": true,
+      "w": 656,
+      "h": 252,
+      "pages": [
+        7
+      ],
+      "optionCount": 6,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 69,
+      "name": "q069.png",
+      "regions": 1,
+      "saved": true,
+      "w": 656,
+      "h": 97,
+      "pages": [
+        7
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 70,
+      "name": "q070.png",
+      "regions": 1,
+      "saved": true,
+      "w": 662,
+      "h": 391,
+      "pages": [
+        7
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "NUMERIC"
+    },
+    {
+      "q": 71,
+      "name": "q071.png",
+      "regions": 1,
+      "saved": true,
+      "w": 663,
+      "h": 138,
+      "pages": [
+        7
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 72,
+      "name": "q072.png",
+      "regions": 1,
+      "saved": true,
+      "w": 663,
+      "h": 307,
+      "pages": [
+        7
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 73,
+      "name": "q073.png",
+      "regions": 2,
+      "saved": true,
+      "w": 662,
+      "h": 210,
+      "pages": [
+        7,
+        8
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 74,
+      "name": "q074.png",
+      "regions": 1,
+      "saved": true,
+      "w": 571,
+      "h": 454,
+      "pages": [
+        8
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 75,
+      "name": "q075.png",
+      "regions": 1,
+      "saved": true,
+      "w": 574,
+      "h": 201,
+      "pages": [
+        8
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 76,
+      "name": "q076.png",
+      "regions": 1,
+      "saved": true,
+      "w": 571,
+      "h": 200,
+      "pages": [
+        8
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 77,
+      "name": "q077.png",
+      "regions": 1,
+      "saved": true,
+      "w": 571,
+      "h": 229,
+      "pages": [
+        8
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 78,
+      "name": "q078.png",
+      "regions": 1,
+      "saved": true,
+      "w": 571,
+      "h": 361,
+      "pages": [
+        8
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 79,
+      "name": "q079.png",
+      "regions": 2,
+      "saved": true,
+      "w": 658,
+      "h": 241,
+      "pages": [
+        8
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 80,
+      "name": "q080.png",
+      "regions": 1,
+      "saved": true,
+      "w": 669,
+      "h": 151,
+      "pages": [
+        8
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 81,
+      "name": "q081.png",
+      "regions": 1,
+      "saved": true,
+      "w": 670,
+      "h": 165,
+      "pages": [
+        8
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 82,
+      "name": "q082.png",
+      "regions": 1,
+      "saved": true,
+      "w": 670,
+      "h": 111,
+      "pages": [
+        8
+      ],
+      "optionCount": 0,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "NUMERIC"
+    },
+    {
+      "q": 83,
+      "name": "q083.png",
+      "regions": 1,
+      "saved": true,
+      "w": 670,
+      "h": 338,
+      "pages": [
+        8
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 84,
+      "name": "q084.png",
+      "regions": 1,
+      "saved": true,
+      "w": 665,
+      "h": 111,
+      "pages": [
+        8
+      ],
+      "optionCount": 0,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "NUMERIC"
+    },
+    {
+      "q": 85,
+      "name": "q085.png",
+      "regions": 1,
+      "saved": true,
+      "w": 664,
+      "h": 319,
+      "pages": [
+        8
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 86,
+      "name": "q086.png",
+      "regions": 1,
+      "saved": true,
+      "w": 662,
+      "h": 321,
+      "pages": [
+        8
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 91,
+      "name": "q091.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1607,
+      "h": 575,
+      "pages": [
+        10
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 92,
+      "name": "q092.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1607,
+      "h": 560,
+      "pages": [
+        10
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 93,
+      "name": "q093.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1607,
+      "h": 560,
+      "pages": [
+        10
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 94,
+      "name": "q094.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1753,
+      "h": 2483,
+      "pages": [
+        10
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 95,
+      "name": "q095.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1888,
+      "h": 665,
+      "pages": [
+        10
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 96,
+      "name": "q096.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1888,
+      "h": 955,
+      "pages": [
+        10
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 97,
+      "name": "q097.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1888,
+      "h": 1938,
+      "pages": [
+        10,
+        11
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 98,
+      "name": "q098.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1808,
+      "h": 584,
+      "pages": [
+        11
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 99,
+      "name": "q099.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1808,
+      "h": 387,
+      "pages": [
+        11
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 100,
+      "name": "q100.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1808,
+      "h": 484,
+      "pages": [
+        11
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 101,
+      "name": "q101.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1855,
+      "h": 734,
+      "pages": [
+        11
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 102,
+      "name": "q102.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1808,
+      "h": 372,
+      "pages": [
+        11
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "NUMERIC"
+    },
+    {
+      "q": 103,
+      "name": "q103.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1808,
+      "h": 1375,
+      "pages": [
+        11
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 104,
+      "name": "q104.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1708,
+      "h": 484,
+      "pages": [
+        11
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 106,
+      "name": "q106.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1710,
+      "h": 952,
+      "pages": [
+        11
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 107,
+      "name": "q107.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1716,
+      "h": 447,
+      "pages": [
+        11
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 108,
+      "name": "q108.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1710,
+      "h": 307,
+      "pages": [
+        11
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 109,
+      "name": "q109.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1700,
+      "h": 617,
+      "pages": [
+        11
+      ],
+      "optionCount": 0,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "VISUAL"
+    },
+    {
+      "q": 110,
+      "name": "q110.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1707,
+      "h": 987,
+      "pages": [
+        11,
+        12
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 111,
+      "name": "q111.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1675,
+      "h": 989,
+      "pages": [
+        12
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 112,
+      "name": "q112.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1675,
+      "h": 1246,
+      "pages": [
+        12
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 113,
+      "name": "q113.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1682,
+      "h": 918,
+      "pages": [
+        12
+      ],
+      "optionCount": 6,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 114,
+      "name": "q114.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1724,
+      "h": 832,
+      "pages": [
+        12
+      ],
+      "optionCount": 8,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 115,
+      "name": "q115.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1725,
+      "h": 244,
+      "pages": [
+        12
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 117,
+      "name": "q117.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1719,
+      "h": 483,
+      "pages": [
+        12
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 118,
+      "name": "q118.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1717,
+      "h": 909,
+      "pages": [
+        12
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 119,
+      "name": "q119.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1714,
+      "h": 563,
+      "pages": [
+        12
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 120,
+      "name": "q120.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1712,
+      "h": 861,
+      "pages": [
+        12,
+        13
+      ],
+      "optionCount": 5,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 121,
+      "name": "q121.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1679,
+      "h": 666,
+      "pages": [
+        13
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 122,
+      "name": "q122.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1679,
+      "h": 333,
+      "pages": [
+        13
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 123,
+      "name": "q123.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1679,
+      "h": 583,
+      "pages": [
+        13
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 124,
+      "name": "q124.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1679,
+      "h": 273,
+      "pages": [
+        13
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 125,
+      "name": "q125.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1679,
+      "h": 361,
+      "pages": [
+        13
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 126,
+      "name": "q126.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1681,
+      "h": 1258,
+      "pages": [
+        13
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 127,
+      "name": "q127.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1724,
+      "h": 1261,
+      "pages": [
+        13
+      ],
+      "optionCount": 7,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 128,
+      "name": "q128.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1719,
+      "h": 991,
+      "pages": [
+        13
+      ],
+      "optionCount": 7,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 129,
+      "name": "q129.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1719,
+      "h": 913,
+      "pages": [
+        13
+      ],
+      "optionCount": 5,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 130,
+      "name": "q130.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1717,
+      "h": 1374,
+      "pages": [
+        13,
+        14
+      ],
+      "optionCount": 6,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 131,
+      "name": "q131.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1686,
+      "h": 555,
+      "pages": [
+        14
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 132,
+      "name": "q132.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1686,
+      "h": 1032,
+      "pages": [
+        14
+      ],
+      "optionCount": 7,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 133,
+      "name": "q133.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1686,
+      "h": 562,
+      "pages": [
+        14
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 134,
+      "name": "q134.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1686,
+      "h": 932,
+      "pages": [
+        14
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 135,
+      "name": "q135.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1722,
+      "h": 769,
+      "pages": [
+        14
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 136,
+      "name": "q136.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1719,
+      "h": 575,
+      "pages": [
+        14
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 137,
+      "name": "q137.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1712,
+      "h": 2266,
+      "pages": [
+        14
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 138,
+      "name": "q138.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1857,
+      "h": 1125,
+      "pages": [
+        14,
+        15
+      ],
+      "optionCount": 8,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 140,
+      "regions": 0,
+      "saved": false,
+      "cropValid": false,
+      "reason": "no_parts"
+    },
+    {
+      "q": 144,
+      "name": "q144.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1872,
+      "h": 1173,
+      "pages": [
+        15
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 141,
+      "name": "q141.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1822,
+      "h": 188,
+      "pages": [
+        15
+      ],
+      "optionCount": 0,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "VISUAL"
+    },
+    {
+      "q": 145,
+      "name": "q145.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1857,
+      "h": 985,
+      "pages": [
+        15
+      ],
+      "optionCount": 5,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 142,
+      "name": "q142.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1822,
+      "h": 621,
+      "pages": [
+        15,
+        16
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 147,
+      "name": "q147.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1686,
+      "h": 1022,
+      "pages": [
+        16
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 148,
+      "name": "q148.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1686,
+      "h": 555,
+      "pages": [
+        16
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 149,
+      "name": "q149.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1686,
+      "h": 1303,
+      "pages": [
+        16
+      ],
+      "optionCount": 6,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 150,
+      "name": "q150.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1686,
+      "h": 364,
+      "pages": [
+        16
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 151,
+      "name": "q151.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1722,
+      "h": 731,
+      "pages": [
+        16
+      ],
+      "optionCount": 5,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 152,
+      "name": "q152.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1717,
+      "h": 1058,
+      "pages": [
+        16
+      ],
+      "optionCount": 5,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 153,
+      "name": "q153.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1708,
+      "h": 1225,
+      "pages": [
+        16
+      ],
+      "optionCount": 6,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 154,
+      "name": "q154.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1737,
+      "h": 1123,
+      "pages": [
+        16,
+        17
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 156,
+      "name": "q156.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1685,
+      "h": 360,
+      "pages": [
+        17
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "VISUAL"
+    },
+    {
+      "q": 157,
+      "name": "q157.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1685,
+      "h": 1253,
+      "pages": [
+        17
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 158,
+      "name": "q158.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1685,
+      "h": 519,
+      "pages": [
+        17
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 159,
+      "name": "q159.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1722,
+      "h": 1066,
+      "pages": [
+        17
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 160,
+      "name": "q160.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1708,
+      "h": 754,
+      "pages": [
+        17
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 161,
+      "name": "q161.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1638,
+      "h": 775,
+      "pages": [
+        17
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 162,
+      "name": "q162.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1712,
+      "h": 1466,
+      "pages": [
+        17
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 163,
+      "name": "q163.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1712,
+      "h": 1109,
+      "pages": [
+        17,
+        18
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 164,
+      "name": "q164.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1869,
+      "h": 355,
+      "pages": [
+        18
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "VISUAL"
+    },
+    {
+      "q": 170,
+      "name": "q170.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1886,
+      "h": 279,
+      "pages": [
+        18
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 165,
+      "name": "q165.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1869,
+      "h": 358,
+      "pages": [
+        18
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 166,
+      "name": "q166.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1869,
+      "h": 59,
+      "pages": [
+        18
+      ],
+      "optionCount": 0,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "NUMERIC"
+    },
+    {
+      "q": 171,
+      "name": "q171.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1892,
+      "h": 816,
+      "pages": [
+        18
+      ],
+      "optionCount": 3,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 172,
+      "name": "q172.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1897,
+      "h": 94,
+      "pages": [
+        18
+      ],
+      "optionCount": 0,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "NUMERIC"
+    },
+    {
+      "q": 167,
+      "name": "q167.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1869,
+      "h": 451,
+      "pages": [
+        18
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "NUMERIC"
+    },
+    {
+      "q": 173,
+      "name": "q173.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1894,
+      "h": 258,
+      "pages": [
+        18
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 168,
+      "name": "q168.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1869,
+      "h": 357,
+      "pages": [
+        18
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 169,
+      "name": "q169.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1869,
+      "h": 367,
+      "pages": [
+        18
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "VISUAL"
+    },
+    {
+      "q": 174,
+      "name": "q174.png",
+      "regions": 2,
+      "saved": true,
+      "w": 1905,
+      "h": 1352,
+      "pages": [
+        18,
+        19
+      ],
+      "optionCount": 5,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 175,
+      "name": "q175.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1893,
+      "h": 777,
+      "pages": [
+        19
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 176,
+      "name": "q176.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1857,
+      "h": 1126,
+      "pages": [
+        19
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": false,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 177,
+      "name": "q177.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1856,
+      "h": 945,
+      "pages": [
+        19
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 105,
+      "name": "q105.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1707,
+      "h": 486,
+      "pages": [
+        11
+      ],
+      "optionCount": 1,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "NUMERIC"
+    },
+    {
+      "q": 116,
+      "name": "q116.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1725,
+      "h": 761,
+      "pages": [
+        12
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 155,
+      "name": "q155.png",
+      "regions": 1,
+      "saved": true,
+      "w": 1737,
+      "h": 944,
+      "pages": [
+        17
+      ],
+      "optionCount": 0,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "VISUAL"
+    },
+    {
+      "q": 87,
+      "regions": 0,
+      "saved": false,
+      "cropValid": false,
+      "reason": "no_parts"
+    },
+    {
+      "q": 88,
+      "name": "q088.png",
+      "regions": 1,
+      "saved": true,
+      "w": 283,
+      "h": 323,
+      "pages": [
+        9
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 89,
+      "name": "q089.png",
+      "regions": 1,
+      "saved": true,
+      "w": 447,
+      "h": 245,
+      "pages": [
+        9
+      ],
+      "optionCount": 4,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    },
+    {
+      "q": 90,
+      "name": "q090.png",
+      "regions": 1,
+      "saved": true,
+      "w": 237,
+      "h": 258,
+      "pages": [
+        9
+      ],
+      "optionCount": 2,
+      "cropValid": true,
+      "needsReview": true,
+      "type": "SINGLE_CHOICE"
+    }
+  ]
+}

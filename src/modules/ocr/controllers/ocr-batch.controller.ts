@@ -4,9 +4,9 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
-import { PaginationQueryDto } from '../../../shared/common/dtos/pagination-query.dto';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { CreateOcrBatchDto } from '../dtos/create-ocr-batch.dto';
+import { ListOcrBatchesQueryDto } from '../dtos/list-ocr-batches-query.dto';
 import {
   OcrBatchDraftResponse,
   OcrBatchListItemResponse,
@@ -56,11 +56,16 @@ export class OcrBatchController {
   @Get()
   async list(
     @CurrentUser() actor: AuthenticatedUser,
-    @Query() query: PaginationQueryDto,
+    @Query() query: ListOcrBatchesQueryDto,
   ): Promise<{ data: OcrBatchListItemResponse[]; meta: { total: number; limit: number; offset: number } }> {
     const limit = query.limit ?? 50;
     const offset = query.offset ?? 0;
-    const r = await this.listBatchesUseCase.execute({ tenantId: actor.tenantId, limit, offset });
+    const r = await this.listBatchesUseCase.execute({
+      tenantId: actor.tenantId,
+      limit,
+      offset,
+      branchId: query.branchId,
+    });
     return { data: r.data.map(toOcrBatchListItemResponse), meta: { total: r.total, limit, offset } };
   }
 

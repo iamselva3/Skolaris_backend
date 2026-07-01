@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import { AntiCheatConfig, DEFAULT_ANTI_CHEAT_CONFIG } from '../../exams/models/exam.model';
+import { MAX_EXAM_VIOLATIONS } from '../../exams/models/exam.model';
 import { GradeAttemptUseCase } from '../../attempts/use-cases/grade-attempt.use-case';
 import {
   EXAM_ATTEMPT_REPOSITORY,
@@ -51,13 +51,12 @@ export class RecordViolationsUseCase {
     if (attempt.status !== 'IN_PROGRESS') {
       throw new ConflictException('Attempt is not in progress');
     }
-    const exam = await this.prisma.exam.findUniqueOrThrow({ where: { id: attempt.examId } });
-    const cfg: AntiCheatConfig = {
-      ...DEFAULT_ANTI_CHEAT_CONFIG,
-      ...((exam.antiCheatConfig as unknown as Partial<AntiCheatConfig>) ?? {}),
-    };
 
     // Write rows + bump violation_count + (maybe) auto-submit, all in one tx.
+    // Single product rule: auto-submit once the attempt reaches the maximum total
+    // number of violations (any type counts toward the same total). No separate
+    // per-type threshold and no intermediate FLAGGED transition — both previously
+    // interfered with reliably auto-submitting on the 6th violation.
     const result = await this.prisma.$transaction(async () => {
       const inserted = await this.violations.bulkCreate(
         input.events.map((e) => ({
@@ -74,32 +73,16 @@ export class RecordViolationsUseCase {
         inserted,
       );
 
+      // Effective limit is the tenant-wide super-admin setting; fall back to the
+      // historical default if the row predates the column or is somehow unset.
+      const tenant = await this.prisma.tenant.findUnique({
+        where: { id: input.tenantId },
+        select: { examViolationLimit: true },
+      });
+      const limit = tenant?.examViolationLimit ?? MAX_EXAM_VIOLATIONS;
+
       const totalCount = updated.violationCount;
-      const tabSwitchCount = input.events.some((e) => e.type === 'TAB_SWITCH')
-        ? await this.violations.countByAttemptAndType(input.tenantId, input.attemptId, 'TAB_SWITCH')
-        : 0;
-
-      let autoSubmitted = false;
-      let flagged = false;
-
-      if (cfg.totalViolationThreshold > 0 && totalCount >= cfg.totalViolationThreshold) {
-        autoSubmitted = true;
-      }
-      if (
-        !autoSubmitted &&
-        cfg.tabSwitchThreshold > 0 &&
-        tabSwitchCount >= cfg.tabSwitchThreshold
-      ) {
-        autoSubmitted = true;
-      }
-      if (
-        !autoSubmitted &&
-        cfg.flagAtViolationCount > 0 &&
-        totalCount >= cfg.flagAtViolationCount
-      ) {
-        flagged = true;
-        await this.attempts.setStatus(input.tenantId, input.attemptId, 'FLAGGED');
-      }
+      const autoSubmitted = totalCount >= limit;
 
       if (autoSubmitted) {
         await this.attempts.submit({
@@ -109,7 +92,7 @@ export class RecordViolationsUseCase {
         });
       }
 
-      return { inserted, totalViolations: totalCount, autoSubmitted, flagged };
+      return { inserted, totalViolations: totalCount, autoSubmitted, flagged: false };
     });
 
     if (result.autoSubmitted) {

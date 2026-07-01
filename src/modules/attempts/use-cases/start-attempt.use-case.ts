@@ -6,6 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import { MAX_EXAM_VIOLATIONS } from '../../exams/models/exam.model';
+import { resolveEffectiveMarks } from '../../exams/scoring/effective-marks';
 import { ExamAttemptModel } from '../models/exam-attempt.model';
 import {
   EXAM_ATTEMPT_REPOSITORY,
@@ -34,6 +36,10 @@ const seededShuffle = <T>(arr: T[], seed: bigint): T[] => {
 
 export interface StartAttemptResult {
   attempt: ExamAttemptModel;
+  // Effective tenant-wide violation limit (super-admin configurable) that the
+  // student UI mirrors as the warning denominator. Enforcement is still
+  // server-side; this is for display only.
+  violationLimit: number;
   questions: Array<{
     examQuestionId: string;
     questionId: string;
@@ -115,18 +121,32 @@ export class StartAttemptUseCase {
         eq.question.type,
         eq.question.payload as Record<string, unknown>,
       );
+      // Show the EFFECTIVE marks the student will actually be scored on, so the
+      // exam-level override (if configured) is reflected during conduct too.
+      const effective = resolveEffectiveMarks(exam, {
+        marks: eq.marks,
+        negativeMarks: eq.negativeMarks,
+      });
       return {
         examQuestionId: eq.id,
         questionId: eq.questionId,
         type: eq.question.type,
         payload,
         options: finalOpts,
-        marks: Number(eq.marks),
-        negativeMarks: Number(eq.negativeMarks),
+        marks: Number(effective.marks),
+        negativeMarks: Number(effective.negativeMarks),
       };
     });
 
-    return { attempt, questions: stripped };
+    // Effective limit = the tenant-wide super-admin setting (same value the
+    // violation-recording use-case enforces), falling back to the default.
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: input.tenantId },
+      select: { examViolationLimit: true },
+    });
+    const violationLimit = tenant?.examViolationLimit ?? MAX_EXAM_VIOLATIONS;
+
+    return { attempt, violationLimit, questions: stripped };
   }
 }
 

@@ -140,6 +140,11 @@ export interface OcrEngineResult {
   pageMetadata?: PageClassification[];
   /** Per-page layout detection (single/two-column). Absent if reorder was off. */
   layoutMetadata?: PageLayoutInfo[];
+  /** Post-OCR analysis artifacts (screenshot-first PDFs only): the per-page word
+   *  boxes + raw page images the engine already produced, so analyzePaper can run
+   *  at the runner over the SAME data without re-OCR. Absent on the Paddle path. */
+  analysisWordsByPage?: OcrWordBox[][];
+  analysisPageImages?: Buffer[];
 }
 
 /* ─────────────────────────────────────────── Tesseract: lazy-singleton */
@@ -160,10 +165,21 @@ const createSharedWorker = (): Promise<TesseractWorker> =>
 
 const getTesseract = (): Promise<TesseractWorker> => {
   if (!tesseractPromise) {
+    // MEASUREMENT (cold start): a COLD init means the singleton was null — either
+    // first job after boot, or a prior job called resetTesseract() (error path) and
+    // every subsequent upload now re-pays worker creation. The matching
+    // tesseract_init_completed line gives the exact init duration.
     // eslint-disable-next-line no-console
-    console.log('[ocr-engine] initializing Tesseract (eng) — first run downloads ~10MB model…');
-    tesseractPromise = createSharedWorker();
+    console.log('[ocr-timing] tesseract_init_started (COLD — singleton was null; first run downloads ~10MB model)…');
+    const initT0 = Date.now();
+    tesseractPromise = createSharedWorker().then((w) => {
+      // eslint-disable-next-line no-console
+      console.log(`[ocr-timing] tesseract_init_completed dur=${Date.now() - initT0}ms`);
+      return w;
+    });
   }
+  // NOTE: a WARM reuse logs nothing (the absence of a cold line on the 2nd upload
+  // proves the singleton was reused). Per-page logging here would be too noisy.
   return tesseractPromise;
 };
 
@@ -709,6 +725,20 @@ const schedulerRecognizer =
       ? sched.addJob('recognize', bytes, {}, { blocks: true })
       : sched.addJob('recognize', bytes)) as Promise<RecognizeResult>;
 
+/** A PDF file begins with the "%PDF-" magic signature. This is the AUTHORITATIVE way to
+ *  tell a PDF from an image buffer — content-types lie (S3/MinIO/fake-gcs often return
+ *  `application/octet-stream`) and storage keys may lack a `.pdf` extension. */
+export const isPdfBytes = (bytes: Buffer): boolean =>
+  bytes.length >= 5 && bytes.subarray(0, 5).toString('latin1') === '%PDF-';
+
+/** Robust PDF-input detection for OCR routing: magic bytes (authoritative) OR a NORMALISED
+ *  application/pdf content-type (params/case ignored) OR a `.pdf` storage key. A PDF that
+ *  matches ANY of these MUST be rasterised page-by-page before Tesseract, never OCR'd raw. */
+const isPdfInput = (bytes: Buffer, mime: string | undefined, storageKey?: string): boolean =>
+  isPdfBytes(bytes) ||
+  (mime ?? '').split(';')[0].trim().toLowerCase() === 'application/pdf' ||
+  (storageKey ?? '').toLowerCase().endsWith('.pdf');
+
 const runOcr = async (
   bytes: Buffer,
   opts: { withWords?: boolean; withBoxes?: boolean } | boolean = false,
@@ -724,6 +754,17 @@ const runOcr = async (
   const wantWords = o.withWords === true;
   const wantBoxes = o.withBoxes === true;
   const needHocr = wantWords || wantBoxes;
+  // HARD GUARD — Tesseract/leptonica CANNOT read PDFs. A PDF buffer reaching recognize()
+  // means a broken routing path (a PDF must be rasterised to PNG/JPEG, one image per page,
+  // first). Fail LOUD with an explicit message instead of the opaque leptonica error
+  // "pixReadStream: Pdf reading is not supported". This is an assertion, never silently
+  // continue — the OCR contract is image-buffers-only.
+  if (isPdfBytes(bytes)) {
+    throw new Error(
+      'OCR routing error: a PDF buffer reached Tesseract.recognize(). PDFs MUST be ' +
+        'rasterised to PNG/JPEG (render every page) before OCR — see extractDrafts PDF routing.',
+    );
+  }
   const t0 = Date.now();
   // The HOCR path (blocks: true) gives us per-word bboxes (needed for column
   // reorder) AND per-word confidences (needed for handwriting routing). The
@@ -824,6 +865,25 @@ interface OcrPdfResult {
    *  page + coordinates + best-effort option count). Present only when ocrPdf
    *  was called with { screenshotFirst, putObject, figureKeyPrefix }. */
   visualDrafts?: OcrEngineDraft[];
+  /** Per-page OCR word boxes (index = pageNumber-1). Surfaced so the post-OCR
+   *  analysis (analyzePaper) can run at the runner with the SAME words/images the
+   *  engine used — no re-OCR, no duplicated pipeline. Present only screenshot-first. */
+  analysisWordsByPage?: OcrWordBox[][];
+  /** Per-page RAW render buffers (index = pageNumber-1), paired with the words above. */
+  analysisPageImages?: Buffer[];
+}
+
+/**
+ * Resumable OCR (P0) — the deterministic per-page OCR output. Persisting this
+ * after every page and replaying it on resume is byte-identical to re-running
+ * `runOcr` on the same (deterministic) cleaned page image, so resumed jobs
+ * produce identical drafts. Carried in OcrPageCheckpoint.artifact.
+ */
+export interface CachedPageOcr {
+  text: string;
+  confidence: number;
+  wordConfidences: number[];
+  wordBoxes: OcrWordBox[];
 }
 
 const ocrPdf = async (
@@ -836,6 +896,17 @@ const ocrPdf = async (
     screenshotFirst?: boolean;
     putObject?: (key: string, body: Buffer, contentType: string) => Promise<void>;
     figureKeyPrefix?: string;
+    /**
+     * Resumable OCR (P0) — ADDITIVE checkpoint seam. When both are absent the
+     * page loop is byte-identical to before (180/180 protected).
+     *   loadPageOcr: return a previously-checkpointed artifact to SKIP this
+     *                page's OCR (resume); return null to OCR it normally.
+     *   savePageOcr: persist a freshly-OCR'd page's artifact (called once per
+     *                page, before segmentation). Both are best-effort — a thrown
+     *                hook degrades to a normal (non-resumable) OCR of that page.
+     */
+    loadPageOcr?: (pageNumber: number) => Promise<CachedPageOcr | null> | CachedPageOcr | null;
+    savePageOcr?: (pageNumber: number, totalPages: number, data: CachedPageOcr) => Promise<void> | void;
   } = {},
 ): Promise<OcrPdfResult> => {
   const t0 = Date.now();
@@ -848,15 +919,31 @@ const ocrPdf = async (
     opts.screenshotFirst === true && !!opts.putObject && !!opts.figureKeyPrefix;
   // Screenshot-first segmentation needs per-word boxes too.
   const withBoxes = reorderColumns || screenshotFirst;
+  // MEASUREMENT (cold start): the window between `[ocr-timing] tesseract_started`
+  // and `[OCR] Render PDF` was previously unmeasured — it hides (a) the pdf-to-img
+  // ESM import, (b) pdfjs DOCUMENT creation via pdf(bytes), and (c) the
+  // watermark-clean dynamic import. Each is bracketed below so the "LONG BREAK"
+  // can be pinned to the exact sub-step. dur=… is per-step; +…ms is since ocrPdf entry.
+  const ocrPdfT0 = Date.now();
+  const pdfImgT0 = Date.now();
   const pdf = await getPdfToImg();
+  // eslint-disable-next-line no-console
+  console.log(`[ocr-timing] pdftoimg_module_ready +${Date.now() - ocrPdfT0}ms dur=${Date.now() - pdfImgT0}ms`);
+  const docOpenT0 = Date.now();
   const doc = await pdf(bytes, { scale: 2 });
   const totalPages = doc.length;
+  // eslint-disable-next-line no-console
+  console.log(
+    `[ocr-timing] pdf_document_opened +${Date.now() - ocrPdfT0}ms dur=${Date.now() - docOpenT0}ms pages=${totalPages} bytes=${bytes.length}`,
+  );
 
   const pages: OcrPageResult[] = [];
   let confSum = 0;
   let pageCount = 0;
   const wordConfidences: number[] = [];
   const visualDrafts: OcrEngineDraft[] = [];
+  const analysisWordsByPage: OcrWordBox[][] = [];
+  let analysisPageImages: Buffer[] = [];
   const pageTraces: import('./visual-segment').PageMarkerTrace[] = [];
   // Carries a question that ran to the bottom of one page so its tail on the next
   // page can be stitched into the same crop (one question = one crop across pages).
@@ -875,17 +962,26 @@ const ocrPdf = async (
     let tClean = 0;
     let tOcr = 0;
     let tSeg = 0;
+    // MEASUREMENT ONLY: display-page cleaning (cleanPageForDisplay → flattenIllumination
+    // + removeChromeComponents) runs per page inside the segmentation tail. It is
+    // DISPLAY-only (never feeds OCR) but adds to total job time, so it is timed
+    // separately from true segmentation to expose hidden per-page cost.
+    let tDisplay = 0;
 
+    const wcImportT0 = Date.now();
     const { cleanPageImage, buildFlatField, buildWatermarkMask } =
       await import('./watermark-clean');
+    // eslint-disable-next-line no-console
+    console.log(`[ocr-timing] watermark_module_loaded +${Date.now() - ocrPdfT0}ms dur=${Date.now() - wcImportT0}ms`);
     const renderT0 = Date.now();
     const pageBuffers: Buffer[] = [];
     for await (const p of doc) pageBuffers.push(p);
-    const m = pageBuffers.length ? await sharp(pageBuffers[0]).metadata() : { width: 0, height: 0 };
+    analysisPageImages = pageBuffers; // surface raw renders for the post-OCR analysis seam
+    const m = pageBuffers.length ? await sharp(pageBuffers[0]).metadata() : { width: 0, height: 0, density: undefined };
     // eslint-disable-next-line no-console
     console.log(
       `[OCR] Render PDF: ${ms(Date.now() - renderT0)} · pages=${pageBuffers.length} · ` +
-        `resolution=${m.width ?? 0}x${m.height ?? 0} · mem=${memMB()}MB`,
+        `resolution=${m.width ?? 0}x${m.height ?? 0} · dpi=${(m as { density?: number }).density ?? 'unset'} · mem=${memMB()}MB`,
     );
 
     const flatT0 = Date.now();
@@ -899,11 +995,26 @@ const ocrPdf = async (
         `mem(after)=${memMB()}MB`,
     );
 
+    // DOCUMENT-DRIVEN PROFILE — derive this PDF's own thresholds (ink/luma cutoffs, glyph
+    // geometry, watermark luma bounds, densities) from its rendered pages + flat field so the
+    // mask + display passes ADAPT to the document instead of reading static env values. Word
+    // boxes aren't available until OCR runs, so geometry here is page-relative; the per-page
+    // segmentation still uses its own per-page glyph stats. Pure statistics, value-free.
+    const { computeDocumentProfile } = await import('./document-profile');
+    const docProfile = await computeDocumentProfile(pageBuffers, [], flatField);
+    // eslint-disable-next-line no-console
+    console.log(
+      `[OCR] Document profile: inkValley=${docProfile.inkValley} coreDark=${docProfile.coreDark} ` +
+        `paperWhite=${docProfile.paperWhite} brightCeil=${docProfile.brightCeil} lineH=${docProfile.lineHeight} ` +
+        `cols=${docProfile.columnCount} textDens=${docProfile.textDensity.toFixed(3)} ` +
+        `wmFloor=${docProfile.wmGreyFloor} wmCeil=${docProfile.wmBrightCeil} repeatFrac=${docProfile.repeatFrac.toFixed(3)}`,
+    );
+
     // DISPLAY-ONLY: large-watermark mask (big logos / diagonal banners / central
     // stamps) from the flat field. Gates the crop cleanup so only LARGE persistent
     // watermark blobs are removal candidates; thin lines, small labels and page
     // codes can never be whitened. Pure CPU, computed once; null when no flat field.
-    const watermarkMask = buildWatermarkMask(flatField);
+    const watermarkMask = buildWatermarkMask(flatField, docProfile);
     // eslint-disable-next-line no-console
     console.log(
       `[OCR] Build Watermark Mask: ${watermarkMask ? `mask=${watermarkMask.width}x${watermarkMask.height}` : 'skipped (no flat field)'}`,
@@ -917,6 +1028,12 @@ const ocrPdf = async (
     // order in `finalizePage`, byte-identical to today. See the ORDERING
     // GUARANTEE in extractDrafts. Default 1 → the exact current serial path.
     const parallelPages = Math.max(1, Math.min(16, Number(process.env.OCR_PARALLEL_PAGES) || 1));
+    // PAGE-WISE PROGRESS: in SERIAL mode the finalize tail runs interleaved with OCR, so it reports
+    // progress page-by-page as it goes. In POOLED mode the finalize tail runs only AFTER every page has
+    // OCR'd, so reporting there would make the bar jump 0→N at the very end. Instead the pooled path
+    // emits progress as each page's OCR COMPLETES (below), and the finalize tail stays silent here.
+    const emitProgressInFinalize = parallelPages <= 1;
+    let ocrCompleted = 0; // pooled-mode OCR-completion counter (progress reflects extraction, the slow part)
 
     // The serial per-page tail. Shared by the serial and pooled paths so the
     // unchanged pipeline runs through ONE code path; only WHO ran clean+OCR
@@ -936,6 +1053,17 @@ const ocrPdf = async (
         const segT0 = Date.now();
         try {
           const { segmentVisualDrafts } = await import('./visual-segment');
+          // STAGE 0 — page-level safe background clean, used ONLY as the crop display
+          // source. ONE watermark-suppressed page derived from the RAW page (flat-field +
+          // mask proof; unique content kept). Crops — incl. figure crops — are sliced from
+          // this, so they inherit a clean background WITHOUT per-crop cleaning. OCR input
+          // (`pageImage`), word boxes and segmentation are unaffected; no flat field ⇒ raw.
+          const { cleanPageForDisplay } = await import('./crop-display-clean');
+          // Pass this page's OCR word boxes so the deterministic chrome pass can apply its
+          // reading-order + word-adjacency gate (display-only; never feeds OCR/segmentation).
+          const dispT0 = Date.now();
+          const displayPage = await cleanPageForDisplay(rawPageImage, flatField, watermarkMask, wordBoxes);
+          tDisplay += Date.now() - dispT0;
           const {
             drafts: vd,
             carryOut,
@@ -953,10 +1081,11 @@ const ocrPdf = async (
             // only if it sits inside a large persistent watermark blob (thin lines /
             // small labels / page codes are kept regardless of the per-pixel rules).
             displayMask: watermarkMask,
-            // DISPLAY-ONLY: crop the SHOWN image from the RAW page so the pre-OCR
-            // flat-field division can't brighten/erase dark content in the crop.
-            // OCR still ran on the cleaned `pageImage` above — unchanged.
-            displaySource: rawPageImage,
+            // DISPLAY-ONLY: crop the SHOWN image from the STAGE 0 safe page (page-level
+            // watermark/logo/banner suppression with full content protection); falls back
+            // to the raw page when there is no flat field. OCR still ran on the cleaned
+            // `pageImage` above — unchanged.
+            displaySource: displayPage,
           });
           visualDrafts.push(...vd);
           pageTraces.push(trace);
@@ -973,6 +1102,8 @@ const ocrPdf = async (
       }
       confSum += confidence;
       if (withWords && pageWords.length > 0) wordConfidences.push(...pageWords);
+      // Surface this page's word boxes for the post-OCR analysis seam (no re-OCR).
+      analysisWordsByPage[pageNumber - 1] = wordBoxes;
 
       // Column reorder when HOCR boxes are present; otherwise keep tesseract's
       // raw text (single-column pages already read correctly that way).
@@ -1010,7 +1141,9 @@ const ocrPdf = async (
       // Phase 2 — live progress: fire-and-forget. Caller's repo write must not
       // block the OCR loop; if it throws we swallow + log (the OCR work itself
       // already succeeded and we don't want a progress-row failure to undo it).
-      if (opts.onPageComplete) {
+      // Pooled mode emits progress at OCR-completion time instead (see below), so
+      // this tail stays silent there to avoid a single end-of-run 0→N jump.
+      if (opts.onPageComplete && emitProgressInFinalize) {
         try {
           await opts.onPageComplete(pageNumber, totalPages);
         } catch (err) {
@@ -1024,6 +1157,49 @@ const ocrPdf = async (
       }
     };
 
+    // Resumable OCR (P0) — wrap runOcr so a checkpointed page SKIPS OCR (resume)
+    // and a freshly-OCR'd page is checkpointed. When neither hook is injected this
+    // is exactly `runOcr` — no behaviour change. `recognize` is the pooled-path
+    // scheduler executor (undefined on the serial path).
+    const runOcrCached = async (
+      pageNumber: number,
+      pageImage: Buffer,
+      o: { withWords?: boolean; withBoxes?: boolean },
+      recognize?: RecognizeExec,
+    ): Promise<CachedPageOcr> => {
+      if (opts.loadPageOcr) {
+        try {
+          const cached = await opts.loadPageOcr(pageNumber);
+          if (cached) {
+            // eslint-disable-next-line no-console
+            console.log(`[ocr-engine] resume: page ${pageNumber} loaded from checkpoint (OCR skipped)`);
+            return cached;
+          }
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[ocr-engine] loadPageOcr failed for page ${pageNumber} (non-fatal, re-OCRing): ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          );
+        }
+      }
+      const out = await runOcr(pageImage, o, recognize);
+      if (opts.savePageOcr) {
+        try {
+          await opts.savePageOcr(pageNumber, totalPages, out);
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[ocr-engine] savePageOcr failed for page ${pageNumber} (non-fatal): ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          );
+        }
+      }
+      return out;
+    };
+
     if (parallelPages <= 1) {
       // SERIAL (default, OCR_PARALLEL_PAGES=1) — the exact current behaviour.
       let pageNumber = 0;
@@ -1033,10 +1209,18 @@ const ocrPdf = async (
         const pageImage = await cleanPageImage(rawPageImage, flatField);
         tClean += Date.now() - cleanT0;
         const ocrT0 = Date.now();
-        const { text, confidence, wordConfidences: pageWords, wordBoxes } = await runOcr(pageImage, {
-          withWords,
-          withBoxes,
-        });
+        // MEASUREMENT (cold start): mark the FIRST page's OCR call. The gap between
+        // this and the following tesseract_init_started/_completed isolates worker
+        // init from recognize time; on warm runs there is no init line in between.
+        if (pageNumber === 1) {
+          // eslint-disable-next-line no-console
+          console.log(`[ocr-timing] first_page_ocr_started +${Date.now() - ocrPdfT0}ms (since ocrPdf entry)`);
+        }
+        const { text, confidence, wordConfidences: pageWords, wordBoxes } = await runOcrCached(
+          pageNumber,
+          pageImage,
+          { withWords, withBoxes },
+        );
         tOcr += Date.now() - ocrT0;
         await finalizePage(pageNumber, pageImage, rawPageImage, text, confidence, pageWords, wordBoxes);
       }
@@ -1058,19 +1242,41 @@ const ocrPdf = async (
       const perPage: Array<PageOcr | undefined> = new Array(pageBuffers.length);
       // eslint-disable-next-line no-console
       console.log(`[ocr-engine] OCR_PARALLEL_PAGES=${parallelPages} — pooled page OCR`);
+      // MEASUREMENT (cold start): pooled path — getScheduler(N) above cold-creates N
+      // workers on first use (then cached). first_page_ocr_started marks the dispatch.
+      // eslint-disable-next-line no-console
+      console.log(`[ocr-timing] first_page_ocr_started +${Date.now() - ocrPdfT0}ms (pooled, since ocrPdf entry)`);
       await runBounded(pageBuffers.length, parallelPages, async (idx) => {
         const rawPageImage = pageBuffers[idx];
         const cleanT0 = Date.now();
         const pageImage = await cleanPageImage(rawPageImage, flatField);
         tClean += Date.now() - cleanT0;
         const ocrT0 = Date.now();
-        const { text, confidence, wordConfidences: pageWords, wordBoxes } = await runOcr(
+        const { text, confidence, wordConfidences: pageWords, wordBoxes } = await runOcrCached(
+          idx + 1,
           pageImage,
           { withWords, withBoxes },
           recognize,
         );
         tOcr += Date.now() - ocrT0;
         perPage[idx] = { pageImage, rawPageImage, text, confidence, pageWords, wordBoxes };
+        // PAGE-WISE PROGRESS (pooled): report each page the moment its OCR finishes — in completion
+        // order (not page order), which is exactly what a "pages processed" bar should reflect while the
+        // slow extraction runs. Fire-and-forget; a progress-row failure never affects OCR.
+        if (opts.onPageComplete) {
+          ocrCompleted += 1;
+          const done = ocrCompleted;
+          try {
+            await opts.onPageComplete(done, pageBuffers.length);
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              `[ocr-engine] onPageComplete (pooled) failed (non-fatal): ${
+                err instanceof Error ? err.message : String(err)
+              }`,
+            );
+          }
+        }
       });
       // Serial, page-ascending segmentation/draft tail (unchanged). Release each
       // page's images right after use to keep peak memory bounded.
@@ -1088,7 +1294,8 @@ const ocrPdf = async (
     // eslint-disable-next-line no-console
     console.log(
       `[OCR] Clean Pages: ${ms(tClean)} · OCR Extraction: ${ms(tOcr)} · ` +
-        `Segmentation: ${ms(tSeg)} · mem=${memMB()}MB`,
+        `Segmentation: ${ms(tSeg)} (of which Display-Clean: ${ms(tDisplay)}, ` +
+        `Segment-only: ${ms(Math.max(0, tSeg - tDisplay))}) · mem=${memMB()}MB`,
     );
   } finally {
     await doc.destroy().catch(() => {
@@ -1168,6 +1375,8 @@ const ocrPdf = async (
     pageCount,
     wordConfidences,
     visualDrafts: visualDrafts.length > 0 ? visualDrafts : undefined,
+    analysisWordsByPage: visualDrafts.length > 0 ? analysisWordsByPage : undefined,
+    analysisPageImages: visualDrafts.length > 0 ? analysisPageImages : undefined,
   };
 };
 
@@ -1195,6 +1404,9 @@ export const extractDrafts = async (
      * MUST NOT break extraction — wrap your handler in try/catch upstream.
      */
     onPageComplete?: (processed: number, total: number) => Promise<void> | void;
+    /** Resumable OCR (P0) — forwarded to ocrPdf's checkpoint seam. No-op when absent. */
+    loadPageOcr?: (pageNumber: number) => Promise<CachedPageOcr | null> | CachedPageOcr | null;
+    savePageOcr?: (pageNumber: number, totalPages: number, data: CachedPageOcr) => Promise<void> | void;
   } = {},
 ): Promise<OcrEngineResult> => {
   const withWords = opts.withWords === true;
@@ -1204,7 +1416,11 @@ export const extractDrafts = async (
   const screenshotFirst =
     process.env.OCR_TEXT_RECONSTRUCTION !== 'true' && !!opts.putObject && !!opts.figureKeyPrefix;
 
-  if (mime === 'application/pdf') {
+  // ROOT ROUTING: a PDF is detected ROBUSTLY (magic %PDF- bytes / normalised content-type /
+  // .pdf key), NOT by a strict `mime === 'application/pdf'`. Storage adapters routinely return
+  // `application/octet-stream` for a PDF, which previously fell through to the image path and
+  // handed the raw PDF to Tesseract. Any PDF now takes the rasterise-every-page route below.
+  if (isPdfInput(bytes, mime, opts.storageKey)) {
     const engineT0 = Date.now();
     // Slice 2.2 — opt-in: route PDF OCR to the Python PaddleOCR service for
     // dramatically better recognition of circled-digit options + dense layouts.
@@ -1273,6 +1489,10 @@ export const extractDrafts = async (
         screenshotFirst,
         putObject: opts.putObject,
         figureKeyPrefix: opts.figureKeyPrefix,
+        // Resumable OCR (P0) — only the tesseract per-page path is checkpointable
+        // (Paddle returns the whole doc atomically). No-op when hooks are absent.
+        loadPageOcr: opts.loadPageOcr,
+        savePageOcr: opts.savePageOcr,
       });
       // eslint-disable-next-line no-console
       console.log(
@@ -1446,6 +1666,8 @@ export const extractDrafts = async (
       drafts,
       pageMetadata: classifications,
       layoutMetadata,
+      analysisWordsByPage: ocrPdfResult.analysisWordsByPage,
+      analysisPageImages: ocrPdfResult.analysisPageImages,
     };
     if (withWords) result.signalRaw = { text: combinedText, pageCount, wordConfidences, sentinel };
     return result;
@@ -1466,6 +1688,12 @@ export const extractDrafts = async (
       const { drafts: visual } = await segmentVisualDrafts(imageBytes, wordBoxes, 1, {
         putObject: opts.putObject!,
         figureKeyPrefix: opts.figureKeyPrefix!,
+        // RAW CROP SOURCE (hybrid: "crop image must remain raw PDF pixels"). OCR runs on the cleaned
+        // `imageBytes` (better recognition through a watermark), but the SHOWN crop is sliced from the
+        // ORIGINAL upload `bytes` — never the watermark/background-cleaned copy — exactly like the PDF
+        // path (which crops from rawPageImage). Without this, a single-image upload's crop carried the
+        // cleanPageImage pixel changes (faint-stroke / diagram damage).
+        displaySource: bytes,
       });
       if (visual.length > 0) {
         // eslint-disable-next-line no-console

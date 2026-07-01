@@ -67,13 +67,23 @@ export class PrismaStudentRepository implements IStudentRepository {
     const where: Prisma.StudentWhereInput = { tenantId: filter.tenantId };
     if (filter.unallocated) {
       where.classrooms = { none: {} };
-    } else if (filter.batch || filter.section) {
+    } else if (
+      (filter.year && filter.year.length > 0) ||
+      (filter.subject && filter.subject.length > 0) ||
+      (filter.batch && filter.batch.length > 0) ||
+      (filter.section && filter.section.length > 0)
+    ) {
+      // Hierarchy (Academic Year → Discipline → Batch → Section) maps to classroom
+      // columns (year/subject/name/section) resolved via membership. Any subset of
+      // levels narrows the set, so a partial hierarchy (e.g. year+discipline only)
+      // still filters.
       where.classrooms = {
         some: {
           classroom: {
-            ...(filter.batch ? { name: filter.batch } : {}),
-            ...(filter.section ? { section: filter.section } : {}),
-            ...(filter.subject ? { subject: filter.subject } : {}),
+            ...(filter.year && filter.year.length > 0 ? { year: { in: filter.year } } : {}),
+            ...(filter.batch && filter.batch.length > 0 ? { name: { in: filter.batch } } : {}),
+            ...(filter.section && filter.section.length > 0 ? { section: { in: filter.section } } : {}),
+            ...(filter.subject && filter.subject.length > 0 ? { subject: { in: filter.subject } } : {}),
           },
         },
       };
@@ -86,46 +96,6 @@ export class PrismaStudentRepository implements IStudentRepository {
         { user: { email: { contains: filter.q, mode: 'insensitive' } } },
       ];
     }
-
-    // ─── TEMP DIAGNOSTIC (remove after debugging students-list count) ───
-    // Isolates which condition reduces the result set. Each count adds ONE
-    // constraint on top of the previous.
-    const membershipWhere = where.classrooms ? { classrooms: where.classrooms } : {};
-    const qWhere = where.OR ? { OR: where.OR } : {};
-    const [cTenant, cMembership, cBranch, cFull] = await this.prisma.$transaction([
-      this.prisma.student.count({ where: { tenantId: filter.tenantId } }),
-      this.prisma.student.count({
-        where: { tenantId: filter.tenantId, ...membershipWhere },
-      }),
-      this.prisma.student.count({
-        where: {
-          tenantId: filter.tenantId,
-          ...membershipWhere,
-          ...(filter.branchId ? { branchId: filter.branchId } : {}),
-        },
-      }),
-      this.prisma.student.count({ where }),
-    ]);
-    // eslint-disable-next-line no-console
-    console.log('[students.list] input =', {
-      tenantId: filter.tenantId,
-      batch: filter.batch,
-      section: filter.section,
-      subject: filter.subject,
-      branchId: filter.branchId,
-      q: filter.q,
-      unallocated: filter.unallocated,
-    });
-    // eslint-disable-next-line no-console
-    console.log('[students.list] WHERE =', JSON.stringify(where, null, 2));
-    // eslint-disable-next-line no-console
-    console.log('[students.list] counts =', {
-      tenantOnly: cTenant,
-      afterMembership: cMembership,
-      afterBranchId: cBranch,
-      afterAll_q: cFull,
-    });
-    // ─── END TEMP DIAGNOSTIC ───
 
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.student.findMany({

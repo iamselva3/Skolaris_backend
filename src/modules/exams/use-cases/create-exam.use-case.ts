@@ -10,6 +10,8 @@ export interface CreateExamInput {
   description?: string;
   durationSeconds: number;
   defaultNegativeMarks?: number;
+  examMarksPerQuestion?: number | null;
+  examNegativeMarks?: number | null;
   randomizeQuestions?: boolean;
   randomizeOptions?: boolean;
   opensAt?: string;
@@ -40,6 +42,8 @@ export class CreateExamUseCase {
       description: input.description ?? null,
       durationSeconds: input.durationSeconds,
       defaultNegativeMarks: input.defaultNegativeMarks,
+      examMarksPerQuestion: input.examMarksPerQuestion,
+      examNegativeMarks: input.examNegativeMarks,
       randomizeQuestions: input.randomizeQuestions,
       randomizeOptions: input.randomizeOptions,
       opensAt: input.opensAt ? new Date(input.opensAt) : null,

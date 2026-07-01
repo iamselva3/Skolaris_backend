@@ -4,6 +4,7 @@ import { ocrConfig } from '../../shared/config/ocr.config';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { QuestionsModule } from '../questions/questions.module';
 import { UploadsModule } from '../uploads/uploads.module';
+import { OcrAnalysisModule } from '../ocr-analysis/ocr-analysis.module';
 import { OcrCallbackController } from './controllers/ocr-callback.controller';
 import { OcrController } from './controllers/ocr.controller';
 import { OcrBatchController } from './controllers/ocr-batch.controller';
@@ -44,6 +45,7 @@ import { AnswerKeyOcrService } from './services/answer-key-ocr';
     UploadsModule,
     QuestionsModule,
     NotificationsModule,
+    OcrAnalysisModule,
   ],
   controllers: [OcrController, OcrBatchController, OcrCallbackController, OcrOpsController],
   providers: [

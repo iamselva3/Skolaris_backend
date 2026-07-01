@@ -1,0 +1,579 @@
+Running production pipeline (render @ 200dpi) on: PHYCHE.pdf
+================================================================================
+DOCUMENT: PHYCHE
+  pages=18  logical=50  complete=50  expectedOptions=4
+  cropGate=PASS  stage1=True  deliver=True  degradedPages=0
+  COORD ALIGNED=True  docScale=2.778  reasons=none
+================================================================================
+
+Q1  id=q0_220_1  pages=[0]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=30894 coordFit=0.957x0.36 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q2  id=q0_303_2  pages=[0]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=28678 coordFit=0.957x0.459 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q3  id=q0_386_3  pages=[0]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=84869 coordFit=0.957x0.747 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q4  id=q0_629_4  pages=[0]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=29212 coordFit=0.957x0.846 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q5  id=q0_712_5  pages=[0, 1]  cols=['FULL/SPAN', 'LEFT']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=35690 coordFit=0.957x0.931 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q6  id=q1_63_6  pages=[1]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=34918 coordFit=0.949x0.173 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q7  id=q1_146_7  pages=[1]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=75350 coordFit=0.949x0.447 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q8  id=q1_376_8  pages=[1]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=5 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=106968 coordFit=0.949x0.802 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q9  id=q1_675_9  pages=[1]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=38720 coordFit=0.949x0.913 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q10  id=q2_115_10  pages=[2]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=120142 coordFit=0.941x0.446 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q11  id=q2_376_11  pages=[2, 3]  cols=['FULL/SPAN', 'LEFT']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=183204 coordFit=0.941x0.942 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q12  id=q3_150_12  pages=[3]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=132720 coordFit=0.949x0.497 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q13  id=q3_418_13  pages=[3]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=31260 coordFit=0.949x0.596 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q14  id=q3_501_14  pages=[3]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=41917 coordFit=0.949x0.713 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q15  id=q3_601_15  pages=[3]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=5 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=38796 coordFit=0.949x0.819 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q16  id=q3_690_16  pages=[3]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=28632 coordFit=0.949x0.921 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q17  id=q3_776_17  pages=[3, 4]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=40844 coordFit=0.95x0.939 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q18  id=q4_124_18  pages=[4]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=40096 coordFit=0.95x0.265 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q19  id=q4_223_19  pages=[4]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=74112 coordFit=0.95x0.551 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q20  id=q4_464_20  pages=[4]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=5 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=39849 coordFit=0.95x0.719 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q21  id=q4_606_21  pages=[4]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=40294 coordFit=0.95x0.919 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q22  id=q4_774_22  pages=[4, 5]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=78647 coordFit=0.95x0.938 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q23  id=q5_325_23  pages=[5, 6]  cols=['FULL/SPAN', 'LEFT']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=178744 coordFit=0.909x0.933 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q24  id=q6_121_24  pages=[6]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=5 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=153218 coordFit=0.956x0.454 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q25  id=q6_383_25  pages=[6]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=208540 coordFit=0.956x0.919 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q26  id=q6_774_26  pages=[6, 7]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=102647 coordFit=0.956x0.938 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q27  id=q7_255_27  pages=[7]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=30186 coordFit=0.904x0.413 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q28  id=q7_347_28  pages=[7]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=82947 coordFit=0.904x0.72 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q29  id=q7_606_29  pages=[7, 8]  cols=['FULL/SPAN', 'LEFT']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=97542 coordFit=0.904x0.947 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'PASS', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q30  id=q8_193_30  pages=[8]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=117982 coordFit=0.94x0.635 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q31  id=q8_534_31  pages=[8, 9]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=110849 coordFit=0.94x0.948 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q32  id=q9_73_32  pages=[9]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=159987 coordFit=0.948x0.641 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q33  id=q9_540_33  pages=[9]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=120316 coordFit=0.948x0.948 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'PASS', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q34  id=q10_128_34  pages=[10]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=104595 coordFit=0.953x0.499 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q35  id=q10_420_35  pages=[10]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=6 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=136033 coordFit=0.953x0.861 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q36  id=q11_118_36  pages=[11]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=123633 coordFit=0.953x0.53 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q37  id=q11_446_37  pages=[11]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=104211 coordFit=0.953x0.818 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q38  id=q11_688_38  pages=[11, 12]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=129396 coordFit=0.953x0.836 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q39  id=q12_452_39  pages=[12]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=90077 coordFit=0.953x0.798 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q40  id=q12_672_40  pages=[12, 13]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=73305 coordFit=0.953x0.914 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q41  id=q13_122_41  pages=[13]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=115254 coordFit=0.946x0.562 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q42  id=q13_473_42  pages=[13]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=162301 coordFit=0.946x0.937 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q43  id=q14_43_43  pages=[14]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=176318 coordFit=0.952x0.44 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'PASS', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q44  id=q14_371_44  pages=[14]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=127885 coordFit=0.952x0.807 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q45  id=q14_679_45  pages=[14, 15]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=128232 coordFit=0.956x0.931 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q46  id=q15_246_46  pages=[15]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=195415 coordFit=0.956x0.924 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q47  id=q16_154_47  pages=[16]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=68794 coordFit=0.828x0.412 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'N/A', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q48  id=q16_347_48  pages=[16]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=32703 coordFit=0.828x0.548 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'N/A', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q49  id=q16_462_49  pages=[16, 17]  cols=['FULL/SPAN', 'LEFT']
+  OWNERSHIP : ownerOk=True boxes=2 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=2 pngBytes=92535 coordFit=0.828x0.832 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=False after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'PASS', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+Q50  id=q17_296_50  pages=[17]  cols=['FULL/SPAN']
+  OWNERSHIP : ownerOk=True boxes=1 options=4 completeness=1.0 foreignOwnership=0 detached=0
+  RECOVER   : missing=none
+  CROP      : regions=1 pngBytes=95482 coordFit=0.863x0.795 of 1653x2339 suspect=False
+  REPAIR    : before=clean grew=True after=clean
+  VALIDATE  : boundaryCut=clean numberVisible=True validCrop=True
+              cropOwnership={'question_number': 'PASS', 'question_text': 'PASS', 'options': 'PASS', 'continuation': 'N/A', 'diagram': 'PASS', 'graph': 'N/A', 'table': 'N/A', 'equation': 'PASS', 'chemical_structure': 'N/A'}
+  INTEGRITY : missing=none detached=none
+  DELIVER   : DELIVER
+      - ownership complete, coords aligned, crop in-bounds, number visible, no cuts
+
+================================================================================
+BUILD VALIDATION REPORT  —  PHYCHE
+--------------------------------------------------------------------------------
+  Logical Questions         : 50
+  Ownership Count           : 50
+  Complete Questions        : 50
+  Crop Count                : 50
+  Delivered Count           : 50
+  Trace DELIVER             : 50
+  Boundary Violations       : 0
+  Foreign Ownership         : 0
+  Missing Options           : 0
+  Detached Options          : 0
+  Visual Ownership Issues   : 0
+  Cross-page Issues         : 12
+  Cross-column Issues       : 0
+  Stage 1 N=N=C             : PASS
+  Stage 2 N=N=C             : PASS
+  VERDICT                   : PASS
+================================================================================
+  crops saved to: D:\Skolaris\Skolaris Backend\ocr-cleanup\crop-trace-out\PHYCHE

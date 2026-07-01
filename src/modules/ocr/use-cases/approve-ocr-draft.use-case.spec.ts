@@ -92,6 +92,16 @@ describe('ApproveOcrDraftUseCase', () => {
       markFinished: jest.fn(),
       markFailed: jest.fn(),
       updateProgress: jest.fn(),
+      markRunning: jest.fn().mockResolvedValue({ attemptCount: 1 }),
+      markPaused: jest.fn().mockResolvedValue(undefined),
+      markResuming: jest.fn().mockResolvedValue(undefined),
+      markCompletedStatus: jest.fn().mockResolvedValue(undefined),
+      savePageCheckpoint: jest.fn().mockResolvedValue(undefined),
+      loadPageCheckpoint: jest.fn().mockResolvedValue(null),
+      saveResultCheckpoint: jest.fn().mockResolvedValue(undefined),
+      loadResultCheckpoint: jest.fn().mockResolvedValue(null),
+      findResumable: jest.fn().mockResolvedValue([]),
+      failExhausted: jest.fn().mockResolvedValue(0),
     };
     uploads = {
       create: jest.fn(),

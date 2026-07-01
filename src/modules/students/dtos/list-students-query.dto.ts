@@ -8,16 +8,24 @@ export class ListStudentsQueryDto extends PaginationQueryDto {
   branchId?: string;
 
   @IsOptional()
-  @IsString()
-  batch?: string;
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  @IsString({ each: true })
+  year?: string[];
 
   @IsOptional()
-  @IsString()
-  section?: string;
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  @IsString({ each: true })
+  batch?: string[];
 
   @IsOptional()
-  @IsString()
-  subject?: string;
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  @IsString({ each: true })
+  section?: string[];
+
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.split(',') : value))
+  @IsString({ each: true })
+  subject?: string[];
 
   @IsOptional()
   @IsString()

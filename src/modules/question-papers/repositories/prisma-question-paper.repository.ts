@@ -143,9 +143,21 @@ export class PrismaQuestionPaperRepository implements IQuestionPaperRepository {
           : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
         ...(input.archivedAt !== undefined ? { archivedAt: input.archivedAt } : {}),
+        ...(input.publishedAt !== undefined ? { publishedAt: input.publishedAt } : {}),
       },
     });
     return (await this.findById(tenantId, id))!;
+  }
+
+  async existsByTitle(tenantId: string, title: string, excludeId?: string): Promise<boolean> {
+    const count = await this.prisma.questionPaper.count({
+      where: {
+        tenantId,
+        title: { equals: title.trim(), mode: 'insensitive' },
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+    });
+    return count > 0;
   }
 
   async delete(tenantId: string, id: string): Promise<void> {
@@ -165,13 +177,52 @@ export class PrismaQuestionPaperRepository implements IQuestionPaperRepository {
     });
     if (!source) throw new NotFoundException('Question paper not found');
 
-    const created = await this.prisma.$transaction(async (tx) => {
+    const title = await this.uniqueTitle(tenantId, `Copy of ${source.title}`);
+    const created = await this.copyPaper(tenantId, source, {
+      title,
+      createdBy: newCreatedBy,
+      branchId,
+    });
+    return (await this.findById(tenantId, created.id))!;
+  }
+
+  async createWorkingCopy(
+    tenantId: string,
+    sourceId: string,
+    newCreatedBy: string,
+    branchId: string | null,
+  ): Promise<PaperRow> {
+    const source = await this.prisma.questionPaper.findFirst({
+      where: { id: sourceId, tenantId },
+      include: { questions: true },
+    });
+    if (!source) throw new NotFoundException('Question paper not found');
+
+    // A revision draft cannot reuse the (globally unique) published title, so it
+    // gets a versioned default the teacher can refine before publishing.
+    const title = await this.uniqueTitle(tenantId, `${source.title} v2`);
+    const created = await this.copyPaper(tenantId, source, {
+      title,
+      createdBy: newCreatedBy,
+      branchId,
+      parentPaperId: source.id,
+    });
+    return (await this.findById(tenantId, created.id))!;
+  }
+
+  /** Shared paper-copy primitive (clone + working copy): always lands a DRAFT with all questions. */
+  private copyPaper(
+    tenantId: string,
+    source: PrismaPaper & { questions: Array<{ questionId: string; position: number; marks: Prisma.Decimal; negativeMarks: Prisma.Decimal }> },
+    overrides: { title: string; createdBy: string; branchId: string | null; parentPaperId?: string },
+  ): Promise<PrismaPaper> {
+    return this.prisma.$transaction(async (tx) => {
       const paper = await tx.questionPaper.create({
         data: {
           tenantId,
-          branchId,
-          createdBy: newCreatedBy,
-          title: `Copy of ${source.title}`,
+          branchId: overrides.branchId,
+          createdBy: overrides.createdBy,
+          title: overrides.title,
           description: source.description,
           programId: source.programId,
           subjectId: source.subjectId,
@@ -179,6 +230,7 @@ export class PrismaQuestionPaperRepository implements IQuestionPaperRepository {
           defaultNegativeMarks: source.defaultNegativeMarks,
           totalMarks: source.totalMarks,
           status: 'DRAFT',
+          parentPaperId: overrides.parentPaperId ?? null,
         },
       });
       if (source.questions.length > 0) {
@@ -194,7 +246,17 @@ export class PrismaQuestionPaperRepository implements IQuestionPaperRepository {
       }
       return paper;
     });
-    return (await this.findById(tenantId, created.id))!;
+  }
+
+  /** Returns `base` if free, else `base (2)`, `base (3)`, … (case-insensitive, trimmed). */
+  private async uniqueTitle(tenantId: string, base: string): Promise<string> {
+    const trimmed = base.trim();
+    if (!(await this.existsByTitle(tenantId, trimmed))) return trimmed;
+    for (let n = 2; n < 1000; n++) {
+      const candidate = `${trimmed} (${n})`;
+      if (!(await this.existsByTitle(tenantId, candidate))) return candidate;
+    }
+    return `${trimmed} (${Date.now()})`;
   }
 
   async addQuestions(
@@ -348,6 +410,8 @@ export class PrismaQuestionPaperRepository implements IQuestionPaperRepository {
       totalMarks: Number(r.totalMarks),
       status: r.status as QuestionPaperStatus,
       archivedAt: r.archivedAt,
+      publishedAt: r.publishedAt,
+      parentPaperId: r.parentPaperId,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
       questionCount,

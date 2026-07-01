@@ -81,6 +81,7 @@ export class QuestionsController {
       difficulty: query.difficulty,
       type: query.type,
       q: query.q,
+      branchId: query.branchId,
       limit: query.limit ?? 50,
       offset: query.offset ?? 0,
     });

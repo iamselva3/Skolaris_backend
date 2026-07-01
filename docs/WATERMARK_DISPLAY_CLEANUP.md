@@ -15,12 +15,14 @@ cleaned image. The `OCR_DISPLAY_*` flags are referenced **only** in
 `crop-display-clean.ts`; `ocr-engine.ts` / `visual-segment.ts` read none of them.
 So display cleanup is structurally incapable of changing detection.
 
-## The two passes (both DEFAULT ON, env‑disableable)
+## Display-only cleanup flags (all DEFAULT ON, env‑disableable)
 
 | Flag | Default | Disable with | What it removes |
 |---|---|---|---|
 | `OCR_DISPLAY_BG_TRAIL` | **on** | `OCR_DISPLAY_BG_TRAIL=false` | faint watermark trail in **empty background** |
 | `OCR_DISPLAY_WM_PERSISTENT_CORE` | **on** | `OCR_DISPLAY_WM_PERSISTENT_CORE=false` | the **dark logo / diagonal text** inside the mask |
+| `OCR_DISPLAY_HSEP_CLEANUP` | **on** | `OCR_DISPLAY_HSEP_CLEANUP=false` | the **PDF page-end / footer horizontal separator rule** (Pass 4) |
+| `OCR_DISPLAY_CROP_TRIM` | **on** | `OCR_DISPLAY_CROP_TRIM=false` | surrounding **blank margins + trailing footer chrome** (word-box-anchored trim, after the passes above) |
 
 The only signal used to separate watermark from content is the **cross‑page flat
 field** (a watermark repeats at the same spot on every page; question content is
@@ -38,6 +40,42 @@ but only where the flat field confirms persistence. Unique content (flat‑brigh
 E) and content‑over‑watermark (darker‑than‑background, guard D) are still protected.
 It is **gated to the mask** (`persistentCore && mreg != null`): with no cross‑page
 mask there is no consensus, so the conservative dark guards stay.
+
+## Horizontal page-separator cleanup (`OCR_DISPLAY_HSEP_CLEANUP`, Pass 4)
+
+The horizontal mirror of the vertical-divider Pass 3. It **whitens in place** (never
+crops) the PDF page-end / footer separator rule that the segmentation crop drags in.
+It runs *inside* `cleanCropForDisplay` (before the crop trim), so a whitened line can't
+anchor the trim region.
+
+**What is removed:** a horizontal dark line that is (a) **full-width** (≥60% of the
+crop width), (b) **persistent across pages**, and (c) **vertically isolated** (blank
+band above/below).
+
+**What is protected (never removed):**
+- table borders, match-the-column grids, graph axes, formula rules, option underlines,
+  diagram lines — they are **unique to their page** ⇒ flat-bright ⇒ kept;
+- any line with **ink above/below it** (content-adjacent) ⇒ kept;
+- anything uncertain ⇒ kept.
+
+**Persistence is tested at ROW level, not per pixel.** A thin 2px rule is averaged to
+grey in the low-res (700px) cross-page flat field, so a per-pixel "darker-than-bg"
+guard (Pass 3) wrongly keeps it. Instead Pass 4 requires the flat field to **dip** at
+the line row vs ±`HSEP_FLAT_GAP`(6)px by ≥ `HSEP_DIP`(14) — a persistent horizontal
+dark band. A unique rule shows no dip and is kept. Tunables: `OCR_DISPLAY_HSEP_DARK=150`,
+`OCR_DISPLAY_HSEP_COVERAGE=0.6`, `OCR_DISPLAY_HSEP_ISOLATE=10`, `OCR_DISPLAY_HSEP_FLAT_GAP=6`,
+`OCR_DISPLAY_HSEP_DIP=14`.
+
+**Validation** (`scripts/diag-hsep-validate.ts`):
+- **RE NEET PST 3 (25pp):** OCR identity off-vs-on = **180/180, 0 per-draft diffs**
+  (number/coords/options/confidence/count). 10 full-width horizontal lines flagged →
+  **5 removed (all genuine page-separators) + 5 kept (unique diagram content: Q44
+  field-lines, Q151 DNA strand)**. Visual: Q6 separator gone + diagram/options intact;
+  Q180 table borders intact; Q108 Structure-X diagram intact. **0 content removed.**
+- **Second template (one-mark, 21pp, watermark-heavy):** **198/198, 0 diffs, 0 removed**
+  — conservative when persistence can't be confirmed (heavy watermark flattens the dip),
+  i.e. it under-removes rather than risk content. No regression with `BG_TRAIL` /
+  `PERSISTENT_CORE` / the crop trim (all on in both runs; 0 draft diffs).
 
 ## Validation (real RE NEET PST 3 paper, 25 pages)
 
@@ -75,8 +113,10 @@ pixels under the mask — rejected. This is the maximum safe removal.
 
 ## Rollback
 
-- Disable one pass: set `OCR_DISPLAY_BG_TRAIL=false` and/or
-  `OCR_DISPLAY_WM_PERSISTENT_CORE=false` (no deploy needed — read at request time).
+- Disable one feature (no deploy needed — read at request time):
+  `OCR_DISPLAY_BG_TRAIL=false`, `OCR_DISPLAY_WM_PERSISTENT_CORE=false`,
+  **`OCR_DISPLAY_HSEP_CLEANUP=false`** (horizontal separator), or
+  `OCR_DISPLAY_CROP_TRIM=false` (crop trim).
 - Disable all display cleanup: `OCR_DISPLAY_WATERMARK_CLEANUP=false`.
 - Full code revert: revert the commit touching `crop-display-clean.ts` — display‑only,
   no migration, no OCR/segmentation impact.

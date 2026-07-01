@@ -2,6 +2,10 @@ import { ConflictException, ForbiddenException, Inject, Injectable } from '@nest
 import * as argon2 from 'argon2';
 import { Role } from '../../../shared/common/enums/role.enum';
 import { AuthenticatedUser } from '../../auth/models/authenticated-user.model';
+import {
+  AssignMemberToClassroomUseCase,
+  ClassroomAssignment,
+} from '../../classrooms/use-cases/assign-member-to-classroom.use-case';
 import { IUserRepository, USER_REPOSITORY } from '../../users/repositories/user.repository';
 import {
   IStudentRepository,
@@ -18,6 +22,8 @@ export interface CreateStudentInput {
   classLabel?: string;
   rollNo?: string;
   parentContact?: string;
+  /** Optional one-step classroom assignment (find-or-create + attach). */
+  classroom?: ClassroomAssignment;
 }
 
 @Injectable()
@@ -25,6 +31,7 @@ export class CreateStudentUseCase {
   constructor(
     @Inject(STUDENT_REPOSITORY) private readonly students: IStudentRepository,
     @Inject(USER_REPOSITORY) private readonly users: IUserRepository,
+    private readonly assignToClassroom: AssignMemberToClassroomUseCase,
   ) {}
 
   async execute(input: CreateStudentInput): Promise<StudentWithUser> {
@@ -40,7 +47,7 @@ export class CreateStudentUseCase {
     }
 
     const passwordHash = await argon2.hash(input.password, { type: argon2.argon2id });
-    return this.students.createWithUser({
+    const created = await this.students.createWithUser({
       tenantId: input.actor.tenantId,
       branchId: input.branchId,
       classLabel: input.classLabel,
@@ -52,5 +59,18 @@ export class CreateStudentUseCase {
         passwordHash,
       },
     });
+
+    // One-step classroom assignment: find-or-create the classroom and attach the
+    // brand-new student. Reuses the Classroom service (single source of truth).
+    if (input.classroom) {
+      await this.assignToClassroom.execute({
+        actor: input.actor,
+        branchId: input.branchId,
+        assignment: input.classroom,
+        studentId: created.student.id,
+      });
+    }
+
+    return created;
   }
 }

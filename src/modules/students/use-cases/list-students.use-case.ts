@@ -13,9 +13,10 @@ export class ListStudentsUseCase {
   async execute(input: {
     tenantId: string;
     branchId?: string;
-    batch?: string;
-    section?: string;
-    subject?: string;
+    year?: string[];
+    batch?: string[];
+    section?: string[];
+    subject?: string[];
     q?: string;
     unallocated?: boolean;
     limit: number;
@@ -24,6 +25,7 @@ export class ListStudentsUseCase {
     const { data, total } = await this.students.list({
       tenantId: input.tenantId,
       branchId: input.branchId,
+      year: input.year,
       batch: input.batch,
       section: input.section,
       subject: input.subject,

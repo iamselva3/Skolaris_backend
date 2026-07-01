@@ -94,6 +94,7 @@ export class PrismaQuestionRepository implements IQuestionRepository {
     if (filter.topic) where.topic = filter.topic;
     if (filter.difficulty) where.difficulty = filter.difficulty as PrismaDifficulty;
     if (filter.type) where.type = filter.type as PrismaQuestionType;
+    if (filter.branchId) where.branchId = filter.branchId;
     if (filter.isActive !== undefined) where.isActive = filter.isActive;
     if (filter.q && filter.q.length > 0) {
       where.OR = [

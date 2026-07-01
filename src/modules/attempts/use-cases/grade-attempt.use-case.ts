@@ -6,6 +6,7 @@ import {
   IAnalyticsDispatcher,
 } from '../../../shared/queue/analytics-dispatcher';
 import { QuestionType } from '../../questions/models/question-type.enum';
+import { resolveEffectiveMarks } from '../../exams/scoring/effective-marks';
 import { GradingService } from '../grading/grading.service';
 import { ExamAttemptModel } from '../models/exam-attempt.model';
 import {
@@ -38,6 +39,18 @@ export class GradeAttemptUseCase {
       this.logger.warn(`Grading attempt ${attempt.id} in unexpected status ${attempt.status}`);
     }
 
+    // Exam-level marks override (all-or-nothing): when configured, every question
+    // is scored with the exam-wide values instead of its own. Single source of
+    // truth = resolveEffectiveMarks.
+    const exam = await this.prisma.exam.findUnique({
+      where: { id: attempt.examId },
+      select: { examMarksPerQuestion: true, examNegativeMarks: true },
+    });
+    const examMarks = {
+      examMarksPerQuestion: exam?.examMarksPerQuestion ?? null,
+      examNegativeMarks: exam?.examNegativeMarks ?? null,
+    };
+
     // Fetch all exam_questions for this exam, with the underlying question + options.
     const examQuestions = await this.prisma.examQuestion.findMany({
       where: { tenantId: input.tenantId, examId: attempt.examId },
@@ -53,6 +66,10 @@ export class GradeAttemptUseCase {
 
     for (const eq of examQuestions) {
       const ans = answerByEqId.get(eq.id);
+      const effective = resolveEffectiveMarks(examMarks, {
+        marks: eq.marks,
+        negativeMarks: eq.negativeMarks,
+      });
       const result = this.grading.grade(
         {
           type: eq.question.type as QuestionType,
@@ -63,8 +80,8 @@ export class GradeAttemptUseCase {
             isCorrect: o.isCorrect,
             position: o.position,
           })),
-          marks: eq.marks,
-          negativeMarks: eq.negativeMarks,
+          marks: effective.marks,
+          negativeMarks: effective.negativeMarks,
         },
         { payload: ans?.answerPayload ?? null },
       );

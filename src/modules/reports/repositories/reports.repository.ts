@@ -26,7 +26,14 @@ export interface ReportFilters {
   chapterId?: string;
   branchId?: string;
   classroomId?: string;
+  // Classroom-hierarchy strings: discipline = Classroom.subject, batch =
+  // Classroom.name, section = Classroom.section. Empty = "All" at that level.
+  discipline?: string;
+  batch?: string;
+  section?: string;
   q?: string;
+  subject?: string;
+  unallocated?: boolean | string;
   limit: number;
   offset: number;
 }
@@ -37,7 +44,7 @@ export interface Paged<T> {
 }
 
 export interface IReportsRepository {
-  getOverview(tenantId: string, createdBy?: string): Promise<ReportsOverview>;
+  getOverview(tenantId: string, createdBy?: string, branchId?: string): Promise<ReportsOverview>;
 
   listExamReports(
     tenantId: string,

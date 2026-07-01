@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ClassroomsModule } from '../classrooms/classrooms.module';
 import { UsersController } from './controllers/users.controller';
 import { PrismaUserRepository } from './repositories/prisma-user.repository';
 import { USER_REPOSITORY } from './repositories/user.repository';
@@ -9,6 +10,7 @@ import { ListUsersUseCase } from './use-cases/list-users.use-case';
 import { UpdateUserUseCase } from './use-cases/update-user.use-case';
 
 @Module({
+  imports: [ClassroomsModule],
   controllers: [UsersController],
   providers: [
     CreateUserUseCase,

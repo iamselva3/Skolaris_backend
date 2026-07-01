@@ -18,13 +18,25 @@ export interface AntiCheatConfig {
   flagAtViolationCount: number;
 }
 
+/**
+ * Hard product rule: an attempt is auto-submitted on the 6th total anti-cheat
+ * violation (any type — tab switch, window blur, fullscreen exit, copy/paste, …
+ * all count toward the same total). This is the single source of truth shared by
+ * the violation use-case; the frontend mirrors it as the warning denominator.
+ */
+export const MAX_EXAM_VIOLATIONS = 6;
+
 export const DEFAULT_ANTI_CHEAT_CONFIG: AntiCheatConfig = {
   requireFullscreen: true,
   blockCopyPaste: true,
   blockRightClick: true,
-  tabSwitchThreshold: 3,
-  totalViolationThreshold: 10,
-  flagAtViolationCount: 5,
+  // Only the total-violation rule (MAX_EXAM_VIOLATIONS) governs auto-submit now.
+  // The per-type tab-switch threshold and the intermediate "flag" count are
+  // disabled (0) so they neither auto-submit early nor flip the attempt to
+  // FLAGGED mid-way (which used to block the 6th violation from being recorded).
+  tabSwitchThreshold: 0,
+  totalViolationThreshold: MAX_EXAM_VIOLATIONS,
+  flagAtViolationCount: 0,
 };
 
 export class ExamModel {
@@ -50,6 +62,17 @@ export class ExamModel {
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
     public readonly kind: ExamKind = 'TEST',
+    // Exam-level marks override (all-or-nothing). null = use per-question marks.
+    // See src/modules/exams/scoring/effective-marks.ts.
+    public readonly examMarksPerQuestion: Decimal | null = null,
+    public readonly examNegativeMarks: Decimal | null = null,
+    // Provenance: the QuestionPaper this test was snapshotted from (if any).
+    // `sourcePaperTitle` is only populated by queries that join the paper.
+    public readonly sourcePaperId: string | null = null,
+    public readonly sourcePaperTitle: string | null = null,
+    // Denormalized names for list display (only populated by queries that join them).
+    public readonly programName: string | null = null,
+    public readonly subjectName: string | null = null,
   ) {}
 
   isEditable(): boolean {

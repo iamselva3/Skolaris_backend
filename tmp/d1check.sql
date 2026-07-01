@@ -1,0 +1,1 @@
+SELECT exam_marks_per_question, exam_negative_marks FROM exams LIMIT 1;

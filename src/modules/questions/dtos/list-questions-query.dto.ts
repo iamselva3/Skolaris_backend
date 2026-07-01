@@ -12,4 +12,6 @@ export class ListQuestionsQueryDto extends PaginationQueryDto {
   @IsOptional() @IsEnum(Difficulty) difficulty?: Difficulty;
   @IsOptional() @IsEnum(QuestionType) type?: QuestionType;
   @IsOptional() @IsString() @MaxLength(80) q?: string;
+  /** Scope to a branch (Super Admin branch picker). Omit = all branches. */
+  @IsOptional() @IsUUID() branchId?: string;
 }

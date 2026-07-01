@@ -43,6 +43,7 @@ import {
   GetQuestionPapersSummaryUseCase,
   ListQuestionPapersUseCase,
   ManagePaperQuestionsUseCase,
+  ReviseQuestionPaperUseCase,
   UpdateQuestionPaperUseCase,
 } from '../use-cases/question-paper.use-cases';
 
@@ -60,6 +61,7 @@ export class QuestionPapersController {
     private readonly cloneUC: CloneQuestionPaperUseCase,
     private readonly archiveUC: ArchiveQuestionPaperUseCase,
     private readonly questionsUC: ManagePaperQuestionsUseCase,
+    private readonly reviseUC: ReviseQuestionPaperUseCase,
   ) {}
 
   @Post()
@@ -127,6 +129,15 @@ export class QuestionPapersController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<{ data: QuestionPaperResponse }> {
     return { data: toPaperResponse(await this.cloneUC.execute(actor, id)) };
+  }
+
+  @Post(':id/revise')
+  @HttpCode(HttpStatus.CREATED)
+  async revise(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<{ data: QuestionPaperResponse }> {
+    return { data: toPaperResponse(await this.reviseUC.execute(actor, id)) };
   }
 
   @Post(':id/archive')

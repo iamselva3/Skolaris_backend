@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import { cleanCropForDisplay } from './crop-display-clean';
+import { cleanCropForDisplay, removeColumnDivider } from './crop-display-clean';
 import { buildWatermarkMask } from './watermark-clean';
 import type { FlatField, WatermarkMask } from './watermark-clean';
 
@@ -21,6 +21,17 @@ const flat = (data: number[]): FlatField => ({
 });
 
 describe('cleanCropForDisplay (binary, content-faithful watermark suppression)', () => {
+  // Background removal is OFF by default in production (architecture decision 2026-06-24 — the client
+  // pre-cleans PDFs; the in-engine passes caused content loss). The algorithm still exists and these
+  // tests verify it, so enable the master switch for the suite. Each test may still toggle its own
+  // per-pass flag (e.g. OCR_DISPLAY_WATERMARK_CLEANUP=false) to exercise the disabled path.
+  beforeEach(() => {
+    process.env.OCR_BACKGROUND_REMOVAL = 'on';
+  });
+  afterEach(() => {
+    delete process.env.OCR_BACKGROUND_REMOVAL;
+  });
+
   const reg = (w: number) => ({ x0: 0, y0: 0, x1: w, y1: 1 });
   const clean = (crop: Buffer, fd: number[]) =>
     cleanCropForDisplay(crop, {
@@ -230,33 +241,174 @@ describe('cleanCropForDisplay (binary, content-faithful watermark suppression)',
       expect(g[15 * W + 15]).toBe(205); // kept (could be unique content)
     });
 
-    it('PASS 3 removes a persistent, isolated divider line', async () => {
-      const W = 21,
-        H = 40;
-      const crop = await makeImg(W, H, (x) => (x === 10 ? 70 : 255)); // dark vertical line at x=10
-      const flat = field2(W, H, (x) => (x === 10 ? 70 : 255)); // line is persistent across pages
-      const g = await gray(await run(crop, flat, W, H));
-      expect(g[20 * W + 10]).toBe(255); // isolated persistent divider → removed
-    });
+    // The divider is removed by `removeColumnDivider` — ONE implementation used in EVERY upload
+    // mode. With a flat field it is located from cross-page consensus; without one (single /
+    // partial) from the page's own geometry. These tests exercise BOTH and prove the same page
+    // gives the same output either way. (The other passes 1/2/4 are exercised via `run` above.)
+    const divFlat = (crop: Buffer, flat: FlatField, w: number, h: number) =>
+      removeColumnDivider(crop, { flat, pageWidth: w, pageHeight: h });
+    const divPage = (crop: Buffer) => removeColumnDivider(crop, {}); // single page, no flat field
 
-    it('PASS 3 keeps a UNIQUE vertical line (flat bright = content, e.g. a graph axis)', async () => {
+    it('removes a divider located from the flat field (multi-page)', async () => {
       const W = 21,
         H = 40;
       const crop = await makeImg(W, H, (x) => (x === 10 ? 70 : 255));
-      const flat = field2(W, H, () => 255); // line is unique to this page → content
-      const g = await gray(await run(crop, flat, W, H));
-      expect(g[20 * W + 10]).toBeLessThan(120); // unique content line → kept
+      const flat = field2(W, H, (x) => (x === 10 ? 70 : 255));
+      const g = await gray(await divFlat(crop, flat, W, H));
+      expect(g[20 * W + 10]).toBe(255); // persistent isolated divider → removed
     });
 
-    it('PASS 3 keeps a divider segment that has text beside it', async () => {
+    it('removes a divider on a SINGLE-PAGE upload (no flat field) — not exempted', async () => {
       const W = 21,
         H = 40;
-      // vertical line at x=10 (persistent) AND a text stroke at x=14 on every row
-      const crop = await makeImg(W, H, (x) => (x === 10 || x === 14 ? 70 : 255));
-      const flat = field2(W, H, (x) => (x === 10 ? 70 : 255)); // only the divider is persistent
-      const g = await gray(await run(crop, flat, W, H));
-      expect(g[20 * W + 14]).toBeLessThan(120); // text kept (unique)
-      expect(g[20 * W + 10]).toBeLessThan(120); // divider kept HERE — ink within DIV_ISOLATE → not isolated
+      const page = await makeImg(W, H, (x) => (x === 10 ? 70 : 255)); // divider, clean gutters
+      const g = await gray(await divPage(page));
+      expect(g[20 * W + 10]).toBe(255); // same removal as multi-page — no mode exemption
+    });
+
+    it('IDENTICAL behaviour: the same page yields the same divider WITH and WITHOUT a flat field', async () => {
+      const W = 21,
+        H = 40;
+      const page = await makeImg(W, H, (x) => (x === 10 ? 70 : 255));
+      const flat = field2(W, H, (x) => (x === 10 ? 70 : 255));
+      const withFlat = await gray(await divFlat(page, flat, W, H));
+      const noFlat = await gray(await divPage(page));
+      for (let y = 0; y < H; y += 1) expect(withFlat[y * W + 10]).toBe(noFlat[y * W + 10]); // same column, same output
+      expect(noFlat[20 * W + 10]).toBe(255);
+    });
+
+    it('removes the WHOLE divider in one piece — page gaps leave no fragment', async () => {
+      const W = 31,
+        H = 60;
+      const onLine = (x: number, y: number) => (x === 15 || x === 16) && y % 17 !== 0; // page gaps every 17th row
+      const crop = await makeImg(W, H, (x, y) => (onLine(x, y) ? 70 : 255));
+      const flat = field2(W, H, (x) => (x === 15 || x === 16 ? 80 : 255)); // solid persistent band
+      const g = await gray(await divFlat(crop, flat, W, H));
+      let leftover = 0;
+      for (let y = 0; y < H; y += 1) for (const x of [15, 16]) if (g[y * W + x] < 250) leftover += 1;
+      expect(leftover).toBe(0);
+    });
+
+    it('removes a clean-gutter divider regardless of the flat argument (flat is NOT the locator)', async () => {
+      // Detection is on the page geometry; the flat field cannot see a thin line on a real PDF, so
+      // even a flat that "says everything is unique" must not block removal of a clean-gutter line.
+      const W = 21,
+        H = 40;
+      const crop = await makeImg(W, H, (x) => (x === 10 ? 70 : 255));
+      const flatAll255 = field2(W, H, () => 255);
+      const g = await gray(await divFlat(crop, flatAll255, W, H));
+      expect(g[20 * W + 10]).toBe(255); // page geometry decides ⇒ clean-gutter line removed
+    });
+
+    it('keeps a single-page line that has content on ONE side (graph axis / table border)', async () => {
+      const W = 21,
+        H = 40;
+      // full-height line at x=10 with a plotted/filled block hugging its right side
+      const page = await makeImg(W, H, (x) => (x === 10 || (x >= 12 && x <= 18) ? 70 : 255));
+      const g = await gray(await divPage(page));
+      expect(g[20 * W + 10]).toBeLessThan(120); // one gutter not clean ⇒ not a divider ⇒ kept
+    });
+
+    it('CONSISTENCY: the SAME divider column is removed on two DIFFERENT pages, content preserved', async () => {
+      // Same layout, different content each page ⇒ the divider (x=10) is removed identically on
+      // both, while each page's own side content (near the edge) is preserved.
+      const W = 21,
+        H = 40;
+      const flat = field2(W, H, (x) => (x === 10 ? 70 : 255));
+      const pageA = await makeImg(W, H, (x) => (x === 10 || x === 2 ? 70 : 255));
+      const pageB = await makeImg(W, H, (x) => (x === 10 || x === 18 ? 70 : 255));
+      const gA = await gray(await divFlat(pageA, flat, W, H));
+      const gB = await gray(await divFlat(pageB, flat, W, H));
+      expect(gA[20 * W + 10]).toBe(255);
+      expect(gB[20 * W + 10]).toBe(255);
+      expect(gA[20 * W + 2]).toBeLessThan(120); // page A side content preserved
+      expect(gB[20 * W + 18]).toBeLessThan(120); // page B side content preserved
+    });
+
+    it('removes the divider while PRESERVING content nearby (outside the gutter)', async () => {
+      const W = 21,
+        H = 40;
+      const crop = await makeImg(W, H, (x) => (x === 10 || x === 16 ? 70 : 255)); // divider x=10, content x=16
+      const flat = field2(W, H, (x) => (x === 10 ? 70 : 255));
+      const g = await gray(await divFlat(crop, flat, W, H));
+      expect(g[20 * W + 10]).toBe(255);
+      expect(g[20 * W + 16]).toBeLessThan(120); // content preserved, not clipped
+    });
+
+    it('keeps a line whose neighbour is ALSO persistent (panel edge, not an isolated divider)', async () => {
+      const W = 21,
+        H = 40;
+      const crop = await makeImg(W, H, (x) => (x === 10 || x === 13 ? 70 : 255));
+      const flat = field2(W, H, (x) => (x === 10 || x === 13 ? 110 : 255));
+      const g = await gray(await divFlat(crop, flat, W, H));
+      expect(g[20 * W + 10]).toBeLessThan(120);
+    });
+
+    it('keeps a page-EDGE border (no outer gutter ⇒ not the middle divider)', async () => {
+      const W = 21,
+        H = 40;
+      const crop = await makeImg(W, H, (x) => (x === 1 ? 70 : 255));
+      const flat = field2(W, H, (x) => (x === 1 ? 70 : 255));
+      const g = await gray(await divFlat(crop, flat, W, H));
+      expect(g[20 * W + 1]).toBeLessThan(120);
+    });
+
+    it('keeps a SHORT mark (run under half the page height ⇒ not a divider) in both modes', async () => {
+      const W = 21,
+        H = 40;
+      const crop = await makeImg(W, H, (x, y) => (x === 10 && y >= 5 && y < 15 ? 70 : 255));
+      const flat = field2(W, H, (x, y) => (x === 10 && y >= 5 && y < 15 ? 80 : 255));
+      const gFlat = await gray(await divFlat(crop, flat, W, H));
+      const gPage = await gray(await divPage(crop));
+      expect(gFlat[8 * W + 10]).toBeLessThan(120);
+      expect(gPage[8 * W + 10]).toBeLessThan(120);
+    });
+
+    // PASS 4 — horizontal page-separator removal (mirror of Pass 3). Default OFF, so
+    // these enable OCR_DISPLAY_HSEP_CLEANUP. Same persistence + isolation safety.
+    describe('PASS 4 horizontal separator (OCR_DISPLAY_HSEP_CLEANUP)', () => {
+      afterEach(() => delete process.env.OCR_DISPLAY_HSEP_CLEANUP);
+
+      it('DEFAULT (now ON): removes a PERSISTENT, isolated horizontal separator line', async () => {
+        const W = 40,
+          H = 21;
+        const crop = await makeImg(W, H, (_x, y) => (y === 10 ? 70 : 255)); // full-width dark rule
+        const flat = field2(W, H, (_x, y) => (y === 10 ? 70 : 255)); // persistent across pages
+        const g = await gray(await run(crop, flat, W, H));
+        expect(g[10 * W + 20]).toBe(255); // isolated persistent separator → removed
+      });
+
+      it('DISABLED (env=false): the same separator is KEPT', async () => {
+        process.env.OCR_DISPLAY_HSEP_CLEANUP = 'false'; // default is ON; this is the disable path
+        const W = 40,
+          H = 21;
+        const crop = await makeImg(W, H, (_x, y) => (y === 10 ? 70 : 255));
+        const flat = field2(W, H, (_x, y) => (y === 10 ? 70 : 255));
+        const g = await gray(await run(crop, flat, W, H));
+        expect(g[10 * W + 20]).toBeLessThan(120); // disabled → kept
+      });
+
+      it('KEEPS a UNIQUE horizontal line (flat bright = table border / graph axis)', async () => {
+        process.env.OCR_DISPLAY_HSEP_CLEANUP = 'true';
+        const W = 40,
+          H = 21;
+        const crop = await makeImg(W, H, (_x, y) => (y === 10 ? 70 : 255));
+        const flat = field2(W, H, () => 255); // unique to this page → content
+        const g = await gray(await run(crop, flat, W, H));
+        expect(g[10 * W + 20]).toBeLessThan(120); // unique content line → kept
+      });
+
+      it('KEEPS a separator that has ink ABOVE/BELOW it (table/option-adjacent)', async () => {
+        process.env.OCR_DISPLAY_HSEP_CLEANUP = 'true';
+        const W = 40,
+          H = 21;
+        // persistent full-width rule at y=10 AND a text row at y=12 (within HSEP_ISOLATE)
+        const crop = await makeImg(W, H, (_x, y) => (y === 10 || y === 12 ? 70 : 255));
+        const flat = field2(W, H, (_x, y) => (y === 10 ? 70 : 255)); // only the rule is persistent
+        const g = await gray(await run(crop, flat, W, H));
+        expect(g[12 * W + 20]).toBeLessThan(120); // text kept (unique)
+        expect(g[10 * W + 20]).toBeLessThan(120); // rule kept HERE — ink within HSEP_ISOLATE → not isolated
+      });
     });
 
     // TRAIL mode: clear a self-protecting MEDIUM-grey trail in empty background, while
@@ -388,6 +540,78 @@ describe('cleanCropForDisplay (binary, content-faithful watermark suppression)',
         }),
       );
       expect(out[0]).toBe(60); // outside the large blob → never touched
+    });
+  });
+
+  // ───────────────── WHOLE-OBJECT watermark removal (opt-in) ─────────────────
+  describe('whole-object removal (OCR_DISPLAY_WM_WHOLE_OBJECT)', () => {
+    afterEach(() => {
+      delete process.env.OCR_DISPLAY_WM_WHOLE_OBJECT;
+      delete process.env.OCR_DISPLAY_WM_BRIDGE;
+    });
+
+    const W = 10;
+    const H = 2;
+    const img = (rows: number[][]): Promise<Buffer> => {
+      const px: number[] = [];
+      for (const r of rows) for (const v of r) px.push(v, v, v);
+      return sharp(Buffer.from(px), { raw: { width: W, height: H, channels: 3 } }).png().toBuffer();
+    };
+    const fullMask = (): WatermarkMask => ({ width: W, height: H, data: Uint8Array.from(new Array(W * H).fill(255)) });
+    const flat2 = (rows: number[][]): FlatField => {
+      const d: number[] = [];
+      for (const r of rows) for (const v of r) d.push(v);
+      return { width: W, height: H, data: Uint8Array.from(d) };
+    };
+    const row = (v: number): number[] => new Array(W).fill(v);
+    const cleanWO = (crop: Buffer, flatRows: number[][]) =>
+      cleanCropForDisplay(crop, {
+        flat: flat2(flatRows),
+        mask: fullMask(),
+        region: { x0: 0, y0: 0, x1: W, y1: H },
+        pageWidth: W,
+        pageHeight: H,
+      });
+
+    it('removes the WHOLE grey watermark word even where the flat field is bright (jitter) — no half-clean', async () => {
+      process.env.OCR_DISPLAY_WM_WHOLE_OBJECT = 'true';
+      // grey watermark across the whole row; flat is grey on the left half, BRIGHT on the right
+      // half (registration jitter). The per-pixel path would keep the right half (guard E) → half
+      // removal. Whole-object: pure watermark (no unique dark ink) ⇒ the WHOLE word goes white.
+      const flatRows = [
+        [...new Array(5).fill(200), ...new Array(5).fill(255)],
+        [...new Array(5).fill(200), ...new Array(5).fill(255)],
+      ];
+      const out = await rawOf(await cleanWO(await img([row(200), row(200)]), flatRows));
+      for (let p = 0; p < W * H; p += 1) expect(out[p * 3]).toBe(255); // entire object removed
+    });
+
+    it('KEEPS the WHOLE object when it overlaps substantial unique dark content (banner-over-formula)', async () => {
+      process.env.OCR_DISPLAY_WM_WHOLE_OBJECT = 'true';
+      // left half grey watermark (200), right half DARK content (50); flat bright everywhere ⇒ the
+      // dark half is unique content. Fraction of unique-dark ink ≥ τ ⇒ keep the WHOLE object.
+      const crop = await img([[...new Array(5).fill(200), ...new Array(5).fill(50)], [...new Array(5).fill(200), ...new Array(5).fill(50)]]);
+      const out = await rawOf(await cleanWO(crop, [row(255), row(255)]));
+      expect(out[0]).toBe(200); // watermark half NOT whitened (object kept whole)
+      expect(out[5 * 3]).toBe(50); // dark content untouched
+    });
+
+    it('removes a DARK persistent watermark whole (flat dark ⇒ not unique ⇒ pure)', async () => {
+      process.env.OCR_DISPLAY_WM_WHOLE_OBJECT = 'true';
+      // dark watermark (60) whose flat is ALSO dark (persistent on every page) ⇒ not unique content.
+      const out = await rawOf(await cleanWO(await img([row(60), row(60)]), [row(60), row(60)]));
+      for (let p = 0; p < W * H; p += 1) expect(out[p * 3]).toBe(255);
+    });
+
+    it('is a NO-OP when the flag is off (validated per-pixel path runs)', async () => {
+      // flag unset → right-half (flat bright) kept, left-half (flat grey) whitened = per-pixel behaviour.
+      const flatRows = [
+        [...new Array(5).fill(200), ...new Array(5).fill(255)],
+        [...new Array(5).fill(200), ...new Array(5).fill(255)],
+      ];
+      const out = await rawOf(await cleanWO(await img([row(200), row(200)]), flatRows));
+      expect(out[0]).toBe(255); // left half (flat grey) removed
+      expect(out[9 * 3]).toBe(200); // right half (flat bright) KEPT — the half-removal of the old path
     });
   });
 });

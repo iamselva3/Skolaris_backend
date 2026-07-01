@@ -39,6 +39,8 @@ export class PrismaTaxonomyRepository implements ITaxonomyRepository {
     tenantId: string;
     code: string;
     name: string;
+    defaultMarks?: number;
+    defaultNegativeMarks?: number;
   }): Promise<ProgramModel> {
     const row = await this.prisma.program.create({ data: input });
     return toProgram(row);
@@ -47,7 +49,7 @@ export class PrismaTaxonomyRepository implements ITaxonomyRepository {
   async updateProgram(
     tenantId: string,
     id: string,
-    patch: { name?: string; isActive?: boolean },
+    patch: { name?: string; isActive?: boolean; defaultMarks?: number; defaultNegativeMarks?: number },
   ): Promise<ProgramModel> {
     await this.prisma.program.updateMany({ where: { id, tenantId }, data: patch });
     const row = await this.prisma.program.findUniqueOrThrow({ where: { id } });
@@ -222,7 +224,17 @@ export class PrismaTaxonomyRepository implements ITaxonomyRepository {
 /* ─── mappers ─── */
 
 function toProgram(r: PrismaProgram): ProgramModel {
-  return new ProgramModel(r.id, r.tenantId, r.code, r.name, r.isActive, r.createdAt, r.updatedAt);
+  return new ProgramModel(
+    r.id,
+    r.tenantId,
+    r.code,
+    r.name,
+    r.isActive,
+    r.defaultMarks,
+    r.defaultNegativeMarks,
+    r.createdAt,
+    r.updatedAt,
+  );
 }
 
 type SubjectWithProgram = PrismaSubject & {

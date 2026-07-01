@@ -19,6 +19,7 @@ export class ListQuestionsUseCase {
     difficulty?: Difficulty;
     type?: QuestionType;
     q?: string;
+    branchId?: string;
     limit: number;
     offset: number;
   }): Promise<PaginatedResponse<QuestionWithOptions>> {

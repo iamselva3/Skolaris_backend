@@ -10,6 +10,9 @@ export interface ExamResponse {
   durationSeconds: number;
   totalMarks: number;
   defaultNegativeMarks: number;
+  /** Exam-level marks override (all-or-nothing). null = per-question marks apply. */
+  examMarksPerQuestion: number | null;
+  examNegativeMarks: number | null;
   randomizeQuestions: boolean;
   randomizeOptions: boolean;
   kind: 'PAPER' | 'TEST';
@@ -21,6 +24,12 @@ export interface ExamResponse {
   antiCheatConfig: Record<string, unknown>;
   programId: string | null;
   subjectId: string | null;
+  /** Provenance: the QuestionPaper this test was snapshotted from (if any). */
+  sourcePaperId: string | null;
+  sourcePaperTitle: string | null;
+  /** Denormalized names for list display (null unless the query joined them). */
+  programName: string | null;
+  subjectName: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,6 +65,8 @@ export const toExamResponse = (e: ExamModel): ExamResponse => ({
   durationSeconds: e.durationSeconds,
   totalMarks: Number(e.totalMarks),
   defaultNegativeMarks: Number(e.defaultNegativeMarks),
+  examMarksPerQuestion: e.examMarksPerQuestion != null ? Number(e.examMarksPerQuestion) : null,
+  examNegativeMarks: e.examNegativeMarks != null ? Number(e.examNegativeMarks) : null,
   randomizeQuestions: e.randomizeQuestions,
   randomizeOptions: e.randomizeOptions,
   kind: e.kind,
@@ -67,6 +78,10 @@ export const toExamResponse = (e: ExamModel): ExamResponse => ({
   antiCheatConfig: e.antiCheatConfig as unknown as Record<string, unknown>,
   programId: e.programId,
   subjectId: e.subjectId,
+  sourcePaperId: e.sourcePaperId,
+  sourcePaperTitle: e.sourcePaperTitle,
+  programName: e.programName,
+  subjectName: e.subjectName,
   createdAt: e.createdAt.toISOString(),
   updatedAt: e.updatedAt.toISOString(),
 });

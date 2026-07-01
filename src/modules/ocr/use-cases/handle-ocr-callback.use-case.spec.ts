@@ -47,6 +47,16 @@ describe('HandleOcrCallbackUseCase', () => {
       markFinished: jest.fn().mockImplementation(async ({ id }) => makeJob({ id })),
       markFailed: jest.fn().mockImplementation(async ({ id }) => makeJob({ id })),
       updateProgress: jest.fn().mockResolvedValue(undefined),
+      markRunning: jest.fn().mockResolvedValue({ attemptCount: 1 }),
+      markPaused: jest.fn().mockResolvedValue(undefined),
+      markResuming: jest.fn().mockResolvedValue(undefined),
+      markCompletedStatus: jest.fn().mockResolvedValue(undefined),
+      savePageCheckpoint: jest.fn().mockResolvedValue(undefined),
+      loadPageCheckpoint: jest.fn().mockResolvedValue(null),
+      saveResultCheckpoint: jest.fn().mockResolvedValue(undefined),
+      loadResultCheckpoint: jest.fn().mockResolvedValue(null),
+      findResumable: jest.fn().mockResolvedValue([]),
+      failExhausted: jest.fn().mockResolvedValue(0),
     };
     drafts = {
       bulkCreate: jest.fn().mockResolvedValue(3),
@@ -91,7 +101,17 @@ describe('HandleOcrCallbackUseCase', () => {
       execute: jest.fn().mockResolvedValue({} as never),
     } as unknown as jest.Mocked<CreateNotificationUseCase>;
 
-    useCase = new HandleOcrCallbackUseCase(ocrJobs, drafts, uploads, notifications, fakePrisma);
+    // correction keeps every draft by default (no phantoms in the unit fixtures)
+    const fakeCorrection = {
+      correct: (ds: Array<{ position: number }>) => ({
+        keptPositions: new Set(ds.map((d) => d.position)),
+        removed: [],
+        deliverable: true,
+        gateReasons: [],
+      }),
+    } as unknown as import('../../ocr-analysis/callback-correction').CallbackCorrectionService;
+
+    useCase = new HandleOcrCallbackUseCase(ocrJobs, drafts, uploads, notifications, fakePrisma, fakeCorrection);
   });
 
   it('writes drafts, marks ready_for_review, and notifies on success', async () => {

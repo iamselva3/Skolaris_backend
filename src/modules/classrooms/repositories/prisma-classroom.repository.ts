@@ -54,6 +54,7 @@ export class PrismaClassroomRepository implements IClassroomRepository {
     name: string,
     year?: string | null,
     section?: string | null,
+    subject?: string | null,
   ): Promise<ClassroomModel | null> {
     const row = await this.prisma.classroom.findFirst({
       where: {
@@ -62,10 +63,46 @@ export class PrismaClassroomRepository implements IClassroomRepository {
         name: { equals: name, mode: 'insensitive' },
         year: year || null,
         section: section ? { equals: section, mode: 'insensitive' } : null,
+        // `subject` is part of the classroom identity, but treat "not provided"
+        // (undefined) as "don't filter" so the existing name+year+section lookup
+        // keeps working; only an explicit subject narrows the match.
+        ...(subject !== undefined
+          ? { subject: subject ? { equals: subject, mode: 'insensitive' } : null }
+          : {}),
       },
       include: { teachers: { select: { teacherId: true } } },
     });
     return row ? this.toModel(row) : null;
+  }
+
+  async findOrCreate(input: CreateClassroomInput): Promise<ClassroomModel> {
+    const existing = await this.findByUniqueAttributes(
+      input.tenantId,
+      input.branchId,
+      input.name,
+      input.year ?? null,
+      input.section ?? null,
+      input.subject ?? null,
+    );
+    if (existing) return existing;
+    try {
+      return await this.create(input);
+    } catch (e) {
+      // Unique-constraint race: another request created the same classroom between
+      // our lookup and insert. Re-read it instead of surfacing a duplicate error.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        const raced = await this.findByUniqueAttributes(
+          input.tenantId,
+          input.branchId,
+          input.name,
+          input.year ?? null,
+          input.section ?? null,
+          input.subject ?? null,
+        );
+        if (raced) return raced;
+      }
+      throw e;
+    }
   }
 
   async findWithCount(tenantId: string, id: string): Promise<ClassroomWithCount | null> {
@@ -131,14 +168,35 @@ export class PrismaClassroomRepository implements IClassroomRepository {
   async getFilters(
     tenantId: string,
     branchId?: string,
+    opts?: { subject?: string; name?: string },
   ): Promise<{ names: string[]; sections: string[]; years: string[]; subjects: string[] }> {
     const where: Prisma.ClassroomWhereInput = { tenantId };
     if (branchId) where.branchId = branchId;
 
+    // Hierarchical scoping for the create-student/teacher autocomplete:
+    //  - batches (names) are scoped to the chosen discipline (subject)
+    //  - sections are scoped to the chosen discipline + batch
+    // Disciplines and years stay unscoped (top of the hierarchy / static list).
+    const subjectFilter = opts?.subject
+      ? ({ equals: opts.subject, mode: 'insensitive' } as const)
+      : undefined;
+    const nameFilter = opts?.name
+      ? ({ equals: opts.name, mode: 'insensitive' } as const)
+      : undefined;
+
     const [names, sections, years, subjects] = await Promise.all([
-      this.prisma.classroom.findMany({ where, select: { name: true }, distinct: ['name'] }),
       this.prisma.classroom.findMany({
-        where: { ...where, section: { not: null } },
+        where: { ...where, ...(subjectFilter ? { subject: subjectFilter } : {}) },
+        select: { name: true },
+        distinct: ['name'],
+      }),
+      this.prisma.classroom.findMany({
+        where: {
+          ...where,
+          section: { not: null },
+          ...(subjectFilter ? { subject: subjectFilter } : {}),
+          ...(nameFilter ? { name: nameFilter } : {}),
+        },
         select: { section: true },
         distinct: ['section'],
       }),
@@ -260,6 +318,43 @@ export class PrismaClassroomRepository implements IClassroomRepository {
     };
   }
 
+  async addTeachers(
+    tenantId: string,
+    classroomId: string,
+    teacherIds: string[],
+  ): Promise<{ added: string[]; alreadyMember: string[] }> {
+    if (teacherIds.length === 0) {
+      return { added: [], alreadyMember: [] };
+    }
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: classroomId, tenantId },
+    });
+    if (!classroom) {
+      throw new NotFoundException('Classroom not found');
+    }
+    // Only real TEACHER users in this tenant can be attached.
+    const validTeachers = await this.prisma.user.findMany({
+      where: { id: { in: teacherIds }, tenantId, role: Role.TEACHER },
+      select: { id: true },
+    });
+    const validIds = new Set(validTeachers.map((t) => t.id));
+
+    const existing = await this.prisma.classroomTeacher.findMany({
+      where: { teacherId: { in: teacherIds }, classroomId },
+      select: { teacherId: true },
+    });
+    const alreadyMember = new Set(existing.map((e) => e.teacherId));
+
+    const toAdd = teacherIds.filter((id) => validIds.has(id) && !alreadyMember.has(id));
+    if (toAdd.length > 0) {
+      await this.prisma.classroomTeacher.createMany({
+        data: toAdd.map((teacherId) => ({ classroomId, teacherId })),
+        skipDuplicates: true,
+      });
+    }
+    return { added: toAdd, alreadyMember: Array.from(alreadyMember) };
+  }
+
   async removeStudent(tenantId: string, classroomId: string, studentId: string): Promise<boolean> {
     const classroom = await this.prisma.classroom.findFirst({
       where: { id: classroomId, tenantId },
@@ -301,6 +396,35 @@ export class PrismaClassroomRepository implements IClassroomRepository {
         student: this.toStudent(r.student),
         user: this.toUser(r.student.user),
       })),
+      total,
+    };
+  }
+
+  async listTeachers(
+    tenantId: string,
+    classroomId: string,
+    limit: number,
+    offset: number,
+  ): Promise<{ data: UserModel[]; total: number }> {
+    const classroom = await this.prisma.classroom.findFirst({
+      where: { id: classroomId, tenantId },
+    });
+    if (!classroom) {
+      throw new NotFoundException('Classroom not found');
+    }
+    const where: Prisma.ClassroomTeacherWhereInput = { classroomId };
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.classroomTeacher.findMany({
+        where,
+        take: limit,
+        skip: offset,
+        orderBy: { joinedAt: 'desc' },
+        include: { teacher: true },
+      }),
+      this.prisma.classroomTeacher.count({ where }),
+    ]);
+    return {
+      data: rows.map((r) => this.toUser(r.teacher)),
       total,
     };
   }

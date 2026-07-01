@@ -12,6 +12,7 @@ import {
   GetQuestionPapersSummaryUseCase,
   ListQuestionPapersUseCase,
   ManagePaperQuestionsUseCase,
+  ReviseQuestionPaperUseCase,
   UpdateQuestionPaperUseCase,
 } from './use-cases/question-paper.use-cases';
 
@@ -29,6 +30,7 @@ import {
     CloneQuestionPaperUseCase,
     ArchiveQuestionPaperUseCase,
     ManagePaperQuestionsUseCase,
+    ReviseQuestionPaperUseCase,
   ],
   exports: [QUESTION_PAPER_REPOSITORY],
 })

@@ -11,12 +11,14 @@ export class ListUploadsUseCase {
     tenantId: string;
     status?: UploadStatus;
     uploadedBy?: string;
+    branchId?: string;
     limit: number;
     offset: number;
   }): Promise<PaginatedResponse<UploadModel>> {
     const { data, total } = await this.uploads.list(input.tenantId, {
       status: input.status,
       uploadedBy: input.uploadedBy,
+      branchId: input.branchId,
       limit: input.limit,
       offset: input.offset,
     });

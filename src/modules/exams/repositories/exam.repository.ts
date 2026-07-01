@@ -15,6 +15,9 @@ export interface CreateExamInput {
   description?: string | null;
   durationSeconds: number;
   defaultNegativeMarks?: number;
+  /** Exam-level marks override (all-or-nothing). null/undefined = per-question marks. */
+  examMarksPerQuestion?: number | null;
+  examNegativeMarks?: number | null;
   randomizeQuestions?: boolean;
   randomizeOptions?: boolean;
   opensAt?: Date | null;
@@ -34,6 +37,9 @@ export interface UpdateExamInput {
   description?: string | null;
   durationSeconds?: number;
   defaultNegativeMarks?: number;
+  /** Exam-level marks override (all-or-nothing). null clears it → per-question marks. */
+  examMarksPerQuestion?: number | null;
+  examNegativeMarks?: number | null;
   randomizeQuestions?: boolean;
   randomizeOptions?: boolean;
   opensAt?: Date | null;
@@ -50,6 +56,12 @@ export interface ListExamsFilter {
   programId?: string;
   subjectId?: string;
   q?: string;
+  branchId?: string;
+  // Classroom-hierarchy filter via ExamAssignment.classroom: discipline =
+  // Classroom.subject, batch = Classroom.name, section = Classroom.section.
+  discipline?: string;
+  batch?: string;
+  section?: string;
   /** Defaults to 'TEST' in the use-case layer so the existing /exams list never surfaces papers. */
   kind?: ExamKind;
   limit: number;
