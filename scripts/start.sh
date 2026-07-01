@@ -27,5 +27,5 @@ if [ "${CLEANUP_ENGINE_ENABLED}" = "true" ] && [ -x /opt/cleanup-venv/bin/uvicor
   ) &
 fi
 
-npx prisma migrate deploy
+npx prisma migrate deploy || echo "[start] prisma migrate deploy failed (non-fatal) -- continuing to boot API"
 exec node dist/main.js
