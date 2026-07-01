@@ -27,6 +27,7 @@ import {
 } from './page-classification';
 import { reorderByColumns, type OcrWordBox, type ReorderLayout } from './column-reorder';
 import { ocrPdfViaPaddle, type PageFigureRef } from './paddle-printed-http';
+import { assertOcrMemoryHeadroom } from './mem-guard';
 
 /** Per-page layout audit, persisted on OcrJob.layoutMetadata. */
 export interface PageLayoutInfo {
@@ -975,7 +976,14 @@ const ocrPdf = async (
     console.log(`[ocr-timing] watermark_module_loaded +${Date.now() - ocrPdfT0}ms dur=${Date.now() - wcImportT0}ms`);
     const renderT0 = Date.now();
     const pageBuffers: Buffer[] = [];
-    for await (const p of doc) pageBuffers.push(p);
+    // MEMORY GUARD: rendering every page is the first big allocation. Check the
+    // container's memory before each page so an oversized (usually scanned) PDF
+    // aborts the JOB cleanly here instead of OOM-killing the whole process. No-op
+    // on unconstrained hosts. See mem-guard.ts.
+    for await (const p of doc) {
+      assertOcrMemoryHeadroom('pdf-render');
+      pageBuffers.push(p);
+    }
     analysisPageImages = pageBuffers; // surface raw renders for the post-OCR analysis seam
     const m = pageBuffers.length ? await sharp(pageBuffers[0]).metadata() : { width: 0, height: 0, density: undefined };
     // eslint-disable-next-line no-console
@@ -985,6 +993,10 @@ const ocrPdf = async (
     );
 
     const flatT0 = Date.now();
+    // MEMORY GUARD: the flat field decodes ALL pages into float buffers at once —
+    // the largest single spike in the render path. Abort cleanly if we are already
+    // near the ceiling rather than letting this decode trip the OOM killer.
+    assertOcrMemoryHeadroom('flat-field');
     // eslint-disable-next-line no-console
     console.log(`[OCR] Build Flat Field: starting · mem(before)=${memMB()}MB`);
     const flatField = await buildFlatField(pageBuffers);
@@ -1205,6 +1217,9 @@ const ocrPdf = async (
       let pageNumber = 0;
       for (const rawPageImage of pageBuffers) {
         pageNumber += 1;
+        // MEMORY GUARD: clean + Tesseract on each page is the third growth point.
+        // Abort cleanly if the container is over budget before starting this page.
+        assertOcrMemoryHeadroom(`page-ocr(${pageNumber})`);
         const cleanT0 = Date.now();
         const pageImage = await cleanPageImage(rawPageImage, flatField);
         tClean += Date.now() - cleanT0;
