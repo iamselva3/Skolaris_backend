@@ -27,5 +27,12 @@ if [ "${CLEANUP_ENGINE_ENABLED}" = "true" ] && [ -x /opt/cleanup-venv/bin/uvicor
   ) &
 fi
 
+# Migrations are applied best-effort. A failure here (e.g. a transient Neon
+# advisory-lock timeout, or a lock left by a previously crashed deploy) must NOT
+# block the web process from starting. If it did, the container would exit before
+# binding a port -> Render reports "no open ports" and kills it -> that crash
+# leaves another stuck advisory lock that fails the NEXT deploy too (crash loop).
+# The schema is managed via baselined migrations, so skipping a run is safe; the
+# API boots either way and a healthy DB applies pending migrations on the next try.
 npx prisma migrate deploy || echo "[start] prisma migrate deploy failed (non-fatal) -- continuing to boot API"
 exec node dist/main.js

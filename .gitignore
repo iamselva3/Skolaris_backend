@@ -18,5 +18,7 @@ venv/
 __pycache__/
 
 .env.example1
+
+# Local OCR/crop test artifacts (baselines, page renders, scratch SQL) — not for the repo
 tmp/
 ocr-cleanup/crop-trace-out/

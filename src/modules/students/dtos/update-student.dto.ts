@@ -1,4 +1,6 @@
-import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ClassroomAssignmentDto } from '../../classrooms/dtos/classroom-assignment.dto';
 
 export class UpdateStudentDto {
   @IsOptional()
@@ -19,4 +21,9 @@ export class UpdateStudentDto {
   @IsOptional()
   @IsUUID()
   branchId?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ClassroomAssignmentDto)
+  classroom?: ClassroomAssignmentDto;
 }

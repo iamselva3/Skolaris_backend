@@ -12,5 +12,6 @@ export class StudentModel {
     public readonly batch?: string | null,
     public readonly section?: string | null,
     public readonly subject?: string | null,
+    public readonly year?: string | null,
   ) {}
 }

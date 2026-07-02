@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { reflowPdf } from '../../modules/ocr-preprocess/pdf-reflow';
 import { resetTesseract, type OcrEngineResult } from '../ocr-engine/ocr-engine';
-import { OcrMemoryLimitError } from '../ocr-engine/mem-guard';
 import { readHandwritingSettings, resolveDrafts } from '../ocr-engine/resolve-drafts';
 import { dispatchHandwritingHttp } from '../ocr-engine/handwriting-http';
 import { startBackgroundCleanup } from '../ocr-engine/cleanup-orchestrator';
@@ -693,11 +692,7 @@ export class OcrJobRunner {
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      // A memory-guard abort is PERMANENT: the document is too big for this tier,
-      // so resuming would just OOM again and burn every resume attempt. Skip the
-      // resumable pause path and fail the upload cleanly with the guidance message.
-      const permanent = err instanceof OcrMemoryLimitError;
-      if (resumable && !permanent) {
+      if (resumable) {
         // Resumable OCR (P0): do NOT discard progress and do NOT fail the upload.
         // Pause the job (checkpoints stay intact, upload stays PROCESSING) so the
         // recovery service resumes it from the last completed page. attemptCount
@@ -726,10 +721,7 @@ export class OcrJobRunner {
       // A Tesseract worker-thread fault can poison the singleton — drop it
       // so the next job re-initialises cleanly. Never crash the host process.
       resetTesseract();
-      // Permanent (memory-limit) failures must NOT be retried by BullMQ — the same
-      // oversized document on the same tier would fail identically. Swallow the
-      // rethrow so the job settles as failed-once; the upload is already FAILED.
-      if (opts.rethrow && !permanent) throw err;
+      if (opts.rethrow) throw err;
     }
   }
 }

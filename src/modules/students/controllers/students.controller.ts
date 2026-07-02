@@ -106,6 +106,7 @@ export class StudentsController {
       rollNo: dto.rollNo,
       parentContact: dto.parentContact,
       branchId: dto.branchId,
+      classroom: dto.classroom,
     });
     return { data: toStudentResponse(r) };
   }

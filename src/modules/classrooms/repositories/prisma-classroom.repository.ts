@@ -355,6 +355,15 @@ export class PrismaClassroomRepository implements IClassroomRepository {
     return { added: toAdd, alreadyMember: Array.from(alreadyMember) };
   }
 
+  async clearStudentClassrooms(tenantId: string, studentId: string): Promise<void> {
+    await this.prisma.classroomStudent.deleteMany({
+      where: {
+        studentId,
+        classroom: { tenantId },
+      },
+    });
+  }
+
   async removeStudent(tenantId: string, classroomId: string, studentId: string): Promise<boolean> {
     const classroom = await this.prisma.classroom.findFirst({
       where: { id: classroomId, tenantId },

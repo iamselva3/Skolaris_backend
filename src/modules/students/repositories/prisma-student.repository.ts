@@ -160,6 +160,7 @@ export class PrismaStudentRepository implements IStudentRepository {
       firstClassroom?.name ?? null,
       firstClassroom?.section ?? null,
       firstClassroom?.subject ?? null,
+      firstClassroom?.year ?? null,
     );
   }
 

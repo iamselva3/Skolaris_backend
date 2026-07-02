@@ -16,6 +16,7 @@ export interface StudentResponse {
   batch?: string | null;
   section?: string | null;
   subject?: string | null;
+  year?: string | null;
 }
 
 export const toStudentResponse = ({ student, user }: StudentWithUser): StudentResponse => ({
@@ -34,4 +35,5 @@ export const toStudentResponse = ({ student, user }: StudentWithUser): StudentRe
   batch: student.batch,
   section: student.section,
   subject: student.subject,
+  year: student.year,
 });

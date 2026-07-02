@@ -75,6 +75,7 @@ export interface IClassroomRepository {
     classroomId: string,
     teacherIds: string[],
   ): Promise<{ added: string[]; alreadyMember: string[] }>;
+  clearStudentClassrooms(tenantId: string, studentId: string): Promise<void>;
   removeStudent(tenantId: string, classroomId: string, studentId: string): Promise<boolean>;
   listStudents(
     tenantId: string,

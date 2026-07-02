@@ -23,6 +23,7 @@ export interface AssignMemberToClassroomInput {
   assignment: ClassroomAssignment;
   studentId?: string;
   teacherId?: string;
+  replaceExistingStudent?: boolean;
 }
 
 /**
@@ -73,6 +74,9 @@ export class AssignMemberToClassroomUseCase {
     });
 
     if (input.studentId) {
+      if (input.replaceExistingStudent) {
+        await this.classrooms.clearStudentClassrooms(actor.tenantId, input.studentId);
+      }
       await this.classrooms.addStudents(actor.tenantId, classroom.id, [input.studentId]);
     }
     if (input.teacherId) {
